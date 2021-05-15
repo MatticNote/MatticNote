@@ -45,6 +45,6 @@ func ConfigureRoute(r fiber.Router) {
 		},
 	}))
 
-	r.Get("/register", registerUserView)
+	r.Get("/register", registerUserGet)
 	r.Post("/register", registerPost)
 }

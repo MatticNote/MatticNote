@@ -6,6 +6,8 @@ require (
 	github.com/UnnoTed/fileb0x v1.1.4 // indirect
 	github.com/andybalholm/brotli v1.0.2 // indirect
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
+	github.com/go-playground/universal-translator v0.17.0 // indirect
+	github.com/go-playground/validator v9.31.0+incompatible // indirect
 	github.com/gofiber/fiber/v2 v2.9.0
 	github.com/gofiber/template v1.6.9 // indirect
 	github.com/google/uuid v1.1.2
@@ -15,6 +17,7 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/labstack/echo v3.3.10+incompatible // indirect
 	github.com/labstack/gommon v0.3.0 // indirect
+	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lib/pq v1.10.0
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-runewidth v0.0.12 // indirect
