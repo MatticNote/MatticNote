@@ -6,13 +6,15 @@ import (
 	"time"
 )
 
+func rateLimitKeyGen(c *fiber.Ctx) string {
+	// TODO: ヘッダーのユーザトークンを基にレートリミットできるようにする
+	return c.IP()
+}
+
 func ConfigureRoute(r fiber.Router) {
 	r.Use(limiter.New(limiter.Config{
-		Max: 6000,
-		KeyGenerator: func(c *fiber.Ctx) string {
-			// TODO: ヘッダーのユーザトークンを基にレートリミットできるようにする
-			return c.IP()
-		},
+		Max:          6000,
+		KeyGenerator: rateLimitKeyGen,
 		Expiration:   15 * time.Minute,
 		LimitReached: v1TooManyRequests,
 	}))

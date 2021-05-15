@@ -1,0 +1,9 @@
+form(method="post")
+    label username
+        input(type="input" name="username" pattern="[a-zA-Z0-9_]{,32}" required=true)
+    label email
+        input(type="email" name="email" required=true)
+    label password
+        input(type="password" name="password" required=true)
+    input(type="hidden" name=.CSRFFormName value=.CSRFToken)
+    input(type="submit" value="Register")

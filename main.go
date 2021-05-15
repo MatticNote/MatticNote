@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/database"
+	"github.com/MatticNote/MatticNote/mn_template"
 	"github.com/MatticNote/MatticNote/server"
 	"github.com/gofiber/fiber/v2"
 	fr "github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/template/pug"
 	"github.com/urfave/cli/v2"
 	"log"
+	"net/http"
 	"os"
 )
 
@@ -102,9 +105,8 @@ func startServer(c *cli.Context) error {
 		Prefork:       true,
 		ServerHeader:  "MatticNote",
 		CaseSensitive: true,
-		ErrorHandler: func(ctx *fiber.Ctx, err error) error {
-			return ctx.Status(500).SendString(err.Error())
-		},
+		ErrorHandler:  server.ErrorView,
+		Views:         pug.NewFileSystem(http.FS(mn_template.Templates), ".pug"),
 	})
 
 	app.Use(fr.New(fr.Config{
@@ -112,6 +114,7 @@ func startServer(c *cli.Context) error {
 	}))
 
 	server.ConfigureRoute(app)
+	app.Use(server.NotFoundView)
 
 	if err := app.Listen(fmt.Sprintf("%s:%d", addr, addrPort)); err != nil {
 		panic(err)
