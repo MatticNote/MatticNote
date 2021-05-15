@@ -1,0 +1,6 @@
+/build/
+dbconfig.yml
+.vscode/
+.idea/
+*.exe
+matticnote.toml
