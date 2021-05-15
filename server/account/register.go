@@ -11,6 +11,7 @@ type registerUserStruct struct {
 	Username string `validate:"required,username"`
 	Email    string `validate:"required,email"`
 	Password string `validate:"required,min=6"`
+	// TODO: CAPTCHAなどの対策用のフォーム内容も含める
 }
 
 func registerUserGet(c *fiber.Ctx) error {

@@ -2,10 +2,13 @@ package account
 
 import (
 	"fmt"
+	"github.com/MatticNote/MatticNote/config"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"math/rand"
 	"net/http"
+	"time"
 )
 
 var tokenCharset = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
@@ -46,5 +49,20 @@ func ConfigureRoute(r fiber.Router) {
 	}))
 
 	r.Get("/register", registerUserGet)
-	r.Post("/register", registerPost)
+	r.Post("/register",
+		limiter.New(limiter.Config{
+			Next: func(_ *fiber.Ctx) bool {
+				return config.Config.Server.DisableAccountRegistrationLimit
+			},
+			Max: int(config.Config.Server.AccountRegistrationLimitCount),
+			KeyGenerator: func(c *fiber.Ctx) string {
+				return c.IP()
+			},
+			Expiration: 24 * time.Hour,
+			LimitReached: func(c *fiber.Ctx) error {
+				return registerUserView(c, "Rate limit reached")
+			},
+		}),
+		registerPost,
+	)
 }
