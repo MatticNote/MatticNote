@@ -1,6 +1,9 @@
 const path = require('path');
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development';
+
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
+const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 
 module.exports = {
     mode: mode,
@@ -37,4 +40,10 @@ module.exports = {
             filename: 'matticnote-ui.css',
         })
     ],
+    optimization: {
+        minimizer: [
+            new TerserPlugin(),
+            new OptimizeCSSAssetsPlugin(),
+        ]
+    }
 }
