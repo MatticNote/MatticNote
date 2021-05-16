@@ -8,7 +8,7 @@ import (
 	"github.com/MatticNote/MatticNote/server"
 	"github.com/gofiber/fiber/v2"
 	fr "github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/gofiber/template/pug"
+	"github.com/gofiber/template/django"
 	"github.com/urfave/cli/v2"
 	"log"
 	"net/http"
@@ -106,7 +106,7 @@ func startServer(c *cli.Context) error {
 		ServerHeader:  "MatticNote",
 		CaseSensitive: true,
 		ErrorHandler:  server.ErrorView,
-		Views:         pug.NewFileSystem(http.FS(mn_template.Templates), ".pug"),
+		Views:         django.NewFileSystem(http.FS(mn_template.Templates), ".django"),
 	})
 
 	app.Use(fr.New(fr.Config{

@@ -9,7 +9,7 @@ import (
 
 func ConfigureRoute(app *fiber.App) {
 	app.Get("/", func(ctx *fiber.Ctx) error {
-		return ctx.Render("index", fiber.Map{}, "layout/index")
+		return ctx.Render("index", fiber.Map{}, "_layout/index")
 	})
 
 	account.ConfigureRoute(app.Group("/account"))

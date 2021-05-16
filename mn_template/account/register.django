@@ -1,0 +1,25 @@
+{% if errors %}
+    <ul>
+        {% for err in errors %}
+        <li>{{ err }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+<form method="post">
+    <label>
+        Email
+        <input name="email" type="email" required>
+    </label>
+    <label>
+        Username
+        <input name="username" type="text" pattern="^[a-zA-Z0-9_]{,32}$" required>
+    </label>
+    <label>
+        Password
+        <input name="password" type="password" pattern="^{8,}$" required>
+    </label>
+
+    <input type="hidden" name="{{ CSRFFormName }}" value="{{ CSRFToken }}">
+
+    <input type="submit" value="Register">
+</form>

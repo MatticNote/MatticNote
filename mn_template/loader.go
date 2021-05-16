@@ -2,5 +2,5 @@ package mn_template
 
 import "embed"
 
-//go:embed *.pug */*.pug
+//go:embed *.django */*.django
 var Templates embed.FS

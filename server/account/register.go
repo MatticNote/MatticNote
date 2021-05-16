@@ -1,6 +1,7 @@
 package account
 
 import (
+	"fmt"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/go-playground/validator"
 	"github.com/gofiber/fiber/v2"
@@ -20,13 +21,13 @@ func registerUserGet(c *fiber.Ctx) error {
 
 func registerUserView(c *fiber.Ctx, errors ...string) error {
 	return c.Status(http.StatusOK).Render(
-		"register",
+		"account/register",
 		fiber.Map{
 			"CSRFFormName": csrfFormName,
 			"CSRFToken":    c.Context().UserValue(csrfContextKey).(string),
 			"errors":       errors,
 		},
-		"layout/account",
+		"_layout/account",
 	)
 }
 
@@ -54,7 +55,7 @@ func validateForm(data registerUserStruct) []string {
 	err := validate.Struct(data)
 	if err != nil {
 		for _, err := range err.(validator.ValidationErrors) {
-			errors = append(errors, err.Field())
+			errors = append(errors, fmt.Sprintf("Invalid form: %s", err.Field()))
 		}
 	}
 
