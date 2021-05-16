@@ -4,3 +4,5 @@ dbconfig.yml
 .idea/
 *.exe
 matticnote.toml
+/static/
+!/static/.gitkeep

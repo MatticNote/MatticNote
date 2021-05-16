@@ -1,15 +1,18 @@
 package main
 
 import (
+	"embed"
 	"fmt"
 	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/mn_template"
 	"github.com/MatticNote/MatticNote/server"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	fr "github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/template/django"
 	"github.com/urfave/cli/v2"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -19,6 +22,9 @@ const (
 	DefaultPort = 3000
 	DefaultAddr = "127.0.0.1"
 )
+
+//go:embed static/**
+var staticFS embed.FS
 
 var mnAppCli = &cli.App{
 	Name:        "MatticNote",
@@ -114,6 +120,18 @@ func startServer(c *cli.Context) error {
 	}))
 
 	server.ConfigureRoute(app)
+
+	app.Use("/static", filesystem.New(filesystem.Config{
+		Root: func() http.FileSystem {
+			staticFSDist, err := fs.Sub(staticFS, "static")
+			if err != nil {
+				panic(err)
+			}
+			return http.FS(staticFSDist)
+		}(),
+		Browse: false,
+	}))
+
 	app.Use(server.NotFoundView)
 
 	if err := app.Listen(fmt.Sprintf("%s:%d", addr, addrPort)); err != nil {

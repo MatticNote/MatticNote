@@ -26,6 +26,10 @@ func NotFoundView(c *fiber.Ctx) error {
 }
 
 func ErrorView(c *fiber.Ctx, err error) error {
+	if err == fiber.ErrForbidden {
+		c.Status(403)
+		return nil
+	}
 	return c.Status(http.StatusInternalServerError).Render(
 		"5xx",
 		fiber.Map{
