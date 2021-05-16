@@ -6,3 +6,4 @@ dbconfig.yml
 matticnote.toml
 /static/
 !/static/.gitkeep
+node_modules/
