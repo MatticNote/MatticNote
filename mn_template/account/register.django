@@ -16,7 +16,7 @@
     </label>
     <label>
         Password
-        <input name="password" type="password" pattern="^{8,}$" required>
+        <input name="password" type="password" minlength="8" required>
     </label>
 
     <input type="hidden" name="{{ CSRFFormName }}" value="{{ CSRFToken }}">
