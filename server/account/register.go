@@ -2,6 +2,7 @@ package account
 
 import (
 	"fmt"
+	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/go-playground/validator"
 	"github.com/gofiber/fiber/v2"
@@ -42,7 +43,14 @@ func registerPost(c *fiber.Ctx) error {
 		return registerUserView(c, errs...)
 	}
 
-	// TODO: アカウント作成関数とか
+	_, err := internal.RegisterLocalUser(formData.Email, formData.Username, formData.Password, false)
+	if err != nil {
+		if err == internal.ErrUserExists {
+			return registerUserView(c, "Username or email is already taken")
+		} else {
+			return err
+		}
+	}
 
 	return c.Status(200).SendString("OK")
 	//return c.Redirect("/account/login?created")
