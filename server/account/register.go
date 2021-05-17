@@ -1,10 +1,8 @@
 package account
 
 import (
-	"fmt"
 	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/misc"
-	"github.com/go-playground/validator"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
 )
@@ -39,7 +37,7 @@ func registerPost(c *fiber.Ctx) error {
 		return err
 	}
 
-	if errs := validateForm(*formData); errs != nil {
+	if errs := misc.ValidateForm(*formData); errs != nil {
 		return registerUserView(c, errs...)
 	}
 
@@ -54,18 +52,4 @@ func registerPost(c *fiber.Ctx) error {
 
 	return c.Status(200).SendString("OK")
 	//return c.Redirect("/account/login?created")
-}
-
-func validateForm(data registerUserStruct) []string {
-	var errors []string
-	validate := validator.New()
-	misc.RegisterCommonValidator(validate)
-	err := validate.Struct(data)
-	if err != nil {
-		for _, err := range err.(validator.ValidationErrors) {
-			errors = append(errors, fmt.Sprintf("Invalid form: %s", err.Field()))
-		}
-	}
-
-	return errors
 }
