@@ -2,19 +2,20 @@ package internal
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
 	"errors"
 	"github.com/MatticNote/MatticNote/database"
+	"github.com/MatticNote/MatticNote/misc"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"golang.org/x/crypto/bcrypt"
 )
 
+//goland:noinspection GoUnusedGlobalVariable
 var (
-	ErrUserExists = errors.New("username or email is already taken")
+	ErrUserExists        = errors.New("username or email is already taken")
+	ErrLoginFailed       = errors.New("there is an error in the login name or password")
+	ErrEmailAuthRequired = errors.New("target user required email authentication")
+	Err2faRequired       = errors.New("target user required two factor authentication") // WIP
 )
 
 const (
@@ -84,18 +85,7 @@ func RegisterLocalUser(email, username, password string, skipEmailVerify bool) (
 		return uuid.Nil, err
 	}
 
-	rsaKeyRaw, err := rsa.GenerateKey(rand.Reader, UserKeyPairLength)
-	if err != nil {
-		return uuid.Nil, err
-	}
-	rsaPrivateKey := pem.EncodeToMemory(&pem.Block{
-		Type:  "PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(rsaKeyRaw),
-	})
-	rsaPublicKey := pem.EncodeToMemory(&pem.Block{
-		Type:  "PUBLIC KEY",
-		Bytes: x509.MarshalPKCS1PublicKey(rsaKeyRaw.Public().(*rsa.PublicKey)),
-	})
+	rsaPrivateKey, rsaPublicKey := misc.GenerateRSAKeypair(UserKeyPairLength)
 
 	_, err = tx.Exec(
 		context.Background(),
@@ -118,4 +108,43 @@ func RegisterLocalUser(email, username, password string, skipEmailVerify bool) (
 	}
 
 	return newUuid, err
+}
+
+func ValidateLoginUser(login, password string) (uuid.UUID, error) {
+	var (
+		targetUuid     uuid.UUID
+		isMailVerified bool
+		targetPassword []byte
+	)
+
+	err := database.DBPool.QueryRow(
+		context.Background(),
+		"SELECT \"user\".uuid, is_verified, password FROM \"user\", user_mail um, user_password up WHERE \"user\".uuid = um.uuid AND \"user\".uuid = up.uuid AND email ILIKE $1 OR (username ILIKE $1 AND host IS NULL);",
+		login,
+	).Scan(
+		&targetUuid,
+		&isMailVerified,
+		&targetPassword,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return uuid.Nil, ErrLoginFailed
+		} else {
+			return uuid.Nil, err
+		}
+	}
+
+	if err := bcrypt.CompareHashAndPassword(targetPassword, []byte(password)); err != nil {
+		if err == bcrypt.ErrMismatchedHashAndPassword {
+			return uuid.Nil, ErrLoginFailed
+		} else {
+			return uuid.Nil, err
+		}
+	}
+
+	if !isMailVerified {
+		return uuid.Nil, ErrEmailAuthRequired
+	}
+
+	return targetUuid, nil
 }

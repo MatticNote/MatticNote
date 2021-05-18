@@ -4,11 +4,13 @@ go 1.16
 
 require (
 	github.com/andybalholm/brotli v1.0.2 // indirect
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/gofiber/fiber/v2 v2.9.0
+	github.com/gofiber/jwt/v2 v2.2.1
 	github.com/gofiber/template v1.6.9
-	github.com/google/uuid v1.1.2
+	github.com/google/uuid v1.2.0
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/karrick/godirwalk v1.16.1 // indirect
 	github.com/klauspost/compress v1.12.2 // indirect
@@ -24,4 +26,5 @@ require (
 	golang.org/x/sys v0.0.0-20210514084401-e8d321eab015 // indirect
 	golang.org/x/text v0.3.6 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )

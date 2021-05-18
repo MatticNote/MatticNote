@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/server/account"
 	"github.com/MatticNote/MatticNote/server/api"
 	"github.com/gofiber/fiber/v2"
@@ -14,6 +15,10 @@ func ConfigureRoute(app *fiber.App) {
 
 	account.ConfigureRoute(app.Group("/account"))
 	api.ConfigureRoute(app.Group("/api"))
+
+	app.Get("/private", internal.RegisterFiberJWT("cookie"), func(c *fiber.Ctx) error {
+		return c.SendString("OK")
+	})
 }
 
 // internal views

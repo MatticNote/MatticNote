@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/database"
+	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/mn_template"
 	"github.com/MatticNote/MatticNote/server"
 	"github.com/gofiber/fiber/v2"
@@ -25,6 +26,9 @@ const (
 
 //go:embed static/**
 var staticFS embed.FS
+
+//go:embed client/dist/cli/**
+var webCliFS embed.FS
 
 var mnAppCli = &cli.App{
 	Name:        "MatticNote",
@@ -107,6 +111,15 @@ func startServer(c *cli.Context) error {
 	}
 	defer database.DisconnectDB()
 
+	err = internal.GenerateJWTSignKey(false)
+	if err != nil {
+		return err
+	}
+	err = internal.LoadJWTSignKey()
+	if err != nil {
+		return err
+	}
+
 	app := fiber.New(fiber.Config{
 		Prefork:       true,
 		ServerHeader:  "MatticNote",
@@ -128,6 +141,17 @@ func startServer(c *cli.Context) error {
 				panic(err)
 			}
 			return http.FS(staticFSDist)
+		}(),
+		Browse: false,
+	}))
+
+	app.Use("/web", internal.RegisterFiberJWT("cookie"), filesystem.New(filesystem.Config{
+		Root: func() http.FileSystem {
+			webCliFSDist, err := fs.Sub(webCliFS, "client/dist/cli")
+			if err != nil {
+				panic(err)
+			}
+			return http.FS(webCliFSDist)
 		}(),
 		Browse: false,
 	}))
