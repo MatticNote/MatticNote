@@ -15,6 +15,10 @@ type registerUserStruct struct {
 }
 
 func registerUserGet(c *fiber.Ctx) error {
+	if c.Cookies(internal.JWTAuthCookieName, "") != "" {
+		return c.Redirect(c.Query("next", "/web/"))
+	}
+
 	return registerUserView(c)
 }
 
