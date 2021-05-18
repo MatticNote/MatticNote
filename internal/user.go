@@ -2,12 +2,9 @@ package internal
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
 	"errors"
 	"github.com/MatticNote/MatticNote/database"
+	"github.com/MatticNote/MatticNote/misc"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"golang.org/x/crypto/bcrypt"
@@ -88,18 +85,7 @@ func RegisterLocalUser(email, username, password string, skipEmailVerify bool) (
 		return uuid.Nil, err
 	}
 
-	rsaKeyRaw, err := rsa.GenerateKey(rand.Reader, UserKeyPairLength)
-	if err != nil {
-		return uuid.Nil, err
-	}
-	rsaPrivateKey := pem.EncodeToMemory(&pem.Block{
-		Type:  "PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(rsaKeyRaw),
-	})
-	rsaPublicKey := pem.EncodeToMemory(&pem.Block{
-		Type:  "PUBLIC KEY",
-		Bytes: x509.MarshalPKCS1PublicKey(rsaKeyRaw.Public().(*rsa.PublicKey)),
-	})
+	rsaPrivateKey, rsaPublicKey := misc.GenerateRSAKeypair(UserKeyPairLength)
 
 	_, err = tx.Exec(
 		context.Background(),
