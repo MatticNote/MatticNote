@@ -99,8 +99,15 @@ func startServer(c *cli.Context) error {
 		return err
 	}
 
-	if !c.Bool("skip-migration") {
-		err := database.MigrateProcess()
+	if !fiber.IsChild() {
+		if !c.Bool("skip-migration") {
+			err := database.MigrateProcess()
+			if err != nil {
+				return err
+			}
+		}
+
+		err = internal.GenerateJWTSignKey(false)
 		if err != nil {
 			return err
 		}
@@ -111,21 +118,18 @@ func startServer(c *cli.Context) error {
 	}
 	defer database.DisconnectDB()
 
-	err = internal.GenerateJWTSignKey(false)
-	if err != nil {
-		return err
-	}
 	err = internal.LoadJWTSignKey()
 	if err != nil {
 		return err
 	}
 
 	app := fiber.New(fiber.Config{
-		Prefork:       true,
-		ServerHeader:  "MatticNote",
-		CaseSensitive: true,
-		ErrorHandler:  server.ErrorView,
-		Views:         django.NewFileSystem(http.FS(mn_template.Templates), ".django"),
+		Prefork:               true,
+		ServerHeader:          "MatticNote",
+		CaseSensitive:         true,
+		Views:                 django.NewFileSystem(http.FS(mn_template.Templates), ".django"),
+		ErrorHandler:          server.ErrorView,
+		DisableStartupMessage: true,
 	})
 
 	app.Use(fr.New(fr.Config{
@@ -158,7 +162,12 @@ func startServer(c *cli.Context) error {
 
 	app.Use(server.NotFoundView)
 
-	if err := app.Listen(fmt.Sprintf("%s:%d", addr, addrPort)); err != nil {
+	listen := fmt.Sprintf("%s:%d", addr, addrPort)
+	if !fiber.IsChild() {
+		log.Println(fmt.Sprintf("MatticNote is running at http://%s", listen))
+	}
+
+	if err := app.Listen(listen); err != nil {
 		panic(err)
 	}
 
