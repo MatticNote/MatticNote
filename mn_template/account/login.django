@@ -17,5 +17,5 @@
 
     <input type="hidden" name="{{ CSRFFormName }}" value="{{ CSRFToken }}">
 
-    <input type="submit" value="Login">
+    <input type="submit" value="Login" class="btn btn-primary">
 </form>

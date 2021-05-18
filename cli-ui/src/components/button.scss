@@ -1,0 +1,39 @@
+.btn {
+  @apply text-base font-medium rounded-lg p-2 sm:p-3 bg-gray-300 shadow-xl cursor-pointer;
+}
+
+.btn:active {
+  @apply bg-gray-400 shadow-inner;
+}
+
+.btn-primary {
+  @apply bg-gradient-to-r from-cyan-400 to-cyan-600 text-white;
+}
+
+.btn-primary:hover {
+  @apply from-cyan-600 to-cyan-700;
+}
+
+.btn-secondary {
+  @apply bg-gradient-to-r from-purple-400 to-purple-600 text-white;
+}
+
+.btn-secondary:hover {
+  @apply from-purple-600 to-purple-700;
+}
+
+.btn-success {
+  @apply bg-gradient-to-r from-green-400 to-green-600 text-white;
+}
+
+.btn-success:hover {
+  @apply from-green-600 to-green-700;
+}
+
+.btn-warning {
+  @apply bg-gradient-to-r from-yellow-400 to-yellow-600;
+}
+
+.btn-warning:hover {
+  @apply from-yellow-600 to-yellow-700;
+}
