@@ -3,15 +3,13 @@ package account
 import (
 	"fmt"
 	"github.com/MatticNote/MatticNote/config"
+	"github.com/MatticNote/MatticNote/misc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
-	"math/rand"
 	"net/http"
 	"time"
 )
-
-var tokenCharset = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
 
 const (
 	csrfContextKey = "CSRF"
@@ -25,14 +23,6 @@ func csrfErrorView(c *fiber.Ctx, _ error) error {
 	)
 }
 
-func genToken(size uint8) string {
-	b := make([]rune, size)
-	for i := range b {
-		b[i] = tokenCharset[rand.Intn(len(tokenCharset))]
-	}
-	return string(b)
-}
-
 func ConfigureRoute(r fiber.Router) {
 	r.Use(csrf.New(csrf.Config{
 		Next:           nil,
@@ -44,7 +34,7 @@ func ConfigureRoute(r fiber.Router) {
 		ContextKey:     csrfContextKey,
 		ErrorHandler:   csrfErrorView,
 		KeyGenerator: func() string {
-			return genToken(32)
+			return misc.GenToken(32)
 		},
 	}))
 

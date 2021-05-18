@@ -13,8 +13,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+//goland:noinspection GoUnusedGlobalVariable
 var (
-	ErrUserExists = errors.New("username or email is already taken")
+	ErrUserExists        = errors.New("username or email is already taken")
+	ErrLoginFailed       = errors.New("there is an error in the login name or password")
+	ErrEmailAuthRequired = errors.New("target user required email authentication")
+	Err2faRequired       = errors.New("target user required two factor authentication") // WIP
 )
 
 const (
@@ -118,4 +122,43 @@ func RegisterLocalUser(email, username, password string, skipEmailVerify bool) (
 	}
 
 	return newUuid, err
+}
+
+func ValidateLoginUser(login, password string) error {
+	var (
+		targetUuid     uuid.UUID
+		isMailVerified bool
+		targetPassword []byte
+	)
+
+	err := database.DBPool.QueryRow(
+		context.Background(),
+		"SELECT \"user\".uuid, is_verified, password FROM \"user\", user_mail um, user_password up WHERE \"user\".uuid = um.uuid AND \"user\".uuid = up.uuid AND email ILIKE $1 OR (username ILIKE $1 AND host IS NULL);",
+		login,
+	).Scan(
+		&targetUuid,
+		&isMailVerified,
+		&targetPassword,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return ErrLoginFailed
+		} else {
+			return err
+		}
+	}
+
+	if err := bcrypt.CompareHashAndPassword(targetPassword, []byte(password)); err != nil {
+		if err == bcrypt.ErrMismatchedHashAndPassword {
+			return ErrLoginFailed
+		} else {
+			return err
+		}
+	}
+
+	if !isMailVerified {
+		return ErrEmailAuthRequired
+	}
+
+	return nil
 }
