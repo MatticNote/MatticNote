@@ -7,3 +7,5 @@ matticnote.toml
 /static/
 !/static/.gitkeep
 node_modules/
+.matticnote_jwt_private.pem
+.matticnote_jwt_public.pem

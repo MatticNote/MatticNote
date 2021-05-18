@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/database"
+	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/mn_template"
 	"github.com/MatticNote/MatticNote/server"
 	"github.com/gofiber/fiber/v2"
@@ -106,6 +107,15 @@ func startServer(c *cli.Context) error {
 		return err
 	}
 	defer database.DisconnectDB()
+
+	err = internal.GenerateJWTSignKey(false)
+	if err != nil {
+		return err
+	}
+	err = internal.LoadJWTSignKey()
+	if err != nil {
+		return err
+	}
 
 	app := fiber.New(fiber.Config{
 		Prefork:       true,

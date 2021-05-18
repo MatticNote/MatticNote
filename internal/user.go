@@ -110,7 +110,7 @@ func RegisterLocalUser(email, username, password string, skipEmailVerify bool) (
 	return newUuid, err
 }
 
-func ValidateLoginUser(login, password string) error {
+func ValidateLoginUser(login, password string) (uuid.UUID, error) {
 	var (
 		targetUuid     uuid.UUID
 		isMailVerified bool
@@ -128,23 +128,23 @@ func ValidateLoginUser(login, password string) error {
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return ErrLoginFailed
+			return uuid.Nil, ErrLoginFailed
 		} else {
-			return err
+			return uuid.Nil, err
 		}
 	}
 
 	if err := bcrypt.CompareHashAndPassword(targetPassword, []byte(password)); err != nil {
 		if err == bcrypt.ErrMismatchedHashAndPassword {
-			return ErrLoginFailed
+			return uuid.Nil, ErrLoginFailed
 		} else {
-			return err
+			return uuid.Nil, err
 		}
 	}
 
 	if !isMailVerified {
-		return ErrEmailAuthRequired
+		return uuid.Nil, ErrEmailAuthRequired
 	}
 
-	return nil
+	return targetUuid, nil
 }

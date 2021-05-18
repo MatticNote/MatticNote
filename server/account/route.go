@@ -70,4 +70,6 @@ func ConfigureRoute(r fiber.Router) {
 		}),
 		loginPost,
 	)
+
+	r.Get("/logout", destroySession)
 }

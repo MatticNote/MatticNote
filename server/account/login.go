@@ -39,7 +39,7 @@ func loginPost(c *fiber.Ctx) error {
 		return loginUserView(c, errs...)
 	}
 
-	err := internal.ValidateLoginUser(formData.Login, formData.Password)
+	targetUuid, err := internal.ValidateLoginUser(formData.Login, formData.Password)
 	if err != nil {
 		switch err {
 		case internal.ErrLoginFailed:
@@ -51,5 +51,19 @@ func loginPost(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.SendString("OK")
+	jwtSignedString, err := internal.SignJWT(targetUuid)
+	if err != nil {
+		return err
+	}
+
+	c.Cookie(&fiber.Cookie{
+		Name:     internal.JWTAuthCookieName,
+		Value:    jwtSignedString,
+		Path:     "/",
+		Secure:   false, // TODO: 将来的に変更すること
+		HTTPOnly: false,
+		SameSite: "Strict",
+	})
+
+	return c.Redirect(c.Query("next", "/"))
 }
