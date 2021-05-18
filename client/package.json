@@ -1,6 +1,11 @@
 {
   "name": "matticnote-cli",
   "version": "0.0.0",
+  "author": {
+    "name": "YuzuRyo61",
+    "email": "yuzuryo61@yuzulia.work",
+    "url": "https://yuzulia.com"
+  },
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -10,6 +15,7 @@
     "e2e": "ng e2e"
   },
   "private": true,
+  "license": "AGPL-3.0-or-later",
   "dependencies": {
     "@angular/animations": "~11.2.1",
     "@angular/common": "~11.2.1",
