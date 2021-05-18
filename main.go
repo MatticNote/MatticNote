@@ -27,6 +27,9 @@ const (
 //go:embed static/**
 var staticFS embed.FS
 
+//go:embed client/dist/cli/**
+var webCliFS embed.FS
+
 var mnAppCli = &cli.App{
 	Name:        "MatticNote",
 	Description: "ActivityPub compatible SNS that aims to be easy for everyone to use",
@@ -138,6 +141,17 @@ func startServer(c *cli.Context) error {
 				panic(err)
 			}
 			return http.FS(staticFSDist)
+		}(),
+		Browse: false,
+	}))
+
+	app.Use("/web", filesystem.New(filesystem.Config{
+		Root: func() http.FileSystem {
+			webCliFSDist, err := fs.Sub(webCliFS, "client/dist/cli")
+			if err != nil {
+				panic(err)
+			}
+			return http.FS(webCliFSDist)
 		}(),
 		Browse: false,
 	}))
