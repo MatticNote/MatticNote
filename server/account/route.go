@@ -72,4 +72,20 @@ func ConfigureRoute(r fiber.Router) {
 	)
 
 	r.Get("/logout", destroySession)
+
+	r.Get("/forgot", forgotPasswordGet)
+	r.Post("/forgot",
+		limiter.New(limiter.Config{
+			Max: 10,
+			KeyGenerator: func(c *fiber.Ctx) string {
+				return c.IP()
+			},
+			Expiration: 1 * time.Hour,
+			LimitReached: func(c *fiber.Ctx) error {
+				return registerUserView(c, "Rate limit reached")
+			},
+		}),
+		forgotPasswordPost,
+	)
+
 }

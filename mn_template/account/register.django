@@ -8,7 +8,7 @@
 <form method="post">
     <label>
         Email
-        <input name="email" type="email" required>
+        <input name="email" type="email" autofocus required>
     </label>
     <label>
         Username

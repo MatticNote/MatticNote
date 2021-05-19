@@ -54,5 +54,5 @@ func registerPost(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.Redirect("/account/login?created")
+	return c.Redirect("/account/login?created=true")
 }

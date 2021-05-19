@@ -9,6 +9,8 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	_ "github.com/lib/pq"
 	migrate "github.com/rubenv/sql-migrate"
+	"io/fs"
+	"log"
 	"net/http"
 )
 
@@ -40,12 +42,22 @@ func MigrateProcess() error {
 	}(dbConn)
 
 	migrateSrc := &migrate.HttpFileSystemMigrationSource{
-		FileSystem: http.FS(embedMigrations),
+		FileSystem: func() http.FileSystem {
+			embedMigrationsDist, err := fs.Sub(embedMigrations, "migrations")
+			if err != nil {
+				panic(err)
+			}
+			return http.FS(embedMigrationsDist)
+		}(),
 	}
 
-	_, err = migrate.Exec(dbConn, "postgres", migrateSrc, migrate.Up)
+	applied, err := migrate.Exec(dbConn, "postgres", migrateSrc, migrate.Up)
 	if err != nil {
 		return err
+	}
+
+	if applied > 0 {
+		log.Println(fmt.Sprintf("Applied %d migration(s) to the database.", applied))
 	}
 
 	return nil
