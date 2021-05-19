@@ -32,7 +32,7 @@ func ValidateConfig() error {
 	if err != nil {
 		var returnErrStr = "There is a problem with the settings: "
 		for _, err := range err.(validator.ValidationErrors) {
-			returnErrStr += fmt.Sprintf("%s,", err.Field())
+			returnErrStr += fmt.Sprintf("%s, ", err.StructNamespace())
 		}
 		err = errors.New(returnErrStr)
 	}

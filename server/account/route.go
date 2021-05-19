@@ -36,6 +36,7 @@ func ConfigureRoute(r fiber.Router) {
 		KeyGenerator: func() string {
 			return misc.GenToken(32)
 		},
+		Storage: config.GetFiberRedisMemory(),
 	}))
 
 	r.Get("/register", registerUserGet)
@@ -46,12 +47,13 @@ func ConfigureRoute(r fiber.Router) {
 			},
 			Max: int(config.Config.Server.AccountRegistrationLimitCount),
 			KeyGenerator: func(c *fiber.Ctx) string {
-				return c.IP()
+				return fmt.Sprintf("MN_ACCTREG-%s", c.IP())
 			},
 			Expiration: 24 * time.Hour,
 			LimitReached: func(c *fiber.Ctx) error {
 				return registerUserView(c, "Rate limit reached")
 			},
+			Storage: config.GetFiberRedisMemory(),
 		}),
 		registerPost,
 	)
@@ -61,12 +63,13 @@ func ConfigureRoute(r fiber.Router) {
 		limiter.New(limiter.Config{
 			Max: 30,
 			KeyGenerator: func(c *fiber.Ctx) string {
-				return c.IP()
+				return fmt.Sprintf("MN_LOGIN-%s", c.IP())
 			},
 			Expiration: 30 * time.Minute,
 			LimitReached: func(c *fiber.Ctx) error {
 				return registerUserView(c, "Rate limit reached")
 			},
+			Storage: config.GetFiberRedisMemory(),
 		}),
 		loginPost,
 	)
@@ -78,12 +81,13 @@ func ConfigureRoute(r fiber.Router) {
 		limiter.New(limiter.Config{
 			Max: 10,
 			KeyGenerator: func(c *fiber.Ctx) string {
-				return c.IP()
+				return fmt.Sprintf("MN_FORGOT-%s", c.IP())
 			},
 			Expiration: 1 * time.Hour,
 			LimitReached: func(c *fiber.Ctx) error {
 				return registerUserView(c, "Rate limit reached")
 			},
+			Storage: config.GetFiberRedisMemory(),
 		}),
 		forgotPasswordPost,
 	)

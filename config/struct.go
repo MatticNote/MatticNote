@@ -4,6 +4,7 @@ type (
 	MNConfig struct {
 		Database MNCDatabase `validate:"required"`
 		Server   MNCServer   `validate:"required"`
+		Redis    MNCRedis    `validate:"required"`
 	}
 
 	MNCDatabase struct {
@@ -22,5 +23,13 @@ type (
 		DisableAccountRegistrationLimit bool   `toml:"disable_account_registration_limit"`
 		AccountRegistrationLimitCount   uint   `toml:"account_registration_limit_count"`
 		CookieSecure                    bool   `toml:"cookie_secure"`
+	}
+
+	MNCRedis struct {
+		Address  string `validate:"required,hostname_rfc1123"`
+		Port     uint16 `validate:"gte=0,lte=65535"`
+		Username string
+		Password string
+		Database int
 	}
 )

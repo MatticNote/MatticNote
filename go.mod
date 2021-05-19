@@ -9,6 +9,7 @@ require (
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/gofiber/fiber/v2 v2.9.0
 	github.com/gofiber/jwt/v2 v2.2.1
+	github.com/gofiber/storage/redis v0.0.0-20210518110040-7bbbc01f8475 // indirect
 	github.com/gofiber/template v1.6.9
 	github.com/google/uuid v1.2.0
 	github.com/jackc/pgx/v4 v4.11.0
