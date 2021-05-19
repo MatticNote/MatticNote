@@ -6,7 +6,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"github.com/MatticNote/MatticNote/misc"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofiber/fiber/v2"
 	jwtware "github.com/gofiber/jwt/v2"
 	"github.com/google/uuid"
@@ -28,6 +28,8 @@ const (
 	authSchemeName     = "jwt"
 	authHeaderName     = "Authorization"
 	JWTAuthCookieName  = "jwt_auth"
+	jwtSignMethod      = "RS512"
+	JWTContextKey      = "jwt_user"
 )
 
 func GenerateJWTSignKey(overwrite bool) error {
@@ -107,23 +109,31 @@ func SignJWT(userUUID uuid.UUID) (string, error) {
 	return signed, nil
 }
 
-func RegisterFiberJWT(mode string) fiber.Handler {
-	var authFailed = func(c *fiber.Ctx, err error) error {
-		if c.Accepts("html") != "" {
-			return c.Redirect(fmt.Sprintf("/account/login?next=%s", url.QueryEscape(c.OriginalURL())))
+func RegisterFiberJWT(mode string, mustLogin bool) fiber.Handler {
+	var authFailed = func() fiber.ErrorHandler {
+		if mustLogin {
+			return func(c *fiber.Ctx, _ error) error {
+				if c.Accepts("html") != "" {
+					return c.Redirect(fmt.Sprintf("/account/login?next=%s", url.QueryEscape(c.OriginalURL())))
+				} else {
+					c.Status(401)
+					return nil
+				}
+			}
 		} else {
-			c.Status(401)
-			return nil
+			return func(c *fiber.Ctx, _ error) error {
+				return c.Next()
+			}
 		}
-	}
+	}()
 
 	switch strings.ToLower(mode) {
 	case "cookie":
 		return jwtware.New(jwtware.Config{
 			ErrorHandler:  authFailed,
 			SigningKey:    jwtSignPublicKey,
-			SigningMethod: "RS512",
-			ContextKey:    "jwt_user",
+			SigningMethod: jwtSignMethod,
+			ContextKey:    JWTContextKey,
 			TokenLookup:   fmt.Sprintf("cookie:%s", JWTAuthCookieName),
 		})
 	default: // within header
@@ -138,8 +148,8 @@ func RegisterFiberJWT(mode string) fiber.Handler {
 			},
 			ErrorHandler:  authFailed,
 			SigningKey:    jwtSignPublicKey,
-			SigningMethod: "RS512",
-			ContextKey:    "jwt_user",
+			SigningMethod: jwtSignMethod,
+			ContextKey:    JWTContextKey,
 			TokenLookup:   fmt.Sprintf("header:%s", authHeaderName),
 			AuthScheme:    authSchemeName,
 		})

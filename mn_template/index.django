@@ -1,0 +1,8 @@
+{% if isLogin %}
+<p>Welcome back user! You can use web client now!</p>
+<a href="/web/">Go back to web client</a>
+{% else %}
+<p>Welcome to MatticNote!</p>
+<a href="/account/register">Join now!</a>
+<p>Are you already this instance user? <a href="/account/login">Login</a></p>
+{% endif %}

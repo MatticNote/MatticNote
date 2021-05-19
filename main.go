@@ -153,7 +153,7 @@ func startServer(c *cli.Context) error {
 		Browse: false,
 	}))
 
-	app.Use("/web", internal.RegisterFiberJWT("cookie"), filesystem.New(filesystem.Config{
+	app.Use("/web", internal.RegisterFiberJWT("cookie", true), filesystem.New(filesystem.Config{
 		Root: func() http.FileSystem {
 			webCliFSDist, err := fs.Sub(webCliFS, "client/dist/cli")
 			if err != nil {
