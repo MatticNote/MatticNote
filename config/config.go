@@ -1,6 +1,10 @@
 package config
 
 import (
+	"errors"
+	"fmt"
+	"github.com/MatticNote/MatticNote/misc"
+	"github.com/go-playground/validator"
 	"github.com/pelletier/go-toml"
 	"io/ioutil"
 )
@@ -18,7 +22,20 @@ func LoadConf() error {
 		return err
 	}
 
-	// TODO: 設定ファイルの検証スクリプトを書く
-
 	return nil
+}
+
+func ValidateConfig() error {
+	validate := validator.New()
+	misc.RegisterCommonValidator(validate)
+	err := validate.Struct(Config)
+	if err != nil {
+		var returnErrStr = "There is a problem with the settings: "
+		for _, err := range err.(validator.ValidationErrors) {
+			returnErrStr += fmt.Sprintf("%s,", err.Field())
+		}
+		err = errors.New(returnErrStr)
+	}
+
+	return err
 }

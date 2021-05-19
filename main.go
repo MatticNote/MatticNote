@@ -100,6 +100,10 @@ func startServer(c *cli.Context) error {
 	}
 
 	if !fiber.IsChild() {
+		if err := config.ValidateConfig(); err != nil {
+			return err
+		}
+
 		if !c.Bool("skip-migration") {
 			err := database.MigrateProcess()
 			if err != nil {
