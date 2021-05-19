@@ -29,7 +29,7 @@ func ConfigureRoute(r fiber.Router) {
 		KeyLookup:      fmt.Sprintf("form:%s", csrfFormName),
 		CookieName:     "_csrf",
 		CookiePath:     "/account",
-		CookieSecure:   false,
+		CookieSecure:   config.Config.Server.CookieSecure,
 		CookieHTTPOnly: true,
 		ContextKey:     csrfContextKey,
 		ErrorHandler:   csrfErrorView,

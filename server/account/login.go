@@ -1,6 +1,7 @@
 package account
 
 import (
+	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/gofiber/fiber/v2"
@@ -64,7 +65,7 @@ func loginPost(c *fiber.Ctx) error {
 		Name:     internal.JWTAuthCookieName,
 		Value:    jwtSignedString,
 		Path:     "/",
-		Secure:   false, // TODO: 将来的に変更すること
+		Secure:   config.Config.Server.CookieSecure,
 		HTTPOnly: false,
 		SameSite: "Strict",
 	})
