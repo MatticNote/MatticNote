@@ -18,5 +18,7 @@ func LoadConf() error {
 		return err
 	}
 
+	// TODO: 設定ファイルの検証スクリプトを書く
+
 	return nil
 }

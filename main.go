@@ -162,6 +162,14 @@ func startServer(c *cli.Context) error {
 
 	app.Use(server.NotFoundView)
 
+	if addr == DefaultAddr {
+		addr = config.Config.Server.ListenAddress
+	}
+
+	if addrPort == DefaultPort {
+		addrPort = uint(config.Config.Server.ListenPort)
+	}
+
 	listen := fmt.Sprintf("%s:%d", addr, addrPort)
 	if !fiber.IsChild() {
 		log.Println(fmt.Sprintf("MatticNote is running at http://%s", listen))
