@@ -1,9 +1,13 @@
 package internal
 
 import (
+	"crypto"
+	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/form3tech-oss/jwt-go"
@@ -78,7 +82,13 @@ func LoadJWTSignKey() error {
 	}
 
 	pubKeyPem, _ := pem.Decode(pubKeyByte)
+	if pubKeyPem.Type != "PUBLIC KEY" {
+		return errors.New("this is not public key")
+	}
 	priKeyPem, _ := pem.Decode(priKeyByte)
+	if priKeyPem.Type != "PRIVATE KEY" {
+		return errors.New("this is not private key")
+	}
 
 	parsedPubKey, err := x509.ParsePKCS1PublicKey(pubKeyPem.Bytes)
 	if err != nil {
@@ -93,6 +103,32 @@ func LoadJWTSignKey() error {
 	jwtSignPublicKey = parsedPubKey
 	jwtSignPrivateKey = parsedPriKey
 
+	return nil
+}
+
+func VerifyRSASign() error {
+	testHash := sha256.New()
+	_, err := testHash.Write([]byte(misc.GenToken(16)))
+	if err != nil {
+		panic(err)
+	}
+	testHashSum := testHash.Sum(nil)
+
+	signature, err := rsa.SignPSS(rand.Reader, jwtSignPrivateKey, crypto.SHA256, testHashSum, nil)
+	if err != nil {
+		panic(err)
+	}
+
+	err = rsa.VerifyPSS(jwtSignPublicKey, crypto.SHA256, testHashSum, signature, nil)
+	if err != nil {
+		if err == rsa.ErrVerification {
+			return errors.New("the key pair does not match. If the problem persists, try deleting the key file")
+		} else {
+			panic(err)
+		}
+	}
+
+	// Verify success
 	return nil
 }
 

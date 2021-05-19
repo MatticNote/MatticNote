@@ -127,6 +127,12 @@ func startServer(c *cli.Context) error {
 		return err
 	}
 
+	if !fiber.IsChild() {
+		if err := internal.VerifyRSASign(); err != nil {
+			return err
+		}
+	}
+
 	app := fiber.New(fiber.Config{
 		Prefork:               true,
 		ServerHeader:          "MatticNote",
