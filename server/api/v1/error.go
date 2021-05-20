@@ -47,7 +47,7 @@ func v1NotFound(c *fiber.Ctx, reason ...string) error {
 	}
 }
 
-func v1TooManyRequests(c *fiber.Ctx) error {
+func rateLimitReached(c *fiber.Ctx) error {
 	return c.Status(http.StatusTooManyRequests).JSON(fiber.Map{
 		"error": fiber.Map{
 			"code":   "RATE_LIMITED",

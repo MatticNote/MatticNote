@@ -15,7 +15,7 @@ type loginUserStruct struct {
 
 func loginUserGet(c *fiber.Ctx) error {
 	if c.Cookies(internal.JWTAuthCookieName, "") != "" {
-		return c.Redirect(c.Query("next", "/web/"))
+		return c.Redirect(c.Query("next", "/web/"), 307)
 	}
 
 	return loginUserView(c)

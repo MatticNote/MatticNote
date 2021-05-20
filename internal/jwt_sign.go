@@ -29,8 +29,8 @@ var (
 const (
 	jwtPrivateFileName = ".matticnote_jwt_private.pem"
 	jwtPublicFileName  = ".matticnote_jwt_public.pem"
-	authSchemeName     = "jwt"
-	authHeaderName     = "Authorization"
+	AuthSchemeName     = "jwt"
+	AuthHeaderName     = "Authorization"
 	JWTAuthCookieName  = "jwt_auth"
 	jwtSignMethod      = "RS512"
 	JWTContextKey      = "jwt_user"
@@ -174,20 +174,12 @@ func RegisterFiberJWT(mode string, mustLogin bool) fiber.Handler {
 		})
 	default: // within header
 		return jwtware.New(jwtware.Config{
-			Filter: func(c *fiber.Ctx) bool {
-				authHeaderSlice := strings.Split(c.Get("Authorization", ""), " ")
-				if len(authHeaderSlice) > 0 && strings.TrimSpace(authHeaderSlice[0]) == authSchemeName {
-					return true
-				} else {
-					return false
-				}
-			},
 			ErrorHandler:  authFailed,
 			SigningKey:    jwtSignPublicKey,
 			SigningMethod: jwtSignMethod,
 			ContextKey:    JWTContextKey,
-			TokenLookup:   fmt.Sprintf("header:%s", authHeaderName),
-			AuthScheme:    authSchemeName,
+			TokenLookup:   fmt.Sprintf("header:%s", AuthHeaderName),
+			AuthScheme:    AuthSchemeName,
 		})
 	}
 }

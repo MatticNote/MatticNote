@@ -38,14 +38,19 @@ func NotFoundView(c *fiber.Ctx) error {
 }
 
 func ErrorView(c *fiber.Ctx, err error) error {
-	if err == fiber.ErrForbidden {
-		c.Status(403)
-		return nil
+	switch err {
+	case fiber.ErrUnauthorized:
+		c.Status(fiber.StatusUnauthorized)
+	case fiber.ErrForbidden:
+		c.Status(fiber.StatusForbidden)
+	default:
+		return c.Status(http.StatusInternalServerError).Render(
+			"5xx",
+			fiber.Map{
+				"Error": err.Error(),
+			},
+		)
 	}
-	return c.Status(http.StatusInternalServerError).Render(
-		"5xx",
-		fiber.Map{
-			"Error": err.Error(),
-		},
-	)
+
+	return c.Send([]byte("")) // empty body
 }

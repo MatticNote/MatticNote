@@ -16,7 +16,23 @@ var (
 	ErrLoginFailed       = errors.New("there is an error in the login name or password")
 	ErrEmailAuthRequired = errors.New("target user required email authentication")
 	Err2faRequired       = errors.New("target user required two factor authentication") // WIP
+	ErrNoSuchUser        = errors.New("target user was not found")
+	ErrUserSuspended     = errors.New("target user is suspended")
 )
+
+type LocalUserStruct struct {
+	Uuid           uuid.UUID
+	Username       string
+	Email          string
+	DisplayName    misc.NullString
+	Summary        misc.NullString
+	CreatedAt      misc.NullTime
+	UpdatedAt      misc.NullTime
+	IsSilence      bool
+	AcceptManually bool
+	IsSuperuser    bool
+	IsBot          bool
+}
 
 const (
 	UserPasswordHashCost = 12
@@ -147,4 +163,46 @@ func ValidateLoginUser(login, password string) (uuid.UUID, error) {
 	}
 
 	return targetUuid, nil
+}
+
+func GetLocalUser(targetUuid string) (*LocalUserStruct, error) {
+	targetUuidParsed, err := uuid.Parse(targetUuid)
+	if err != nil {
+		return nil, err
+	}
+
+	target := new(LocalUserStruct)
+	var isSuspend bool
+
+	err = database.DBPool.QueryRow(
+		context.Background(),
+		"select \"user\".uuid, username, email, display_name, summary, created_at, updated_at, is_silence, accept_manually, is_superuser, is_bot, is_suspend from \"user\" left join user_mail um on \"user\".uuid = um.uuid where \"user\".uuid = $1",
+		targetUuidParsed.String(),
+	).Scan(
+		&target.Uuid,
+		&target.Username,
+		&target.Email,
+		&target.DisplayName,
+		&target.Summary,
+		&target.CreatedAt,
+		&target.UpdatedAt,
+		&target.IsSilence,
+		&target.AcceptManually,
+		&target.IsSuperuser,
+		&target.IsBot,
+		&isSuspend,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, ErrNoSuchUser
+		} else {
+			return nil, err
+		}
+	}
+
+	if isSuspend {
+		return nil, ErrUserSuspended
+	}
+
+	return target, nil
 }

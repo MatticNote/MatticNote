@@ -13,7 +13,7 @@ type forgotPasswordFormStruct struct {
 
 func forgotPasswordGet(c *fiber.Ctx) error {
 	if c.Cookies(internal.JWTAuthCookieName, "") != "" {
-		return c.Redirect("/web/")
+		return c.Redirect("/web/", 307)
 	}
 
 	return forgotPasswordView(c)

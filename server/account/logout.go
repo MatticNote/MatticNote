@@ -7,11 +7,15 @@ import (
 )
 
 func destroySession(c *fiber.Ctx) error {
+	DestroySessionCookie(c)
+	return c.Redirect("/account/login?logout=true", 307)
+}
+
+func DestroySessionCookie(c *fiber.Ctx) {
 	c.Cookie(&fiber.Cookie{
 		Name:    internal.JWTAuthCookieName,
 		Value:   "",
 		MaxAge:  -1,
 		Expires: time.Now().Add(-100 * time.Hour),
 	})
-	return c.Redirect("/account/login?logout=true", 307)
 }
