@@ -3,6 +3,8 @@ package internal
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/google/uuid"
@@ -114,13 +116,15 @@ func RegisterLocalUser(email, username, password string, skipEmailVerify bool) (
 		return uuid.Nil, err
 	}
 
+	if !skipEmailVerify {
+		if err := IssueVerifyEmail(newUuid, email); err != nil {
+			return uuid.Nil, err
+		}
+	}
+
 	err = tx.Commit(context.Background())
 	if err != nil {
 		return uuid.Nil, err
-	}
-
-	if !skipEmailVerify {
-		// TODO: メールを認証するための処理
 	}
 
 	return newUuid, err
@@ -205,4 +209,49 @@ func GetLocalUser(targetUuid string) (*LocalUserStruct, error) {
 	}
 
 	return target, nil
+}
+
+func IssueVerifyEmail(targetUuid uuid.UUID, targetEmail string, tx ...pgx.Tx) error {
+	var issueSql = "insert into user_mail_transaction(uuid, new_email, token) VALUES ($1, $2, $3) on conflict on constraint user_mail_transaction_pk do update set new_email = $2, token = $3, expired_at = default;"
+	verifyToken := misc.GenToken(32)
+
+	var err error
+
+	if len(tx) > 0 {
+		_, err = tx[0].Exec(
+			context.Background(),
+			issueSql,
+			targetUuid.String(),
+			targetEmail,
+			verifyToken,
+		)
+	} else {
+		_, err = database.DBPool.Exec(
+			context.Background(),
+			issueSql,
+			targetUuid.String(),
+			targetEmail,
+			verifyToken,
+		)
+	}
+	if err != nil {
+		return err
+	}
+
+	// TODO: 将来的に"template/text"を使う
+	body := fmt.Sprintf(
+		"Hello. This is MatticNote.\n\n"+
+			"I was asked to use this email address to verify my account email and issued a token to accept it.\n\n"+
+			"Click the URL below to complete the email verification: \n\n"+
+			"%s\n\n"+
+			"The expiration date is 3 hours after issuance. \n\n"+
+			"If you don't know, please discard this email. Unless you click on the URL, it will not be accepted.",
+		fmt.Sprintf("%s/account/verify/%s", config.Config.Server.Endpoint, verifyToken),
+	)
+
+	if err := SendMail(targetEmail, "Verify Email", "text/plain", body); err != nil {
+		return err
+	}
+
+	return nil
 }

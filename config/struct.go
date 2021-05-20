@@ -24,6 +24,7 @@ type (
 		DisableAccountRegistrationLimit bool   `toml:"disable_account_registration_limit"`
 		AccountRegistrationLimitCount   uint   `toml:"account_registration_limit_count"`
 		CookieSecure                    bool   `toml:"cookie_secure"`
+		Endpoint                        string `validate:"required"`
 	}
 
 	MNCRedis struct {

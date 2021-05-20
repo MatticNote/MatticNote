@@ -92,4 +92,35 @@ func ConfigureRoute(r fiber.Router) {
 		forgotPasswordPost,
 	)
 
+	r.Get("/issue_confirm_mail", issueConfirmGet)
+	r.Post("/issue_confirm_mail",
+		limiter.New(limiter.Config{
+			Max: 10,
+			KeyGenerator: func(c *fiber.Ctx) string {
+				return fmt.Sprintf("MN_ISSCM-%s", c.IP())
+			},
+			Expiration: 1 * time.Hour,
+			LimitReached: func(c *fiber.Ctx) error {
+				return registerUserView(c, "Rate limit reached")
+			},
+			Storage: config.GetFiberRedisMemory(),
+		}),
+		issueConfirmPost,
+	)
+
+	r.Get("/verify/:token",
+		limiter.New(limiter.Config{
+			Max: 30,
+			KeyGenerator: func(c *fiber.Ctx) string {
+				return fmt.Sprintf("MN_VFTK-%s", c.IP())
+			},
+			Expiration: 1 * time.Hour,
+			LimitReached: func(c *fiber.Ctx) error {
+				c.Status(http.StatusTooManyRequests)
+				return c.Send([]byte(""))
+			},
+			Storage: config.GetFiberRedisMemory(),
+		}),
+		verifyMail,
+	)
 }
