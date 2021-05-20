@@ -134,7 +134,7 @@ func startServer(c *cli.Context) error {
 	}
 
 	app := fiber.New(fiber.Config{
-		Prefork:               true,
+		Prefork:               false,
 		ServerHeader:          "MatticNote",
 		CaseSensitive:         true,
 		Views:                 django.NewFileSystem(http.FS(mn_template.Templates), ".django"),
