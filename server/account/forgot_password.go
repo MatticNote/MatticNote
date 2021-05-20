@@ -42,7 +42,9 @@ func forgotPasswordPost(c *fiber.Ctx) error {
 		return forgotPasswordView(c, errs...)
 	}
 
-	// TODO: パスワードを忘れた時のトークンとかを発行する関数を作る
+	if err := internal.IssueForgotPassword(formData.Email); err != nil {
+		return err
+	}
 
 	return c.Redirect("/account/login?forgot_sent=true")
 }

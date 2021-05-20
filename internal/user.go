@@ -211,6 +211,38 @@ func GetLocalUser(targetUuid string) (*LocalUserStruct, error) {
 	return target, nil
 }
 
+func IssueForgotPassword(targetEmail string) error {
+	verifyToken := misc.GenToken(64)
+
+	cmdTag, err := database.DBPool.Exec(
+		context.Background(),
+		"insert into user_reset_password(key, target) values ($1, (select user_mail.uuid from user_mail where is_verified is true and email ilike $2)) "+
+			"on conflict on constraint user_reset_password_target do update set key = $1, expired = default;",
+		verifyToken,
+		targetEmail,
+	)
+	if err == nil {
+		if cmdTag.RowsAffected() > 0 {
+			// TODO: 将来的に"template/text"を使う
+			body := fmt.Sprintf(
+				"Hello. This is MatticNote.\n\n"+
+					"We have received a request to reset the password of the account registered with this email address.\n\n"+
+					"You can reset your password by clicking the URL below: \n\n"+
+					"%s\n\n"+
+					"The expiration date is 30 minutes after issuance. \n\n"+
+					"If you don't know, please discard this email. Unless you click on the URL, it will not be processed.",
+				fmt.Sprintf("%s/account/forgot/%s", config.Config.Server.Endpoint, verifyToken),
+			)
+			err := SendMail(targetEmail, "Forgot password", "text/plain", body)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 func IssueVerifyEmail(targetUuid uuid.UUID, targetEmail string, tx ...pgx.Tx) error {
 	var issueSql = "insert into user_mail_transaction(uuid, new_email, token) VALUES ($1, $2, $3) on conflict on constraint user_mail_transaction_pk do update set new_email = $2, token = $3, expired_at = default;"
 	verifyToken := misc.GenToken(32)
