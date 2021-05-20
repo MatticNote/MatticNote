@@ -3,16 +3,23 @@ package v1
 import (
 	"context"
 	"github.com/MatticNote/MatticNote/database"
+	"github.com/MatticNote/MatticNote/internal"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
+	"log"
 	"net/http"
 )
 
 func getUser(c *fiber.Ctx) error {
 	targetUuid, err := uuid.Parse(c.Params("uuid"))
 	if err != nil {
-		return v1BadRequest(c, "Not valid UUID format")
+		return badRequest(c, "Not valid UUID format")
+	}
+
+	currentUsr, ok := c.Locals(loginUserLocal).(*internal.LocalUserStruct)
+	if ok {
+		log.Println(currentUsr.Uuid.String())
 	}
 
 	res := new(v1UserRes)
@@ -40,7 +47,7 @@ func getUser(c *fiber.Ctx) error {
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return v1NotFound(c)
+			return notFound(c, "Specified user was not found")
 		} else {
 			return err
 		}
@@ -52,7 +59,7 @@ func getUser(c *fiber.Ctx) error {
 	}
 
 	if isSuspend {
-		return v1Forbidden(c, "Specified user is suspended")
+		return forbidden(c, "Specified user is suspended")
 	}
 
 	return c.Status(http.StatusOK).JSON(res)

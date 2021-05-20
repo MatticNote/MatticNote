@@ -5,53 +5,32 @@ import (
 	"net/http"
 )
 
-func v1BadRequest(c *fiber.Ctx, reason ...string) error {
+func renderError(c *fiber.Ctx, status int, code string, reason ...string) error {
 	if len(reason) > 0 {
-		return c.Status(http.StatusBadRequest).JSON(fiber.Map{
+		return c.Status(status).JSON(fiber.Map{
 			"error": fiber.Map{
-				"code":   "BAD_REQUEST",
+				"code":   code,
 				"detail": reason[0],
 			},
 		})
 	} else {
-		c.Status(http.StatusBadRequest)
+		c.Status(status)
 		return nil
 	}
 }
 
-func v1Forbidden(c *fiber.Ctx, reason ...string) error {
-	if len(reason) > 0 {
-		return c.Status(http.StatusForbidden).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":   "FORBIDDEN",
-				"detail": reason[0],
-			},
-		})
-	} else {
-		c.Status(http.StatusForbidden)
-		return nil
-	}
+func badRequest(c *fiber.Ctx, reason ...string) error {
+	return renderError(c, http.StatusBadRequest, "BAD_REQUEST", reason...)
 }
 
-func v1NotFound(c *fiber.Ctx, reason ...string) error {
-	if len(reason) > 0 {
-		return c.Status(http.StatusNotFound).JSON(fiber.Map{
-			"error": fiber.Map{
-				"code":   "NOT_FOUND",
-				"detail": reason[0],
-			},
-		})
-	} else {
-		c.Status(http.StatusNotFound)
-		return nil
-	}
+func forbidden(c *fiber.Ctx, reason ...string) error {
+	return renderError(c, http.StatusForbidden, "FORBIDDEN", reason...)
+}
+
+func notFound(c *fiber.Ctx, reason ...string) error {
+	return renderError(c, http.StatusNotFound, "NOT_FOUND", reason...)
 }
 
 func rateLimitReached(c *fiber.Ctx) error {
-	return c.Status(http.StatusTooManyRequests).JSON(fiber.Map{
-		"error": fiber.Map{
-			"code":   "RATE_LIMITED",
-			"detail": "The acceptable request limit has been reached",
-		},
-	})
+	return renderError(c, http.StatusTooManyRequests, "RATE_REACHED", "The acceptable request limit has been reached")
 }

@@ -152,8 +152,7 @@ func RegisterFiberJWT(mode string, mustLogin bool) fiber.Handler {
 				if c.Accepts("html") != "" {
 					return c.Redirect(fmt.Sprintf("/account/login?next=%s", url.QueryEscape(c.OriginalURL())))
 				} else {
-					c.Status(401)
-					return nil
+					return fiber.ErrUnauthorized
 				}
 			}
 		} else {

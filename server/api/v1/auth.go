@@ -12,7 +12,6 @@ const (
 )
 
 func authenticationUser(c *fiber.Ctx) error {
-
 	// JWT token authentication
 	headerSplit := strings.Split(c.Get(internal.AuthHeaderName, ""), " ")
 	if len(headerSplit) > 0 && strings.TrimSpace(headerSplit[0]) == internal.AuthSchemeName {
