@@ -3,11 +3,9 @@ package v1
 import (
 	"context"
 	"github.com/MatticNote/MatticNote/database"
-	"github.com/MatticNote/MatticNote/internal"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
-	"log"
 	"net/http"
 )
 
@@ -17,10 +15,8 @@ func getUser(c *fiber.Ctx) error {
 		return badRequest(c, "Not valid UUID format")
 	}
 
-	currentUsr, ok := c.Locals(loginUserLocal).(*internal.LocalUserStruct)
-	if ok {
-		log.Println(currentUsr.Uuid.String())
-	}
+	// TODO: ターゲットのアカウントリレーション次第では403とかを出す
+	//currentUsr, ok := c.Locals(loginUserLocal).(*internal.LocalUserStruct)
 
 	res := new(v1UserRes)
 	var (

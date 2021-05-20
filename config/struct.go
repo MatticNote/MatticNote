@@ -5,6 +5,7 @@ type (
 		Database MNCDatabase `validate:"required"`
 		Server   MNCServer   `validate:"required"`
 		Redis    MNCRedis    `validate:"required"`
+		Mail     MNCMail     `validate:"required"`
 	}
 
 	MNCDatabase struct {
@@ -31,5 +32,13 @@ type (
 		Username string
 		Password string
 		Database int
+	}
+
+	MNCMail struct {
+		From     string `validate:"required"`
+		Username string
+		Password string
+		SmtpHost string `validate:"required" toml:"smtp_host"`
+		SmtpPort uint16 `validate:"gte=0,lte=65535" toml:"smtp_port"`
 	}
 )

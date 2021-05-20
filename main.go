@@ -31,8 +31,9 @@ var staticFS embed.FS
 var webCliFS embed.FS
 
 var mnAppCli = &cli.App{
-	Name:        "MatticNote",
-	Description: "ActivityPub compatible SNS that aims to be easy for everyone to use",
+	Name:                 "MatticNote",
+	Description:          "ActivityPub compatible SNS that aims to be easy for everyone to use",
+	EnableBashCompletion: true,
 	Commands: []*cli.Command{
 		{
 			Name:    "server",
@@ -70,12 +71,51 @@ var mnAppCli = &cli.App{
 			Usage:   "Migrate database",
 			Action:  migrateDB,
 		},
+		{
+			Name:    "testmail",
+			Aliases: []string{"tm"},
+			Usage:   "Send a mail for test",
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:     "to",
+					Required: true,
+				},
+			},
+			Action: testSendMail,
+		},
 	},
+}
+
+func testSendMail(c *cli.Context) error {
+	err := config.LoadConf()
+	if err != nil {
+		return err
+	}
+
+	if err := config.ValidateConfig(); err != nil {
+		return err
+	}
+
+	err = internal.SendMail(
+		c.String("to"),
+		"MatticNote Test mail / MatticNote テストメール",
+		"text/plain",
+		"If you can see this mail, configuration is correct!\n"+
+			"このメッセージが見えている場合、設定は正しいです！",
+	)
+	if err == nil {
+		log.Println("Test mail was sent!")
+	}
+	return err
 }
 
 func migrateDB(_ *cli.Context) error {
 	err := config.LoadConf()
 	if err != nil {
+		return err
+	}
+
+	if err := config.ValidateConfig(); err != nil {
 		return err
 	}
 

@@ -9,6 +9,8 @@ import (
 	"net/http"
 )
 
+var emptyBody = []byte("")
+
 func ConfigureRoute(app *fiber.App) {
 	app.Get("/", internal.RegisterFiberJWT("cookie", false), func(c *fiber.Ctx) error {
 		_, isLogin := c.Locals(internal.JWTContextKey).(*jwt.Token)
@@ -31,10 +33,14 @@ func ConfigureRoute(app *fiber.App) {
 // internal views
 
 func NotFoundView(c *fiber.Ctx) error {
-	return c.Status(http.StatusNotFound).Render(
-		"404",
-		fiber.Map{},
-	)
+	if c.Accepts("html") != "" {
+		return c.Status(http.StatusNotFound).Render(
+			"404",
+			fiber.Map{},
+		)
+	} else {
+		return c.Status(http.StatusNotFound).Send(emptyBody)
+	}
 }
 
 func ErrorView(c *fiber.Ctx, err error) error {
@@ -52,5 +58,5 @@ func ErrorView(c *fiber.Ctx, err error) error {
 		)
 	}
 
-	return c.Send([]byte("")) // empty body
+	return c.Send(emptyBody) // empty body
 }
