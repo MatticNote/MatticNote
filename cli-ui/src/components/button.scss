@@ -31,9 +31,17 @@
 }
 
 .btn-warning {
-  @apply bg-gradient-to-r from-yellow-400 to-yellow-600;
+  @apply bg-gradient-to-r from-yellow-400 to-yellow-600 text-white;
 
   &:hover {
     @apply from-yellow-600 to-yellow-700;
+  }
+}
+
+.btn-danger {
+  @apply bg-gradient-to-r from-red-400 to-red-600 text-white;
+
+  &:hover {
+    @apply from-red-600 to-red-700;
   }
 }
