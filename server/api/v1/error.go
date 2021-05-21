@@ -23,6 +23,10 @@ func badRequest(c *fiber.Ctx, reason ...string) error {
 	return renderError(c, http.StatusBadRequest, "BAD_REQUEST", reason...)
 }
 
+func unauthorized(c *fiber.Ctx, reason ...string) error {
+	return renderError(c, http.StatusUnauthorized, "UNAUTHORIZED", reason...)
+}
+
 func forbidden(c *fiber.Ctx, reason ...string) error {
 	return renderError(c, http.StatusForbidden, "FORBIDDEN", reason...)
 }
