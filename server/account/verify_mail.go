@@ -24,9 +24,9 @@ func verifyMail(c *fiber.Ctx) error {
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return c.Status(http.StatusBadRequest).Render(
-				"verify_error",
+				"account/verify_error",
 				fiber.Map{},
-				"_layout/error",
+				"_layout/account",
 			)
 		} else {
 			return err

@@ -91,6 +91,36 @@ func ConfigureRoute(r fiber.Router) {
 		}),
 		forgotPasswordPost,
 	)
+	r.Get("/forgot/:token",
+		limiter.New(limiter.Config{
+			Max: 30,
+			KeyGenerator: func(c *fiber.Ctx) string {
+				return fmt.Sprintf("MN_FPTF-%s", c.IP())
+			},
+			Expiration: 3 * time.Hour,
+			LimitReached: func(c *fiber.Ctx) error {
+				c.Status(http.StatusTooManyRequests)
+				return c.Send([]byte(""))
+			},
+			Storage: config.GetFiberRedisMemory(),
+		}),
+		forgotPasswordResetGet,
+	)
+	r.Post("/forgot/:token",
+		limiter.New(limiter.Config{
+			Max: 30,
+			KeyGenerator: func(c *fiber.Ctx) string {
+				return fmt.Sprintf("MN_FPTP-%s", c.IP())
+			},
+			Expiration: 3 * time.Hour,
+			LimitReached: func(c *fiber.Ctx) error {
+				c.Status(http.StatusTooManyRequests)
+				return c.Send([]byte(""))
+			},
+			Storage: config.GetFiberRedisMemory(),
+		}),
+		forgotPasswordResetPost,
+	)
 
 	r.Get("/issue_confirm_mail", issueConfirmGet)
 	r.Post("/issue_confirm_mail",

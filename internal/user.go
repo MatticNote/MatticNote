@@ -243,6 +243,23 @@ func IssueForgotPassword(targetEmail string) error {
 	return nil
 }
 
+func ValidateForgotPasswordToken(token string) (uuid.UUID, error) {
+	var targetUuidRaw string
+	err := database.DBPool.QueryRow(
+		context.Background(),
+		"select target from user_reset_password where key = $1 and expired > now();",
+		token,
+	).Scan(
+		&targetUuidRaw,
+	)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	targetUuid := uuid.MustParse(targetUuidRaw)
+	return targetUuid, nil
+}
+
 func IssueVerifyEmail(targetUuid uuid.UUID, targetEmail string, tx ...pgx.Tx) error {
 	var issueSql = "insert into user_mail_transaction(uuid, new_email, token) VALUES ($1, $2, $3) on conflict on constraint user_mail_transaction_pk do update set new_email = $2, token = $3, expired_at = default;"
 	verifyToken := misc.GenToken(32)
@@ -283,6 +300,49 @@ func IssueVerifyEmail(targetUuid uuid.UUID, targetEmail string, tx ...pgx.Tx) er
 
 	if err := SendMail(targetEmail, "Verify Email", "text/plain", body); err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func ChangeUserPassword(targetUuid uuid.UUID, password string) error {
+	var email string
+
+	err := database.DBPool.QueryRow(
+		context.Background(),
+		"select email from user_mail where uuid = $1 and is_verified is true;",
+		targetUuid.String(),
+	).Scan(
+		&email,
+	)
+	if err != nil {
+		return err
+	}
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), UserPasswordHashCost)
+	if err != nil {
+		return err
+	}
+
+	dbRes, err := database.DBPool.Exec(
+		context.Background(),
+		"update user_password set password = $1 where uuid = $2;\n",
+		hashedPassword,
+		targetUuid,
+	)
+	if err != nil {
+		return err
+	}
+
+	if dbRes.RowsAffected() > 0 {
+		// TODO: 将来的に"template/text"を使う
+		body := "Hello. This is MatticNote.\n\n" +
+			"We would like to inform you that the password of the account associated with this email address has been changed recently.\n\n" +
+			"If you did it yourself, there is no problem. If you don't remember making any changes, please let the instance administrator know immediately."
+
+		if err := SendMail(email, "Password was changed", "text/plain", body); err != nil {
+			return err
+		}
 	}
 
 	return nil

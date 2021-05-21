@@ -1,0 +1,17 @@
+{% if errors %}
+<ul>
+    {% for err in errors %}
+    <li>{{ err }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+<form method="post">
+    <label>
+        Password
+        <input name="password" type="password" minlength="8" autofocus required>
+    </label>
+
+    <input type="hidden" name="{{ CSRFFormName }}" value="{{ CSRFToken }}">
+
+    <input type="submit" value="Send" class="btn btn-primary">
+</form>
