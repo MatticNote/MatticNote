@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/misc"
+	"github.com/MatticNote/MatticNote/server/account/oauth"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
@@ -153,4 +154,6 @@ func ConfigureRoute(r fiber.Router) {
 		}),
 		verifyMail,
 	)
+
+	oauth.ConfigureRoute(r.Group("/oauth"))
 }

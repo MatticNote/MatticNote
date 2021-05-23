@@ -13,7 +13,7 @@ import (
 )
 
 func postNote(c *fiber.Ctx) error {
-	currentUsr, ok := c.Locals(loginUserLocal).(*internal.LocalUserStruct)
+	currentUsr, ok := c.Locals(internal.LoginUserLocal).(*internal.LocalUserStruct)
 	if !ok {
 		return unauthorized(c)
 	}

@@ -16,7 +16,7 @@ func getUser(c *fiber.Ctx) error {
 	}
 
 	// TODO: ターゲットのアカウントリレーション次第では403とかを出す
-	//currentUsr, ok := c.Locals(loginUserLocal).(*internal.LocalUserStruct)
+	//currentUsr, ok := c.Locals(internal.LoginUserLocal).(*internal.LocalUserStruct)
 
 	res := new(v1UserRes)
 	var (

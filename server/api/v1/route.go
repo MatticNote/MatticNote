@@ -11,10 +11,10 @@ import (
 func ConfigureRoute(r fiber.Router) {
 	r.Use(
 		internal.RegisterFiberJWT("header", false),
-		authenticationUser,
+		internal.AuthenticationUser,
 		limiter.New(limiter.Config{
 			Max:          6000,
-			KeyGenerator: rateLimitKeyGen("APIv1"),
+			KeyGenerator: internal.RateLimitKeyGen("APIv1"),
 			Expiration:   15 * time.Minute,
 			LimitReached: rateLimitReached,
 			Storage:      config.GetFiberRedisMemory(),
