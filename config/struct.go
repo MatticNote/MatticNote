@@ -25,6 +25,7 @@ type (
 		AccountRegistrationLimitCount   uint   `toml:"account_registration_limit_count"`
 		CookieSecure                    bool   `toml:"cookie_secure"`
 		Endpoint                        string `validate:"required"`
+		OAuthSecretKey                  string `toml:"oauth_secret_key" validate:"required,len=32"`
 	}
 
 	MNCRedis struct {

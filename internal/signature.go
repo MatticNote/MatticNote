@@ -22,13 +22,13 @@ import (
 )
 
 var (
-	jwtSignPublicKey  *rsa.PublicKey
-	jwtSignPrivateKey *rsa.PrivateKey
+	signPublicKey  *rsa.PublicKey
+	signPrivateKey *rsa.PrivateKey
 )
 
 const (
-	jwtPrivateFileName = ".matticnote_jwt_private.pem"
-	jwtPublicFileName  = ".matticnote_jwt_public.pem"
+	privateKeyFileName = ".matticnote_private.pem"
+	publicKeyFileName  = ".matticnote_public.pem"
 	AuthSchemeName     = "jwt"
 	AuthHeaderName     = "Authorization"
 	JWTAuthCookieName  = "jwt_auth"
@@ -38,7 +38,7 @@ const (
 
 func GenerateJWTSignKey(overwrite bool) error {
 	var shouldGen = false
-	_, err := os.Stat(jwtPrivateFileName)
+	_, err := os.Stat(privateKeyFileName)
 	if err != nil {
 		if os.IsNotExist(err) {
 			shouldGen = true
@@ -46,7 +46,7 @@ func GenerateJWTSignKey(overwrite bool) error {
 			return err
 		}
 	}
-	_, err = os.Stat(jwtPublicFileName)
+	_, err = os.Stat(publicKeyFileName)
 	if err != nil {
 		if os.IsNotExist(err) {
 			shouldGen = true
@@ -57,11 +57,11 @@ func GenerateJWTSignKey(overwrite bool) error {
 
 	if shouldGen || overwrite {
 		priKey, pubKey := misc.GenerateRSAKeypair(2048)
-		err = ioutil.WriteFile(jwtPrivateFileName, priKey, fs.FileMode(0600))
+		err = ioutil.WriteFile(privateKeyFileName, priKey, fs.FileMode(0600))
 		if err != nil {
 			return err
 		}
-		err = ioutil.WriteFile(jwtPublicFileName, pubKey, fs.FileMode(0600))
+		err = ioutil.WriteFile(publicKeyFileName, pubKey, fs.FileMode(0600))
 		if err != nil {
 			return err
 		}
@@ -71,12 +71,12 @@ func GenerateJWTSignKey(overwrite bool) error {
 }
 
 func LoadJWTSignKey() error {
-	pubKeyByte, err := ioutil.ReadFile(jwtPublicFileName)
+	pubKeyByte, err := ioutil.ReadFile(publicKeyFileName)
 	if err != nil {
 		return err
 	}
 
-	priKeyByte, err := ioutil.ReadFile(jwtPrivateFileName)
+	priKeyByte, err := ioutil.ReadFile(privateKeyFileName)
 	if err != nil {
 		return err
 	}
@@ -100,8 +100,8 @@ func LoadJWTSignKey() error {
 		return err
 	}
 
-	jwtSignPublicKey = parsedPubKey
-	jwtSignPrivateKey = parsedPriKey
+	signPublicKey = parsedPubKey
+	signPrivateKey = parsedPriKey
 
 	return nil
 }
@@ -114,12 +114,12 @@ func VerifyRSASign() error {
 	}
 	testHashSum := testHash.Sum(nil)
 
-	signature, err := rsa.SignPSS(rand.Reader, jwtSignPrivateKey, crypto.SHA256, testHashSum, nil)
+	signature, err := rsa.SignPSS(rand.Reader, signPrivateKey, crypto.SHA256, testHashSum, nil)
 	if err != nil {
 		panic(err)
 	}
 
-	err = rsa.VerifyPSS(jwtSignPublicKey, crypto.SHA256, testHashSum, signature, nil)
+	err = rsa.VerifyPSS(signPublicKey, crypto.SHA256, testHashSum, signature, nil)
 	if err != nil {
 		if err == rsa.ErrVerification {
 			return errors.New("the key pair does not match. If the problem persists, try deleting the key file")
@@ -137,7 +137,7 @@ func SignJWT(userUUID uuid.UUID) (string, error) {
 	claims := token.Claims.(jwt.MapClaims)
 	claims["sub"] = userUUID.String()
 
-	signed, err := token.SignedString(jwtSignPrivateKey)
+	signed, err := token.SignedString(signPrivateKey)
 	if err != nil {
 		return "", err
 	}
@@ -166,7 +166,7 @@ func RegisterFiberJWT(mode string, mustLogin bool) fiber.Handler {
 	case "cookie":
 		return jwtware.New(jwtware.Config{
 			ErrorHandler:  authFailed,
-			SigningKey:    jwtSignPublicKey,
+			SigningKey:    signPublicKey,
 			SigningMethod: jwtSignMethod,
 			ContextKey:    JWTContextKey,
 			TokenLookup:   fmt.Sprintf("cookie:%s", JWTAuthCookieName),
@@ -174,11 +174,15 @@ func RegisterFiberJWT(mode string, mustLogin bool) fiber.Handler {
 	default: // within header
 		return jwtware.New(jwtware.Config{
 			ErrorHandler:  authFailed,
-			SigningKey:    jwtSignPublicKey,
+			SigningKey:    signPublicKey,
 			SigningMethod: jwtSignMethod,
 			ContextKey:    JWTContextKey,
 			TokenLookup:   fmt.Sprintf("header:%s", AuthHeaderName),
 			AuthScheme:    AuthSchemeName,
 		})
 	}
+}
+
+func GetPrivateKey() *rsa.PrivateKey {
+	return signPrivateKey
 }
