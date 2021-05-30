@@ -20,6 +20,7 @@ var (
 	Err2faRequired       = errors.New("target user required two factor authentication") // WIP
 	ErrNoSuchUser        = errors.New("target user was not found")
 	ErrUserSuspended     = errors.New("target user is suspended")
+	ErrInvalidPassword   = errors.New("invalid password")
 )
 
 type LocalUserStruct struct {
@@ -167,6 +168,37 @@ func ValidateLoginUser(login, password string) (uuid.UUID, error) {
 	}
 
 	return targetUuid, nil
+}
+
+func ValidateUserPassword(targetUuid, password string) error {
+	var (
+		targetPassword []byte
+	)
+
+	err := database.DBPool.QueryRow(
+		context.Background(),
+		"select password from user_password where uuid = $1;",
+		targetUuid,
+	).Scan(
+		&targetPassword,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return ErrNoSuchUser
+		} else {
+			return err
+		}
+	}
+
+	if err := bcrypt.CompareHashAndPassword(targetPassword, []byte(password)); err != nil {
+		if err == bcrypt.ErrMismatchedHashAndPassword {
+			return ErrInvalidPassword
+		} else {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func GetLocalUser(targetUuid string) (*LocalUserStruct, error) {
@@ -346,4 +378,18 @@ func ChangeUserPassword(targetUuid uuid.UUID, password string) error {
 	}
 
 	return nil
+}
+
+func UpdateProfile(targetUuid, name, summary string, isBot, acceptManually bool) error {
+	_, err := database.DBPool.Exec(
+		context.Background(),
+		"update \"user\" set display_name = $1, summary = $2, is_bot = $3, accept_manually = $4, updated_at = now() where uuid = $5;",
+		name,
+		summary,
+		isBot,
+		acceptManually,
+		targetUuid,
+	)
+
+	return err
 }

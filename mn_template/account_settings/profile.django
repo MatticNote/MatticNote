@@ -1,0 +1,32 @@
+{% if errors %}
+<ul>
+    {% for err in errors %}
+    <li>{{ err }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+<form method="post">
+    <label>
+        Name
+        <input name="name" type="text" value="{{ Profile.Name }}">
+    </label>
+
+    <label>
+        Summary
+        <textarea name="summary">{{ Profile.Summary }}</textarea>
+    </label>
+
+    <label>
+        Do you operate it as a BOT?
+        <input type="checkbox" name="is_bot" value="true" {% if Profile.IsBot %}checked{% endif %}>
+    </label>
+
+    <label>
+        Manual follow
+        <input type="checkbox" name="accept_manually" value="true" {% if Profile.AcceptManually %}checked{% endif %}>
+    </label>
+
+    <input type="hidden" name="{{ CSRFFormName }}" value="{{ CSRFToken }}">
+
+    <input type="submit" value="Send" class="btn btn-primary">
+</form>

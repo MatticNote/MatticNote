@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>MatticNote</title>
+    <link rel="stylesheet" href="/static/ui/matticnote-ui.css">
+  </head>
+
+  <body>
+    {{embed}}
+  </body>
+  <script defer type="application/javascript" src="/static/ui/matticnote-ui.js"></script>
+</html>
