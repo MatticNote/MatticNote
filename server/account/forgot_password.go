@@ -30,8 +30,8 @@ func forgotPasswordView(c *fiber.Ctx, errors ...string) error {
 	return c.Status(http.StatusOK).Render(
 		"account/forgot",
 		fiber.Map{
-			"CSRFFormName": csrfFormName,
-			"CSRFToken":    c.Context().UserValue(csrfContextKey).(string),
+			"CSRFFormName": misc.CSRFFormName,
+			"CSRFToken":    c.Context().UserValue(misc.CSRFContextKey).(string),
 			"errors":       errors,
 		},
 		"_layout/account",
@@ -76,8 +76,8 @@ func forgotPasswordResetView(c *fiber.Ctx, errors ...string) error {
 	return c.Status(http.StatusOK).Render(
 		"account/forgot_reset",
 		fiber.Map{
-			"CSRFFormName": csrfFormName,
-			"CSRFToken":    c.Context().UserValue(csrfContextKey).(string),
+			"CSRFFormName": misc.CSRFFormName,
+			"CSRFToken":    c.Context().UserValue(misc.CSRFContextKey).(string),
 			"errors":       errors,
 		},
 		"_layout/account",

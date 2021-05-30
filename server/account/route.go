@@ -5,16 +5,12 @@ import (
 	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/MatticNote/MatticNote/server/account/oauth"
+	"github.com/MatticNote/MatticNote/server/account/settings"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"net/http"
 	"time"
-)
-
-const (
-	csrfContextKey = "CSRF"
-	csrfFormName   = "_csrf"
 )
 
 func csrfErrorView(c *fiber.Ctx, _ error) error {
@@ -27,12 +23,12 @@ func csrfErrorView(c *fiber.Ctx, _ error) error {
 func ConfigureRoute(r fiber.Router) {
 	r.Use(csrf.New(csrf.Config{
 		Next:           nil,
-		KeyLookup:      fmt.Sprintf("form:%s", csrfFormName),
+		KeyLookup:      fmt.Sprintf("form:%s", misc.CSRFFormName),
 		CookieName:     "_csrf",
 		CookiePath:     "/account",
 		CookieSecure:   config.Config.Server.CookieSecure,
 		CookieHTTPOnly: true,
-		ContextKey:     csrfContextKey,
+		ContextKey:     misc.CSRFContextKey,
 		ErrorHandler:   csrfErrorView,
 		KeyGenerator: func() string {
 			return misc.GenToken(32)
@@ -156,4 +152,5 @@ func ConfigureRoute(r fiber.Router) {
 	)
 
 	oauth.ConfigureRoute(r.Group("/oauth"))
+	settings.ConfigureRoute(r.Group("/settings"))
 }
