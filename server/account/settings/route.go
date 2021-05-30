@@ -10,4 +10,7 @@ func ConfigureRoute(r fiber.Router) {
 
 	r.Get("/profile", editProfileGet)
 	r.Post("/profile", editProfilePost)
+
+	r.Get("/password", editPasswordGet)
+	r.Post("/password", editPasswordPost)
 }
