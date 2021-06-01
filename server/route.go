@@ -4,6 +4,7 @@ import (
 	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/server/account"
 	"github.com/MatticNote/MatticNote/server/api"
+	"github.com/MatticNote/MatticNote/server/well_known"
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofiber/fiber/v2"
 	"net/http"
@@ -28,6 +29,7 @@ func ConfigureRoute(app *fiber.App) {
 
 	account.ConfigureRoute(app.Group("/account"))
 	api.ConfigureRoute(app.Group("/api"))
+	well_known.ConfigureRoute(app.Group("/.well-known"))
 }
 
 // internal views
@@ -49,6 +51,8 @@ func ErrorView(c *fiber.Ctx, err error) error {
 		c.Status(fiber.StatusUnauthorized)
 	case fiber.ErrForbidden:
 		c.Status(fiber.StatusForbidden)
+	case fiber.ErrNotFound:
+		c.Status(fiber.StatusNotFound)
 	default:
 		return c.Status(http.StatusInternalServerError).Render(
 			"5xx",
