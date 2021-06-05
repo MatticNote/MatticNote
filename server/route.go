@@ -7,10 +7,7 @@ import (
 	"github.com/MatticNote/MatticNote/server/well_known"
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofiber/fiber/v2"
-	"net/http"
 )
-
-var emptyBody = []byte("")
 
 func ConfigureRoute(app *fiber.App) {
 	app.Get("/", internal.RegisterFiberJWT("cookie", false), func(c *fiber.Ctx) error {
@@ -27,40 +24,12 @@ func ConfigureRoute(app *fiber.App) {
 		)
 	})
 
+	app.Get("/@:username", userProfileController)
+	app.Get("/user/:username", userProfileController) // alias path
+
 	account.ConfigureRoute(app.Group("/account"))
 	api.ConfigureRoute(app.Group("/api"))
 	well_known.ConfigureRoute(app.Group("/.well-known"))
 }
 
 // internal views
-
-func NotFoundView(c *fiber.Ctx) error {
-	if c.Accepts("html") != "" {
-		return c.Status(http.StatusNotFound).Render(
-			"404",
-			fiber.Map{},
-		)
-	} else {
-		return c.Status(http.StatusNotFound).Send(emptyBody)
-	}
-}
-
-func ErrorView(c *fiber.Ctx, err error) error {
-	switch err {
-	case fiber.ErrUnauthorized:
-		c.Status(fiber.StatusUnauthorized)
-	case fiber.ErrForbidden:
-		c.Status(fiber.StatusForbidden)
-	case fiber.ErrNotFound:
-		c.Status(fiber.StatusNotFound)
-	default:
-		return c.Status(http.StatusInternalServerError).Render(
-			"5xx",
-			fiber.Map{
-				"Error": err.Error(),
-			},
-		)
-	}
-
-	return c.Send(emptyBody) // empty body
-}
