@@ -9,12 +9,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
-	"net/http"
 	"time"
 )
 
 func csrfErrorView(c *fiber.Ctx, _ error) error {
-	return c.Status(http.StatusForbidden).Render(
+	return c.Status(fiber.StatusForbidden).Render(
 		"csrf_failed",
 		fiber.Map{},
 	)
@@ -96,7 +95,7 @@ func ConfigureRoute(r fiber.Router) {
 			},
 			Expiration: 3 * time.Hour,
 			LimitReached: func(c *fiber.Ctx) error {
-				c.Status(http.StatusTooManyRequests)
+				c.Status(fiber.StatusTooManyRequests)
 				return c.Send([]byte(""))
 			},
 			Storage: config.GetFiberRedisMemory(),
@@ -111,7 +110,7 @@ func ConfigureRoute(r fiber.Router) {
 			},
 			Expiration: 3 * time.Hour,
 			LimitReached: func(c *fiber.Ctx) error {
-				c.Status(http.StatusTooManyRequests)
+				c.Status(fiber.StatusTooManyRequests)
 				return c.Send([]byte(""))
 			},
 			Storage: config.GetFiberRedisMemory(),
@@ -143,7 +142,7 @@ func ConfigureRoute(r fiber.Router) {
 			},
 			Expiration: 1 * time.Hour,
 			LimitReached: func(c *fiber.Ctx) error {
-				c.Status(http.StatusTooManyRequests)
+				c.Status(fiber.StatusTooManyRequests)
 				return c.Send([]byte(""))
 			},
 			Storage: config.GetFiberRedisMemory(),

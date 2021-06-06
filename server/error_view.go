@@ -2,7 +2,6 @@ package server
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"net/http"
 )
 
 func NotFoundView(c *fiber.Ctx) error {
@@ -32,8 +31,10 @@ func ErrorView(c *fiber.Ctx, err error) error {
 		return NotFoundView(c)
 	case fiber.ErrGone:
 		return GoneView(c)
+	case fiber.ErrBadGateway:
+		return BadGatewayView(c)
 	default:
-		return c.Status(http.StatusInternalServerError).Render(
+		return c.Status(fiber.StatusInternalServerError).Render(
 			"5xx",
 			fiber.Map{
 				"Error": err.Error(),
@@ -42,4 +43,8 @@ func ErrorView(c *fiber.Ctx, err error) error {
 	}
 
 	return nil
+}
+
+func BadGatewayView(c *fiber.Ctx) error {
+	return c.SendStatus(fiber.StatusBadGateway)
 }

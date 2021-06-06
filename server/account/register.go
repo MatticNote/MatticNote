@@ -4,7 +4,6 @@ import (
 	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/gofiber/fiber/v2"
-	"net/http"
 )
 
 type registerUserStruct struct {
@@ -23,7 +22,7 @@ func registerUserGet(c *fiber.Ctx) error {
 }
 
 func registerUserView(c *fiber.Ctx, errors ...string) error {
-	return c.Status(http.StatusOK).Render(
+	return c.Status(fiber.StatusOK).Render(
 		"account/register",
 		fiber.Map{
 			"CSRFFormName": misc.CSRFFormName,

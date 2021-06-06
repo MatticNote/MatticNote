@@ -6,7 +6,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
-	"net/http"
 )
 
 func getUser(c *fiber.Ctx) error {
@@ -50,7 +49,7 @@ func getUser(c *fiber.Ctx) error {
 	}
 
 	if !isActive {
-		c.Status(http.StatusGone)
+		c.Status(fiber.StatusGone)
 		return nil
 	}
 
@@ -58,5 +57,5 @@ func getUser(c *fiber.Ctx) error {
 		return forbidden(c, "Specified user is suspended")
 	}
 
-	return c.Status(http.StatusOK).JSON(res)
+	return c.Status(fiber.StatusOK).JSON(res)
 }

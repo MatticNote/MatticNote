@@ -5,7 +5,6 @@ import (
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v4"
-	"net/http"
 )
 
 func verifyMail(c *fiber.Ctx) error {
@@ -23,7 +22,7 @@ func verifyMail(c *fiber.Ctx) error {
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return c.Status(http.StatusBadRequest).Render(
+			return c.Status(fiber.StatusBadRequest).Render(
 				"account/verify_error",
 				fiber.Map{},
 				"_layout/account",

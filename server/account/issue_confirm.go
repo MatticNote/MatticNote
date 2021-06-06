@@ -8,7 +8,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
-	"net/http"
 )
 
 type issueConfirmFormStruct struct {
@@ -24,7 +23,7 @@ func issueConfirmGet(c *fiber.Ctx) error {
 }
 
 func issueConfirmView(c *fiber.Ctx, errors ...string) error {
-	return c.Status(http.StatusOK).Render(
+	return c.Status(fiber.StatusOK).Render(
 		"account/issue_confirm",
 		fiber.Map{
 			"CSRFFormName": misc.CSRFFormName,

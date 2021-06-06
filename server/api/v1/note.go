@@ -9,7 +9,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
-	"net/http"
 )
 
 func postNote(c *fiber.Ctx) error {
@@ -49,7 +48,7 @@ func postNote(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.Status(http.StatusOK).JSON(fiber.Map{
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{
 		"uuid": newNoteUuid,
 	})
 }
@@ -100,7 +99,7 @@ func getNote(c *fiber.Ctx) error {
 	}
 
 	if !isActive {
-		c.Status(http.StatusGone)
+		c.Status(fiber.StatusGone)
 		return nil
 	}
 
@@ -110,5 +109,5 @@ func getNote(c *fiber.Ctx) error {
 
 	noteRes.Author = noteAuthorRes
 
-	return c.Status(http.StatusOK).JSON(noteRes)
+	return c.Status(fiber.StatusOK).JSON(noteRes)
 }

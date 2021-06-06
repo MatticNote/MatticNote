@@ -7,7 +7,6 @@ import (
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v4"
-	"net/http"
 )
 
 type issueForgotPasswordFormStruct struct {
@@ -27,7 +26,7 @@ func forgotPasswordGet(c *fiber.Ctx) error {
 }
 
 func forgotPasswordView(c *fiber.Ctx, errors ...string) error {
-	return c.Status(http.StatusOK).Render(
+	return c.Status(fiber.StatusOK).Render(
 		"account/forgot",
 		fiber.Map{
 			"CSRFFormName": misc.CSRFFormName,
@@ -60,7 +59,7 @@ func forgotPasswordResetGet(c *fiber.Ctx) error {
 	_, err := internal.ValidateForgotPasswordToken(c.Params("token"))
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return c.Status(http.StatusBadRequest).Render(
+			return c.Status(fiber.StatusBadRequest).Render(
 				"account/forgot_reset_error",
 				fiber.Map{},
 				"_layout/account",
@@ -73,7 +72,7 @@ func forgotPasswordResetGet(c *fiber.Ctx) error {
 }
 
 func forgotPasswordResetView(c *fiber.Ctx, errors ...string) error {
-	return c.Status(http.StatusOK).Render(
+	return c.Status(fiber.StatusOK).Render(
 		"account/forgot_reset",
 		fiber.Map{
 			"CSRFFormName": misc.CSRFFormName,
@@ -88,7 +87,7 @@ func forgotPasswordResetPost(c *fiber.Ctx) error {
 	targetUuid, err := internal.ValidateForgotPasswordToken(c.Params("token"))
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return c.Status(http.StatusBadRequest).Render(
+			return c.Status(fiber.StatusBadRequest).Render(
 				"account/forgot_reset_error",
 				fiber.Map{},
 				"_layout/account",
