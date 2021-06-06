@@ -39,7 +39,7 @@ func ConfigureRoute(r fiber.Router) {
 	r.Post("/register",
 		limiter.New(limiter.Config{
 			Next: func(_ *fiber.Ctx) bool {
-				return config.Config.Server.DisableAccountRegistrationLimit
+				return config.Config.Server.DisableAccountRateLimit
 			},
 			Max: int(config.Config.Server.AccountRegistrationLimitCount),
 			KeyGenerator: func(c *fiber.Ctx) string {
@@ -57,6 +57,9 @@ func ConfigureRoute(r fiber.Router) {
 	r.Get("/login", loginUserGet)
 	r.Post("/login",
 		limiter.New(limiter.Config{
+			Next: func(_ *fiber.Ctx) bool {
+				return config.Config.Server.DisableAccountRateLimit
+			},
 			Max: 30,
 			KeyGenerator: func(c *fiber.Ctx) string {
 				return fmt.Sprintf("MN_LOGIN-%s", c.IP())
@@ -75,6 +78,9 @@ func ConfigureRoute(r fiber.Router) {
 	r.Get("/forgot", forgotPasswordGet)
 	r.Post("/forgot",
 		limiter.New(limiter.Config{
+			Next: func(_ *fiber.Ctx) bool {
+				return config.Config.Server.DisableAccountRateLimit
+			},
 			Max: 10,
 			KeyGenerator: func(c *fiber.Ctx) string {
 				return fmt.Sprintf("MN_FORGOT-%s", c.IP())
@@ -89,6 +95,9 @@ func ConfigureRoute(r fiber.Router) {
 	)
 	r.Get("/forgot/:token",
 		limiter.New(limiter.Config{
+			Next: func(_ *fiber.Ctx) bool {
+				return config.Config.Server.DisableAccountRateLimit
+			},
 			Max: 30,
 			KeyGenerator: func(c *fiber.Ctx) string {
 				return fmt.Sprintf("MN_FPTF-%s", c.IP())
@@ -104,6 +113,9 @@ func ConfigureRoute(r fiber.Router) {
 	)
 	r.Post("/forgot/:token",
 		limiter.New(limiter.Config{
+			Next: func(_ *fiber.Ctx) bool {
+				return config.Config.Server.DisableAccountRateLimit
+			},
 			Max: 30,
 			KeyGenerator: func(c *fiber.Ctx) string {
 				return fmt.Sprintf("MN_FPTP-%s", c.IP())
@@ -121,6 +133,9 @@ func ConfigureRoute(r fiber.Router) {
 	r.Get("/issue_confirm_mail", issueConfirmGet)
 	r.Post("/issue_confirm_mail",
 		limiter.New(limiter.Config{
+			Next: func(_ *fiber.Ctx) bool {
+				return config.Config.Server.DisableAccountRateLimit
+			},
 			Max: 10,
 			KeyGenerator: func(c *fiber.Ctx) string {
 				return fmt.Sprintf("MN_ISSCM-%s", c.IP())
@@ -136,6 +151,9 @@ func ConfigureRoute(r fiber.Router) {
 
 	r.Get("/verify/:token",
 		limiter.New(limiter.Config{
+			Next: func(_ *fiber.Ctx) bool {
+				return config.Config.Server.DisableAccountRateLimit
+			},
 			Max: 30,
 			KeyGenerator: func(c *fiber.Ctx) string {
 				return fmt.Sprintf("MN_VFTK-%s", c.IP())

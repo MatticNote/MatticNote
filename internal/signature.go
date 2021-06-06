@@ -19,6 +19,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 )
 
 var (
@@ -27,13 +28,14 @@ var (
 )
 
 const (
-	privateKeyFileName = ".matticnote_private.pem"
-	publicKeyFileName  = ".matticnote_public.pem"
-	AuthSchemeName     = "jwt"
-	AuthHeaderName     = "Authorization"
-	JWTAuthCookieName  = "jwt_auth"
-	jwtSignMethod      = "RS512"
-	JWTContextKey      = "jwt_user"
+	privateKeyFileName     = ".matticnote_private.pem"
+	publicKeyFileName      = ".matticnote_public.pem"
+	AuthSchemeName         = "jwt"
+	AuthHeaderName         = "Authorization"
+	JWTAuthCookieName      = "jwt_auth"
+	jwtSignMethod          = "RS512"
+	JWTContextKey          = "jwt_user"
+	JWTSignExpiredDuration = 6 * time.Hour
 )
 
 func GenerateJWTSignKey(overwrite bool) error {
@@ -136,6 +138,7 @@ func SignJWT(userUUID uuid.UUID) (string, error) {
 	token := jwt.New(jwt.SigningMethodRS512)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["sub"] = userUUID.String()
+	claims["exp"] = time.Now().Add(JWTSignExpiredDuration).Unix()
 
 	signed, err := token.SignedString(signPrivateKey)
 	if err != nil {

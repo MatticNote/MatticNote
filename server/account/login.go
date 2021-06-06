@@ -67,6 +67,7 @@ func loginPost(c *fiber.Ctx) error {
 		Secure:   config.Config.Server.CookieSecure,
 		HTTPOnly: false,
 		SameSite: "Strict",
+		MaxAge:   int(internal.JWTSignExpiredDuration),
 	})
 
 	return c.Redirect(c.Query("next", "/web/"))
