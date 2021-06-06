@@ -1,0 +1,5 @@
+<ul>
+    {% for log in SignInLogs %}
+    <li>{{ log.IsSuccess }} - {{ log.FromIp.String }} - {{ log.TriedAt }}</li>
+    {% endfor %}
+</ul>
