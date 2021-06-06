@@ -5,6 +5,7 @@ import (
 	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 type loginUserStruct struct {
@@ -44,6 +45,12 @@ func loginPost(c *fiber.Ctx) error {
 	}
 
 	targetUuid, err := internal.ValidateLoginUser(formData.Login, formData.Password)
+	var isSuccess = false
+	defer func() {
+		if targetUuid != uuid.Nil {
+			_ = internal.InsertSigninLog(targetUuid, c.IP(), isSuccess)
+		}
+	}()
 	if err != nil {
 		switch err {
 		case internal.ErrLoginFailed:
@@ -60,6 +67,7 @@ func loginPost(c *fiber.Ctx) error {
 		return err
 	}
 
+	isSuccess = true
 	c.Cookie(&fiber.Cookie{
 		Name:     internal.JWTAuthCookieName,
 		Value:    jwtSignedString,

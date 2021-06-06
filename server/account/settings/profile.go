@@ -5,6 +5,7 @@ import (
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"strconv"
 )
 
@@ -74,7 +75,7 @@ func editProfilePost(c *fiber.Ctx) error {
 	}
 
 	err = internal.UpdateProfile(
-		claim["sub"].(string),
+		uuid.MustParse(claim["sub"].(string)),
 		formData.Name,
 		formData.Summary,
 		isBot,

@@ -157,20 +157,20 @@ func ValidateLoginUser(login, password string) (uuid.UUID, error) {
 
 	if err := bcrypt.CompareHashAndPassword(targetPassword, []byte(password)); err != nil {
 		if err == bcrypt.ErrMismatchedHashAndPassword {
-			return uuid.Nil, ErrLoginFailed
+			return targetUuid, ErrLoginFailed
 		} else {
 			return uuid.Nil, err
 		}
 	}
 
 	if !isMailVerified {
-		return uuid.Nil, ErrEmailAuthRequired
+		return targetUuid, ErrEmailAuthRequired
 	}
 
 	return targetUuid, nil
 }
 
-func ValidateUserPassword(targetUuid, password string) error {
+func ValidateUserPassword(targetUuid uuid.UUID, password string) error {
 	var (
 		targetPassword []byte
 	)
@@ -178,7 +178,7 @@ func ValidateUserPassword(targetUuid, password string) error {
 	err := database.DBPool.QueryRow(
 		context.Background(),
 		"select password from user_password where uuid = $1;",
-		targetUuid,
+		targetUuid.String(),
 	).Scan(
 		&targetPassword,
 	)
@@ -380,7 +380,7 @@ func ChangeUserPassword(targetUuid uuid.UUID, password string) error {
 	return nil
 }
 
-func UpdateProfile(targetUuid, name, summary string, isBot, acceptManually bool) error {
+func UpdateProfile(targetUuid uuid.UUID, name, summary string, isBot, acceptManually bool) error {
 	_, err := database.DBPool.Exec(
 		context.Background(),
 		"update \"user\" set display_name = $1, summary = $2, is_bot = $3, accept_manually = $4, updated_at = now() where uuid = $5;",
@@ -388,8 +388,29 @@ func UpdateProfile(targetUuid, name, summary string, isBot, acceptManually bool)
 		summary,
 		isBot,
 		acceptManually,
-		targetUuid,
+		targetUuid.String(),
 	)
+
+	return err
+}
+
+func InsertSigninLog(targetUuid uuid.UUID, fromIp string, isSuccess bool) (err error) {
+	if targetUuid != uuid.Nil {
+		_, err = database.DBPool.Exec(
+			context.Background(),
+			"insert into signin(target_user, from_ip, is_success) values ($1, $2, $3);",
+			targetUuid.String(),
+			fromIp,
+			isSuccess,
+		)
+	} else {
+		_, err = database.DBPool.Exec(
+			context.Background(),
+			"insert into signin(from_ip, is_success) values ($1, $2);",
+			fromIp,
+			isSuccess,
+		)
+	}
 
 	return err
 }

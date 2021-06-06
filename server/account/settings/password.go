@@ -47,7 +47,7 @@ func editPasswordPost(c *fiber.Ctx) error {
 		return editPasswordView(c, false, errs...)
 	}
 
-	targetUuid := claim["sub"].(string)
+	targetUuid := uuid.MustParse(claim["sub"].(string))
 
 	err := internal.ValidateUserPassword(targetUuid, formData.CurrentPassword)
 	if err != nil {
@@ -58,7 +58,7 @@ func editPasswordPost(c *fiber.Ctx) error {
 		}
 	}
 
-	err = internal.ChangeUserPassword(uuid.MustParse(targetUuid), formData.NewPassword)
+	err = internal.ChangeUserPassword(targetUuid, formData.NewPassword)
 	if err != nil {
 		return err
 	}
