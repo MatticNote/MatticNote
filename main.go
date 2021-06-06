@@ -219,7 +219,7 @@ func startServer(c *cli.Context) error {
 			internal.RegisterFiberJWT("cookie", true),
 			func(ctx *fiber.Ctx) error {
 				if err := proxy.Do(ctx, fmt.Sprintf("%s%s", c.String("client-addr"), ctx.Path())); err != nil {
-					return err
+					return fiber.ErrBadGateway
 				}
 
 				ctx.Response().Header.Del(fiber.HeaderServer)
