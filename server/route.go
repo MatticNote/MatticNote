@@ -31,5 +31,3 @@ func ConfigureRoute(app *fiber.App) {
 	api.ConfigureRoute(app.Group("/api"))
 	well_known.ConfigureRoute(app.Group("/.well-known"))
 }
-
-// internal views
