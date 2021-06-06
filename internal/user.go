@@ -1,12 +1,15 @@
 package internal
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/misc"
+	"github.com/MatticNote/MatticNote/mn_template"
+	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"golang.org/x/crypto/bcrypt"
@@ -255,18 +258,20 @@ func IssueForgotPassword(targetEmail string) error {
 	)
 	if err == nil {
 		if cmdTag.RowsAffected() > 0 {
-			// TODO: 将来的に"template/text"を使う
-			body := fmt.Sprintf(
-				"Hello. This is MatticNote.\n\n"+
-					"We have received a request to reset the password of the account registered with this email address.\n\n"+
-					"You can reset your password by clicking the URL below: \n\n"+
-					"%s\n\n"+
-					"The expiration date is 30 minutes after issuance. \n\n"+
-					"If you don't know, please discard this email. Unless you click on the URL, it will not be processed.",
-				fmt.Sprintf("%s/account/forgot/%s", config.Config.Server.Endpoint, verifyToken),
-			)
-			err := SendMail(targetEmail, "Forgot password", "text/plain", body)
+			txtTemplate, err := mn_template.LoadTextTemplate()
 			if err != nil {
+				return err
+			}
+
+			body := new(bytes.Buffer)
+
+			if err := txtTemplate.ExecuteTemplate(body, "issue_password.txt", fiber.Map{
+				"ResetURL": fmt.Sprintf("%s/account/forgot/%s", config.Config.Server.Endpoint, verifyToken),
+			}); err != nil {
+				return err
+			}
+
+			if err := SendMail(targetEmail, "Forgot password", "text/plain", body.String()); err != nil {
 				return err
 			}
 		}
@@ -319,18 +324,20 @@ func IssueVerifyEmail(targetUuid uuid.UUID, targetEmail string, tx ...pgx.Tx) er
 		return err
 	}
 
-	// TODO: 将来的に"template/text"を使う
-	body := fmt.Sprintf(
-		"Hello. This is MatticNote.\n\n"+
-			"I was asked to use this email address to verify my account email and issued a token to accept it.\n\n"+
-			"Click the URL below to complete the email verification: \n\n"+
-			"%s\n\n"+
-			"The expiration date is 3 hours after issuance. \n\n"+
-			"If you don't know, please discard this email. Unless you click on the URL, it will not be accepted.",
-		fmt.Sprintf("%s/account/verify/%s", config.Config.Server.Endpoint, verifyToken),
-	)
+	body := new(bytes.Buffer)
 
-	if err := SendMail(targetEmail, "Verify Email", "text/plain", body); err != nil {
+	txtTemplate, err := mn_template.LoadTextTemplate()
+	if err != nil {
+		return err
+	}
+
+	if err := txtTemplate.ExecuteTemplate(body, "verify_mail", fiber.Map{
+		"VerifyURL": fmt.Sprintf("%s/account/verify/%s", config.Config.Server.Endpoint, verifyToken),
+	}); err != nil {
+		return err
+	}
+
+	if err := SendMail(targetEmail, "Verify Email", "text/plain", body.String()); err != nil {
 		return err
 	}
 
@@ -367,12 +374,18 @@ func ChangeUserPassword(targetUuid uuid.UUID, password string) error {
 	}
 
 	if dbRes.RowsAffected() > 0 {
-		// TODO: 将来的に"template/text"を使う
-		body := "Hello. This is MatticNote.\n\n" +
-			"We would like to inform you that the password of the account associated with this email address has been changed recently.\n\n" +
-			"If you did it yourself, there is no problem. If you don't remember making any changes, please let the instance administrator know immediately."
+		body := new(bytes.Buffer)
 
-		if err := SendMail(email, "Password was changed", "text/plain", body); err != nil {
+		txtTemplate, err := mn_template.LoadTextTemplate()
+		if err != nil {
+			return err
+		}
+
+		if err := txtTemplate.ExecuteTemplate(body, "password_changed.txt", nil); err != nil {
+			return err
+		}
+
+		if err := SendMail(email, "Password was changed", "text/plain", body.String()); err != nil {
 			return err
 		}
 	}

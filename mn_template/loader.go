@@ -1,6 +1,13 @@
 package mn_template
 
-import "embed"
+import (
+	"embed"
+	"text/template"
+)
 
-//go:embed *.django */*.django
+//go:embed *.django */*.django _mail/*.txt
 var Templates embed.FS
+
+func LoadTextTemplate() (*template.Template, error) {
+	return template.ParseFS(Templates, "_mail/*.txt")
+}
