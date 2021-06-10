@@ -2,6 +2,7 @@ const colors = require('tailwindcss/colors')
 
 module.exports = {
   purge: [
+      './src/**',
       '../client/src/**/*.html',
       '../mn_template/**/*.django',
   ],
@@ -17,5 +18,7 @@ module.exports = {
   variants: {
     extend: {},
   },
-  plugins: [],
+  plugins: [
+      require('@tailwindcss/forms'),
+  ],
 }
