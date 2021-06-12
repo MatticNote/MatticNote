@@ -121,7 +121,7 @@ func RegisterLocalUser(email, username, password string, skipEmailVerify bool) (
 	}
 
 	if !skipEmailVerify {
-		if err := IssueVerifyEmail(newUuid, email); err != nil {
+		if err := IssueVerifyEmail(newUuid, email, tx); err != nil {
 			return uuid.Nil, err
 		}
 	}
@@ -331,7 +331,7 @@ func IssueVerifyEmail(targetUuid uuid.UUID, targetEmail string, tx ...pgx.Tx) er
 		return err
 	}
 
-	if err := txtTemplate.ExecuteTemplate(body, "verify_mail", fiber.Map{
+	if err := txtTemplate.ExecuteTemplate(body, "verify_mail.txt", fiber.Map{
 		"VerifyURL": fmt.Sprintf("%s/account/verify/%s", config.Config.Server.Endpoint, verifyToken),
 	}); err != nil {
 		return err
