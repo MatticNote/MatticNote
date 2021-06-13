@@ -16,7 +16,7 @@ var (
 	ErrCantRelateYourself = errors.New("can't yourself")
 )
 
-func CreateFollowRelation(fromUser, targetUser uuid.UUID) error {
+func CreateFollowRelation(fromUser, targetUser uuid.UUID, isPending bool) error {
 	if fromUser == targetUser {
 		return ErrCantRelateYourself
 	}
@@ -38,9 +38,10 @@ func CreateFollowRelation(fromUser, targetUser uuid.UUID) error {
 
 	exec, err := database.DBPool.Exec(
 		context.Background(),
-		"insert into follow_relation(follow_from, follow_to) values ($1, $2) on conflict do nothing;",
+		"insert into follow_relation(follow_from, follow_to, is_pending) values ($1, $2, $3) on conflict do nothing;",
 		fromUser.String(),
 		targetUser.String(),
+		isPending,
 	)
 	if err != nil {
 		return err

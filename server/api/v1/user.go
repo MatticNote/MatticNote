@@ -73,17 +73,19 @@ func followUser(c *fiber.Ctx) error {
 	}
 
 	var (
-		isActive  bool
-		isSuspend bool
+		isActive       bool
+		isSuspend      bool
+		acceptManually bool
 	)
 
 	err = database.DBPool.QueryRow(
 		context.Background(),
-		"select is_active, is_suspend from \"user\" where uuid = $1;",
+		"select is_active, is_suspend, accept_manually from \"user\" where uuid = $1;",
 		targetUuid.String(),
 	).Scan(
 		&isActive,
 		&isSuspend,
+		&acceptManually,
 	)
 
 	if err != nil {
@@ -104,7 +106,7 @@ func followUser(c *fiber.Ctx) error {
 		return forbidden(c, "Specified user is suspended")
 	}
 
-	err = internal.CreateFollowRelation(currentUsr.Uuid, targetUuid)
+	err = internal.CreateFollowRelation(currentUsr.Uuid, targetUuid, acceptManually)
 
 	if err != nil {
 		switch err {
@@ -119,8 +121,9 @@ func followUser(c *fiber.Ctx) error {
 		}
 	}
 
-	c.Status(fiber.StatusNoContent)
-	return nil
+	return c.JSON(fiber.Map{
+		"is_pending": acceptManually,
+	})
 }
 
 func unfollowUser(c *fiber.Ctx) error {
