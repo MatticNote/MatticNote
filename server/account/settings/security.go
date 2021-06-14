@@ -50,6 +50,7 @@ func securityPageView(c *fiber.Ctx) error {
 			return err
 		}
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		data := signinLogStruct{}
@@ -62,6 +63,10 @@ func securityPageView(c *fiber.Ctx) error {
 			return err
 		}
 		signInLogs = append(signInLogs, data)
+	}
+
+	if rows.Err() != nil {
+		return rows.Err()
 	}
 
 	return c.Render(
