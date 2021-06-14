@@ -305,3 +305,72 @@ func unblockUser(c *fiber.Ctx) error {
 	c.Status(fiber.StatusNoContent)
 	return nil
 }
+
+func listRequests(c *fiber.Ctx) error {
+	currentUsr, ok := c.Locals(internal.LoginUserLocal).(*internal.LocalUserStruct)
+	if !ok {
+		return unauthorized(c)
+	}
+
+	requests, err := internal.ListFollowRequests(currentUsr.Uuid)
+	if err != nil {
+		return err
+	}
+
+	// TODO: 今はUUIDだけだが、ユーザー情報とか入れたほうが良さそう
+	return c.JSON(requests)
+}
+
+func acceptRequests(c *fiber.Ctx) error {
+	targetUuid, err := uuid.Parse(c.Params("uuid"))
+	if err != nil {
+		return badRequest(c, "Not valid UUID format")
+	}
+
+	currentUsr, ok := c.Locals(internal.LoginUserLocal).(*internal.LocalUserStruct)
+	if !ok {
+		return unauthorized(c)
+	}
+
+	err = internal.AcceptFollowRequest(currentUsr.Uuid, targetUuid)
+	if err != nil {
+		switch err {
+		case internal.ErrCantRelateYourself:
+			return badRequest(c, "Can't accept yourself")
+		case internal.ErrUnknownRequest:
+			return badRequest(c, "Unknown follow request")
+		default:
+			return err
+		}
+	}
+
+	c.Status(fiber.StatusNoContent)
+	return nil
+}
+
+func rejectRequests(c *fiber.Ctx) error {
+	targetUuid, err := uuid.Parse(c.Params("uuid"))
+	if err != nil {
+		return badRequest(c, "Not valid UUID format")
+	}
+
+	currentUsr, ok := c.Locals(internal.LoginUserLocal).(*internal.LocalUserStruct)
+	if !ok {
+		return unauthorized(c)
+	}
+
+	err = internal.RejectFollowRequest(currentUsr.Uuid, targetUuid)
+	if err != nil {
+		switch err {
+		case internal.ErrCantRelateYourself:
+			return badRequest(c, "Can't accept yourself")
+		case internal.ErrUnknownRequest:
+			return badRequest(c, "Unknown follow request")
+		default:
+			return err
+		}
+	}
+
+	c.Status(fiber.StatusNoContent)
+	return nil
+}

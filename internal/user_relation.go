@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v4"
 )
 
 var (
@@ -14,7 +15,10 @@ var (
 	ErrNotBlocking        = errors.New("the specified user is not blocking")
 	ErrTargetBlocked      = errors.New("the specified user is blocking")
 	ErrCantRelateYourself = errors.New("can't yourself")
+	ErrUnknownRequest     = errors.New("unknown follow request")
 )
+
+var emptyUuidList = make([]uuid.UUID, 0)
 
 func CreateFollowRelation(fromUser, targetUser uuid.UUID, isPending bool) error {
 	if fromUser == targetUser {
@@ -133,6 +137,81 @@ func DestroyBlockRelation(fromUser, targetUser uuid.UUID) error {
 	}
 	if exec.RowsAffected() <= 0 {
 		return ErrNotBlocking
+	}
+
+	return nil
+}
+
+func ListFollowRequests(fromUser uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := database.DBPool.Query(
+		context.Background(),
+		"select follow_from from follow_relation where follow_to = $1 and is_pending = true;",
+		fromUser.String(),
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return emptyUuidList, nil
+		} else {
+			return emptyUuidList, err
+		}
+	}
+	defer rows.Close()
+
+	var requests = make([]uuid.UUID, 0)
+	for rows.Next() {
+		var reqUuid uuid.UUID
+		err = rows.Scan(&reqUuid)
+		if err != nil {
+			return emptyUuidList, err
+		}
+		requests = append(requests, reqUuid)
+	}
+	if rows.Err() != nil {
+		return emptyUuidList, rows.Err()
+	}
+
+	return requests, nil
+}
+
+func AcceptFollowRequest(fromUser, targetUser uuid.UUID) error {
+	if fromUser == targetUser {
+		return ErrCantRelateYourself
+	}
+
+	exec, err := database.DBPool.Exec(
+		context.Background(),
+		"update follow_relation set is_pending = false where follow_to = $1 and follow_from = $2 and is_pending = true;",
+		fromUser.String(),
+		targetUser.String(),
+	)
+	if err != nil {
+		return err
+	}
+	if exec.RowsAffected() <= 0 {
+		return ErrUnknownRequest
+	}
+
+	// TODO: 通知とか飛ばせるようにしたい
+
+	return nil
+}
+
+func RejectFollowRequest(fromUser, targetUser uuid.UUID) error {
+	if fromUser == targetUser {
+		return ErrCantRelateYourself
+	}
+
+	exec, err := database.DBPool.Exec(
+		context.Background(),
+		"delete from follow_relation where follow_to = $1 and follow_from = $2 and is_pending = true;",
+		fromUser.String(),
+		targetUser.String(),
+	)
+	if err != nil {
+		return err
+	}
+	if exec.RowsAffected() <= 0 {
+		return ErrUnknownRequest
 	}
 
 	return nil
