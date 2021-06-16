@@ -28,7 +28,7 @@ func editProfileView(c *fiber.Ctx, isSuccess bool, errs ...string) error {
 
 	claim := jwtCurrentUserKey.Claims.(jwt.MapClaims)
 
-	currentUser, err := internal.GetLocalUser(claim["sub"].(string))
+	currentUser, err := internal.GetLocalUser(uuid.MustParse(claim["sub"].(string)))
 	if err != nil {
 		return err
 	}

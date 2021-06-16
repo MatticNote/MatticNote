@@ -22,23 +22,31 @@ var (
 	ErrEmailAuthRequired = errors.New("target user required email authentication")
 	Err2faRequired       = errors.New("target user required two factor authentication") // WIP
 	ErrNoSuchUser        = errors.New("target user was not found")
+	ErrUserGone          = errors.New("target user was gone")
 	ErrUserSuspended     = errors.New("target user is suspended")
 	ErrInvalidPassword   = errors.New("invalid password")
 )
 
-type LocalUserStruct struct {
-	Uuid           uuid.UUID
-	Username       string
-	Email          string
-	DisplayName    misc.NullString
-	Summary        misc.NullString
-	CreatedAt      misc.NullTime
-	UpdatedAt      misc.NullTime
-	IsSilence      bool
-	AcceptManually bool
-	IsSuperuser    bool
-	IsBot          bool
-}
+type (
+	LocalUserStruct struct {
+		UserStruct
+		Email          string
+		AcceptManually bool
+		IsSuperuser    bool
+	}
+	UserStruct struct {
+		Uuid           uuid.UUID
+		Username       string
+		Host           misc.NullString
+		DisplayName    misc.NullString
+		Summary        misc.NullString
+		CreatedAt      misc.NullTime
+		UpdatedAt      misc.NullTime
+		IsSilence      bool
+		AcceptManually bool
+		IsBot          bool
+	}
+)
 
 const (
 	UserPasswordHashCost = 12
@@ -204,19 +212,61 @@ func ValidateUserPassword(targetUuid uuid.UUID, password string) error {
 	return nil
 }
 
-func GetLocalUser(targetUuid string) (*LocalUserStruct, error) {
-	targetUuidParsed, err := uuid.Parse(targetUuid)
+func GetUser(targetUuid uuid.UUID) (*UserStruct, error) {
+	target := new(UserStruct)
+	var (
+		isSuspend bool
+		isActive  bool
+	)
+
+	err := database.DBPool.QueryRow(
+		context.Background(),
+		"select uuid, host, username, display_name, summary, created_at, updated_at, is_silence, accept_manually, is_bot, is_suspend, is_active from \"user\" where \"user\".uuid = $1",
+		targetUuid.String(),
+	).Scan(
+		&target.Uuid,
+		&target.Host,
+		&target.Username,
+		&target.DisplayName,
+		&target.Summary,
+		&target.CreatedAt,
+		&target.UpdatedAt,
+		&target.IsSilence,
+		&target.AcceptManually,
+		&target.IsBot,
+		&isSuspend,
+		&isActive,
+	)
 	if err != nil {
-		return nil, err
+		if err == pgx.ErrNoRows {
+			return nil, ErrNoSuchUser
+		} else {
+			return nil, err
+		}
 	}
 
-	target := new(LocalUserStruct)
-	var isSuspend bool
+	if !isActive {
+		return nil, ErrUserGone
+	}
 
-	err = database.DBPool.QueryRow(
+	if isSuspend {
+		return nil, ErrUserSuspended
+	}
+
+	return target, nil
+}
+
+func GetLocalUser(targetUuid uuid.UUID) (*LocalUserStruct, error) {
+	target := new(LocalUserStruct)
+	var (
+		isSuspend bool
+		isActive  bool
+	)
+
+	err := database.DBPool.QueryRow(
 		context.Background(),
-		"select \"user\".uuid, username, email, display_name, summary, created_at, updated_at, is_silence, accept_manually, is_superuser, is_bot, is_suspend from \"user\" left join user_mail um on \"user\".uuid = um.uuid where \"user\".uuid = $1",
-		targetUuidParsed.String(),
+		"select \"user\".uuid, username, email, display_name, summary, created_at, updated_at, is_silence, accept_manually, is_superuser, is_bot, is_suspend, is_active from \"user\" left join user_mail um on \"user\".uuid = um.uuid where \"user\".uuid = $1",
+		targetUuid.String(),
 	).Scan(
 		&target.Uuid,
 		&target.Username,
@@ -230,6 +280,7 @@ func GetLocalUser(targetUuid string) (*LocalUserStruct, error) {
 		&target.IsSuperuser,
 		&target.IsBot,
 		&isSuspend,
+		&isActive,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -237,6 +288,10 @@ func GetLocalUser(targetUuid string) (*LocalUserStruct, error) {
 		} else {
 			return nil, err
 		}
+	}
+
+	if !isActive {
+		return nil, ErrUserGone
 	}
 
 	if isSuspend {

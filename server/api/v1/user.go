@@ -2,12 +2,69 @@ package v1
 
 import (
 	"context"
+	"errors"
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/internal"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 )
+
+var (
+	errUnauthorized = errors.New("unauthorized")
+	errInvalidUUID  = errors.New("invalid UUID")
+	errNotFoundUser = errors.New("user not found")
+	errUserSuspend  = errors.New("user is suspended")
+	errUserGone     = errors.New("user is gone")
+)
+
+func getCurrentUser(c *fiber.Ctx) (*internal.LocalUserStruct, error) {
+	currentUsr, ok := c.Locals(internal.LoginUserLocal).(*internal.LocalUserStruct)
+	if !ok {
+		return nil, errUnauthorized
+	}
+
+	return currentUsr, nil
+}
+
+func validateUser(c *fiber.Ctx) error {
+	targetUuid, err := uuid.Parse(c.Params("uuid"))
+	if err != nil {
+		return errInvalidUUID
+	}
+
+	var (
+		isActive  bool
+		isSuspend bool
+	)
+
+	err = database.DBPool.QueryRow(
+		context.Background(),
+		"select is_active, is_suspend from \"user\" where uuid = $1;",
+		targetUuid.String(),
+	).Scan(
+		&isActive,
+		&isSuspend,
+	)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return errNotFoundUser
+		} else {
+			return err
+		}
+	}
+
+	if !isActive {
+		return errUserGone
+	}
+
+	if isSuspend {
+		return errUserSuspend
+	}
+
+	return nil
+}
 
 func getUser(c *fiber.Ctx) error {
 	targetUuid, err := uuid.Parse(c.Params("uuid"))
@@ -62,51 +119,38 @@ func getUser(c *fiber.Ctx) error {
 }
 
 func followUser(c *fiber.Ctx) error {
-	targetUuid, err := uuid.Parse(c.Params("uuid"))
+	err := validateUser(c)
 	if err != nil {
-		return badRequest(c, "Not valid UUID format")
-	}
-
-	currentUsr, ok := c.Locals(internal.LoginUserLocal).(*internal.LocalUserStruct)
-	if !ok {
-		return unauthorized(c)
-	}
-
-	var (
-		isActive       bool
-		isSuspend      bool
-		acceptManually bool
-	)
-
-	err = database.DBPool.QueryRow(
-		context.Background(),
-		"select is_active, is_suspend, accept_manually from \"user\" where uuid = $1;",
-		targetUuid.String(),
-	).Scan(
-		&isActive,
-		&isSuspend,
-		&acceptManually,
-	)
-
-	if err != nil {
-		if err == pgx.ErrNoRows {
+		switch err {
+		case errNotFoundUser:
 			return notFound(c)
+		case errUserSuspend:
+			return forbidden(c)
+		case errInvalidUUID:
+			return badRequest(c, "Invalid UUID format")
+		case errUserGone:
+			c.Status(fiber.StatusGone)
+			return nil
+		default:
+			return err
+		}
+	}
+
+	currentUsr, err := getCurrentUser(c)
+	if err != nil {
+		if err == errUnauthorized {
+			return unauthorized(c)
 		} else {
 			return err
 		}
 	}
 
-	if !isActive {
-		c.Status(fiber.StatusGone)
-		return nil
+	target, err := internal.GetUser(uuid.MustParse(c.Params("uuid")))
+	if err != nil {
+		return err
 	}
 
-	if isSuspend {
-		c.Status(fiber.StatusForbidden)
-		return forbidden(c, "Specified user is suspended")
-	}
-
-	err = internal.CreateFollowRelation(currentUsr.Uuid, targetUuid, acceptManually)
+	err = internal.CreateFollowRelation(currentUsr.Uuid, target.Uuid, target.AcceptManually)
 
 	if err != nil {
 		switch err {
@@ -122,54 +166,43 @@ func followUser(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{
-		"is_pending": acceptManually,
+		"is_pending": target.AcceptManually,
 	})
 }
 
 func unfollowUser(c *fiber.Ctx) error {
-	targetUuid, err := uuid.Parse(c.Params("uuid"))
+	err := validateUser(c)
 	if err != nil {
-		return badRequest(c, "Not valid UUID format")
-	}
-
-	currentUsr, ok := c.Locals(internal.LoginUserLocal).(*internal.LocalUserStruct)
-	if !ok {
-		return unauthorized(c)
-	}
-
-	var (
-		isActive  bool
-		isSuspend bool
-	)
-
-	err = database.DBPool.QueryRow(
-		context.Background(),
-		"select is_active, is_suspend from \"user\" where uuid = $1;",
-		targetUuid.String(),
-	).Scan(
-		&isActive,
-		&isSuspend,
-	)
-
-	if err != nil {
-		if err == pgx.ErrNoRows {
+		switch err {
+		case errNotFoundUser:
 			return notFound(c)
+		case errUserSuspend:
+			return forbidden(c)
+		case errInvalidUUID:
+			return badRequest(c, "Invalid UUID format")
+		case errUserGone:
+			c.Status(fiber.StatusGone)
+			return nil
+		default:
+			return err
+		}
+	}
+
+	currentUsr, err := getCurrentUser(c)
+	if err != nil {
+		if err == errUnauthorized {
+			return unauthorized(c)
 		} else {
 			return err
 		}
 	}
 
-	if !isActive {
-		c.Status(fiber.StatusGone)
-		return nil
+	target, err := internal.GetUser(uuid.MustParse(c.Params("uuid")))
+	if err != nil {
+		return err
 	}
 
-	if isSuspend {
-		c.Status(fiber.StatusForbidden)
-		return forbidden(c, "Specified user is suspended")
-	}
-
-	err = internal.DestroyFollowRelation(currentUsr.Uuid, targetUuid)
+	err = internal.DestroyFollowRelation(currentUsr.Uuid, target.Uuid)
 
 	if err != nil {
 		switch err {
@@ -186,50 +219,137 @@ func unfollowUser(c *fiber.Ctx) error {
 	return nil
 }
 
-func blockUser(c *fiber.Ctx) error {
-	targetUuid, err := uuid.Parse(c.Params("uuid"))
+func muteUser(c *fiber.Ctx) error {
+	err := validateUser(c)
 	if err != nil {
-		return badRequest(c, "Not valid UUID format")
-	}
-
-	currentUsr, ok := c.Locals(internal.LoginUserLocal).(*internal.LocalUserStruct)
-	if !ok {
-		return unauthorized(c)
-	}
-
-	var (
-		isActive  bool
-		isSuspend bool
-	)
-
-	err = database.DBPool.QueryRow(
-		context.Background(),
-		"select is_active, is_suspend from \"user\" where uuid = $1;",
-		targetUuid.String(),
-	).Scan(
-		&isActive,
-		&isSuspend,
-	)
-
-	if err != nil {
-		if err == pgx.ErrNoRows {
+		switch err {
+		case errNotFoundUser:
 			return notFound(c)
+		case errUserSuspend:
+			return forbidden(c)
+		case errInvalidUUID:
+			return badRequest(c, "Invalid UUID format")
+		case errUserGone:
+			c.Status(fiber.StatusGone)
+			return nil
+		default:
+			return err
+		}
+	}
+
+	currentUsr, err := getCurrentUser(c)
+	if err != nil {
+		if err == errUnauthorized {
+			return unauthorized(c)
 		} else {
 			return err
 		}
 	}
 
-	if !isActive {
-		c.Status(fiber.StatusGone)
-		return nil
+	target, err := internal.GetUser(uuid.MustParse(c.Params("uuid")))
+	if err != nil {
+		return err
 	}
 
-	if isSuspend {
-		c.Status(fiber.StatusForbidden)
-		return forbidden(c, "Specified user is suspended")
+	err = internal.CreateMuteRelation(currentUsr.Uuid, target.Uuid)
+
+	if err != nil {
+		switch err {
+		case internal.ErrCantRelateYourself:
+			return badRequest(c, "Cannot follow yourself")
+		case internal.ErrAlreadyMuting:
+			return badRequest(c, "You are already muting")
+		default:
+			return err
+		}
 	}
 
-	err = internal.CreateBlockRelation(currentUsr.Uuid, targetUuid)
+	c.Status(fiber.StatusNoContent)
+	return nil
+}
+
+func unmuteUser(c *fiber.Ctx) error {
+	err := validateUser(c)
+	if err != nil {
+		switch err {
+		case errNotFoundUser:
+			return notFound(c)
+		case errUserSuspend:
+			return forbidden(c)
+		case errInvalidUUID:
+			return badRequest(c, "Invalid UUID format")
+		case errUserGone:
+			c.Status(fiber.StatusGone)
+			return nil
+		default:
+			return err
+		}
+	}
+
+	currentUsr, err := getCurrentUser(c)
+	if err != nil {
+		if err == errUnauthorized {
+			return unauthorized(c)
+		} else {
+			return err
+		}
+	}
+
+	target, err := internal.GetUser(uuid.MustParse(c.Params("uuid")))
+	if err != nil {
+		return err
+	}
+
+	err = internal.DestroyMuteRelation(currentUsr.Uuid, target.Uuid)
+
+	if err != nil {
+		switch err {
+		case internal.ErrCantRelateYourself:
+			return badRequest(c, "Cannot follow yourself")
+		case internal.ErrNotMuting:
+			return badRequest(c, "You are not muting")
+		default:
+			return err
+		}
+	}
+
+	c.Status(fiber.StatusNoContent)
+	return nil
+}
+
+func blockUser(c *fiber.Ctx) error {
+	err := validateUser(c)
+	if err != nil {
+		switch err {
+		case errNotFoundUser:
+			return notFound(c)
+		case errUserSuspend:
+			return forbidden(c)
+		case errInvalidUUID:
+			return badRequest(c, "Invalid UUID format")
+		case errUserGone:
+			c.Status(fiber.StatusGone)
+			return nil
+		default:
+			return err
+		}
+	}
+
+	currentUsr, err := getCurrentUser(c)
+	if err != nil {
+		if err == errUnauthorized {
+			return unauthorized(c)
+		} else {
+			return err
+		}
+	}
+
+	target, err := internal.GetUser(uuid.MustParse(c.Params("uuid")))
+	if err != nil {
+		return err
+	}
+
+	err = internal.CreateBlockRelation(currentUsr.Uuid, target.Uuid)
 
 	if err != nil {
 		switch err {
@@ -247,49 +367,38 @@ func blockUser(c *fiber.Ctx) error {
 }
 
 func unblockUser(c *fiber.Ctx) error {
-	targetUuid, err := uuid.Parse(c.Params("uuid"))
+	err := validateUser(c)
 	if err != nil {
-		return badRequest(c, "Not valid UUID format")
-	}
-
-	currentUsr, ok := c.Locals(internal.LoginUserLocal).(*internal.LocalUserStruct)
-	if !ok {
-		return unauthorized(c)
-	}
-
-	var (
-		isActive  bool
-		isSuspend bool
-	)
-
-	err = database.DBPool.QueryRow(
-		context.Background(),
-		"select is_active, is_suspend from \"user\" where uuid = $1;",
-		targetUuid.String(),
-	).Scan(
-		&isActive,
-		&isSuspend,
-	)
-
-	if err != nil {
-		if err == pgx.ErrNoRows {
+		switch err {
+		case errNotFoundUser:
 			return notFound(c)
+		case errUserSuspend:
+			return forbidden(c)
+		case errInvalidUUID:
+			return badRequest(c, "Invalid UUID format")
+		case errUserGone:
+			c.Status(fiber.StatusGone)
+			return nil
+		default:
+			return err
+		}
+	}
+
+	currentUsr, err := getCurrentUser(c)
+	if err != nil {
+		if err == errUnauthorized {
+			return unauthorized(c)
 		} else {
 			return err
 		}
 	}
 
-	if !isActive {
-		c.Status(fiber.StatusGone)
-		return nil
+	target, err := internal.GetUser(uuid.MustParse(c.Params("uuid")))
+	if err != nil {
+		return err
 	}
 
-	if isSuspend {
-		c.Status(fiber.StatusForbidden)
-		return forbidden(c, "Specified user is suspended")
-	}
-
-	err = internal.DestroyBlockRelation(currentUsr.Uuid, targetUuid)
+	err = internal.DestroyBlockRelation(currentUsr.Uuid, target.Uuid)
 
 	if err != nil {
 		switch err {

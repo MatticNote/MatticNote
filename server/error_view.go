@@ -34,12 +34,16 @@ func ErrorView(c *fiber.Ctx, err error) error {
 	case fiber.ErrBadGateway:
 		return BadGatewayView(c)
 	default:
-		return c.Status(fiber.StatusInternalServerError).Render(
-			"5xx",
-			fiber.Map{
-				"Error": err.Error(),
-			},
-		)
+		if c.Accepts("html") != "" {
+			return c.Status(fiber.StatusInternalServerError).Render(
+				"5xx",
+				fiber.Map{
+					"Error": err.Error(),
+				},
+			)
+		} else {
+			return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
+		}
 	}
 
 	return nil

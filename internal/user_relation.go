@@ -11,6 +11,8 @@ import (
 var (
 	ErrAlreadyFollowing   = errors.New("the specified user is already following")
 	ErrNotFollowing       = errors.New("the specified user is not following")
+	ErrAlreadyMuting      = errors.New("the specified user is already muting")
+	ErrNotMuting          = errors.New("the specified user is not muting")
 	ErrAlreadyBlocking    = errors.New("the specified user is already blocking")
 	ErrNotBlocking        = errors.New("the specified user is not blocking")
 	ErrTargetBlocked      = errors.New("the specified user is blocking")
@@ -73,6 +75,48 @@ func DestroyFollowRelation(fromUser, targetUser uuid.UUID) error {
 	}
 	if exec.RowsAffected() <= 0 {
 		return ErrNotFollowing
+	}
+
+	return nil
+}
+
+func CreateMuteRelation(fromUser, targetUser uuid.UUID) error {
+	if fromUser == targetUser {
+		return ErrCantRelateYourself
+	}
+
+	exec, err := database.DBPool.Exec(
+		context.Background(),
+		"insert into mute_relation(mute_from, mute_to) values ($1, $2) on conflict do nothing;",
+		fromUser.String(),
+		targetUser.String(),
+	)
+	if err != nil {
+		return err
+	}
+	if exec.RowsAffected() <= 0 {
+		return ErrAlreadyMuting
+	}
+
+	return nil
+}
+
+func DestroyMuteRelation(fromUser, targetUser uuid.UUID) error {
+	if fromUser == targetUser {
+		return ErrCantRelateYourself
+	}
+
+	exec, err := database.DBPool.Exec(
+		context.Background(),
+		"delete from mute_relation where mute_from = $1 and mute_to = $2;",
+		fromUser.String(),
+		targetUser.String(),
+	)
+	if err != nil {
+		return err
+	}
+	if exec.RowsAffected() <= 0 {
+		return ErrNotMuting
 	}
 
 	return nil
