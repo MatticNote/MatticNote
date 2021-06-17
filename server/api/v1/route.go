@@ -38,4 +38,5 @@ func ConfigureRoute(r fiber.Router) {
 	note := r.Group("/note")
 	note.Post("/", postNote)
 	note.Get("/:uuid", getNote)
+	note.Delete("/:uuid", deleteNote)
 }

@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/misc"
 )
 
@@ -36,3 +37,28 @@ type (
 		LocalOnly  bool   `json:"local_only"`
 	}
 )
+
+func convFromInternalUser(iu internal.UserStruct) *v1UserRes {
+	return &v1UserRes{
+		Uuid:           iu.Uuid.String(),
+		Username:       iu.Username,
+		Host:           iu.Host,
+		DisplayName:    iu.DisplayName,
+		Summary:        iu.Summary,
+		CreatedAt:      iu.CreatedAt,
+		UpdatedAt:      iu.UpdatedAt,
+		AcceptManually: iu.AcceptManually,
+		IsBot:          iu.IsBot,
+	}
+}
+
+func convFromInternalNote(ns internal.NoteStruct) *v1NoteRes {
+	return &v1NoteRes{
+		Uuid:      ns.Uuid.String(),
+		Author:    *convFromInternalUser(ns.Author),
+		CreatedAt: ns.CreatedAt,
+		Cw:        ns.Cw,
+		Body:      ns.Body,
+		LocalOnly: ns.LocalOnly,
+	}
+}

@@ -1,14 +1,11 @@
 package v1
 
 import (
-	"context"
 	"fmt"
-	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v4"
 )
 
 func postNote(c *fiber.Ctx) error {
@@ -36,7 +33,7 @@ func postNote(c *fiber.Ctx) error {
 		reTextUuid = uuid.Nil
 	}
 
-	newNoteUuid, err := internal.CreateNoteFromLocal(
+	newNote, err := internal.CreateNoteFromLocal(
 		currentUsr.Uuid,
 		formData.Cw,
 		formData.Text,
@@ -48,9 +45,7 @@ func postNote(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"uuid": newNoteUuid,
-	})
+	return c.Status(fiber.StatusOK).JSON(convFromInternalNote(*newNote))
 }
 
 func getNote(c *fiber.Ctx) error {
@@ -59,55 +54,59 @@ func getNote(c *fiber.Ctx) error {
 		return badRequest(c, "Not valid UUID format")
 	}
 
-	var (
-		noteRes       v1NoteRes
-		noteAuthorRes v1UserRes
-		isActive      bool
-		isSuspend     bool
-	)
-
-	err = database.DBPool.QueryRow(
-		context.Background(),
-		"select note.uuid, note.created_at, cw, body, local_only,"+
-			" u.uuid, username, host, display_name, summary, u.created_at, updated_at, accept_manually, is_bot, is_active, is_suspend "+
-			"from note, \"user\" u where u.uuid = note.author and note.uuid = $1;",
-		targetUuid.String(),
-	).Scan(
-		&noteRes.Uuid,
-		&noteRes.CreatedAt,
-		&noteRes.Cw,
-		&noteRes.Body,
-		&noteRes.LocalOnly,
-		&noteAuthorRes.Uuid,
-		&noteAuthorRes.Username,
-		&noteAuthorRes.Host,
-		&noteAuthorRes.DisplayName,
-		&noteAuthorRes.Summary,
-		&noteAuthorRes.CreatedAt,
-		&noteAuthorRes.UpdatedAt,
-		&noteAuthorRes.AcceptManually,
-		&noteAuthorRes.IsBot,
-		&isActive,
-		&isSuspend,
-	)
+	noteRes, err := internal.GetNote(targetUuid)
 	if err != nil {
-		if err == pgx.ErrNoRows {
-			return notFound(c, "Specified user was not found")
-		} else {
+		switch err {
+		case internal.ErrNoteNotFound:
+			return notFound(c, "no such note")
+		case internal.ErrUserGone:
+			c.Status(fiber.StatusGone)
+			return nil
+		case internal.ErrUserSuspended:
+			return forbidden(c, "Note author is suspended")
+		default:
 			return err
 		}
 	}
 
-	if !isActive {
-		c.Status(fiber.StatusGone)
-		return nil
-	}
-
-	if isSuspend {
-		return forbidden(c, "Note Author is Suspend")
-	}
-
-	noteRes.Author = noteAuthorRes
-
 	return c.Status(fiber.StatusOK).JSON(noteRes)
+}
+
+func deleteNote(c *fiber.Ctx) error {
+	currentUsr, ok := c.Locals(internal.LoginUserLocal).(*internal.LocalUserStruct)
+	if !ok {
+		return unauthorized(c)
+	}
+
+	targetNoteUuid, err := uuid.Parse(c.Params("uuid"))
+	if err != nil {
+		return badRequest(c, "Not valid UUID format")
+	}
+
+	noteRes, err := internal.GetNote(targetNoteUuid)
+	if err != nil {
+		switch err {
+		case internal.ErrNoteNotFound:
+			return notFound(c, "no such note")
+		case internal.ErrUserGone:
+			c.Status(fiber.StatusGone)
+			return nil
+		case internal.ErrUserSuspended:
+			return forbidden(c, "Note author is suspended")
+		default:
+			return nil
+		}
+	}
+
+	if currentUsr.Uuid != noteRes.Author.Uuid {
+		return forbidden(c, "this note is not owner")
+	}
+
+	err = internal.DeleteNote(noteRes.Uuid)
+	if err != nil {
+		return err
+	}
+
+	c.Status(fiber.StatusNoContent)
+	return nil
 }
