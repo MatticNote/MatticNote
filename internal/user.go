@@ -3,6 +3,9 @@ package internal
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/base32"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/MatticNote/MatticNote/config"
@@ -12,6 +15,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
+	"github.com/pquerna/otp"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -25,6 +29,7 @@ var (
 	ErrUserGone          = errors.New("target user was gone")
 	ErrUserSuspended     = errors.New("target user is suspended")
 	ErrInvalidPassword   = errors.New("invalid password")
+	Err2faAlreadyEnabled = errors.New("target user 2fa is already enabled")
 )
 
 type (
@@ -481,4 +486,71 @@ func InsertSigninLog(targetUuid uuid.UUID, fromIp string, isSuccess bool) (err e
 	}
 
 	return err
+}
+
+func Setup2faCode(targetUUid uuid.UUID) (*otp.Key, error) {
+	user, err := GetLocalUser(targetUUid)
+	if err != nil {
+		return nil, err
+	}
+
+	var (
+		isEnable   bool
+		totpGen    *otp.Key
+		secretCode string
+	)
+
+	err = database.DBPool.QueryRow(
+		context.Background(),
+		"select is_enable, secret_code from user_2fa where uuid = $1;",
+		user.Uuid.String(),
+	).Scan(
+		&isEnable,
+		&secretCode,
+	)
+	if err != nil {
+		if err != pgx.ErrNoRows {
+			return nil, err
+		}
+
+		secret := make([]byte, 20)
+		_, err := rand.Reader.Read(secret)
+		if err != nil {
+			return nil, err
+		}
+		secretCode = base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(secret)
+
+		backupCode, err := json.Marshal(misc.GenBackupCode())
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = database.DBPool.Exec(
+			context.Background(),
+			"insert into user_2fa(uuid, secret_code, backup_code) values ($1, $2, $3);",
+			user.Uuid.String(),
+			secretCode,
+			backupCode,
+		)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if isEnable {
+		return nil, Err2faAlreadyEnabled
+	}
+
+	totpGen, err = otp.NewKeyFromURL(fmt.Sprintf(
+		"otpauth://totp/%s:%s?secret=%s&issuer=%s&period=30&digits=6&algorithm=SHA1",
+		fmt.Sprintf("MatticNote(%s)", config.Config.Server.Endpoint),
+		user.Username,
+		secretCode,
+		fmt.Sprintf("MatticNote(%s)", config.Config.Server.Endpoint),
+	))
+	if err != nil {
+		return nil, err
+	}
+
+	return totpGen, nil
 }
