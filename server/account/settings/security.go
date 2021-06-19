@@ -23,6 +23,10 @@ type signinLogStruct struct {
 	FromIp    sql.NullString
 }
 
+type user2faSetupForm struct {
+	Token string `validate:"required,len=6,containsany=0123456789"`
+}
+
 func securityPageGet(c *fiber.Ctx) error {
 	return securityPageView(c)
 }
@@ -84,6 +88,10 @@ func securityPageView(c *fiber.Ctx) error {
 }
 
 func setup2faGet(c *fiber.Ctx) error {
+	return setup2faView(c, false)
+}
+
+func setup2faView(c *fiber.Ctx, isFail bool) error {
 	jwtCurrentUserKey := c.Locals(internal.JWTContextKey).(*jwt.Token)
 	if !jwtCurrentUserKey.Valid {
 		return fiber.ErrForbidden
@@ -117,6 +125,69 @@ func setup2faGet(c *fiber.Ctx) error {
 			"SecretCode":   totpCode.Secret(),
 			"CSRFFormName": misc.CSRFFormName,
 			"CSRFToken":    c.Context().UserValue(misc.CSRFContextKey).(string),
+			"IsFail":       isFail,
+		},
+		"_layout/account",
+	)
+}
+
+func setup2faPost(c *fiber.Ctx) error {
+	jwtCurrentUserKey := c.Locals(internal.JWTContextKey).(*jwt.Token)
+	if !jwtCurrentUserKey.Valid {
+		return fiber.ErrForbidden
+	}
+
+	claim := jwtCurrentUserKey.Claims.(jwt.MapClaims)
+
+	formData := new(user2faSetupForm)
+
+	if err := c.BodyParser(formData); err != nil {
+		return err
+	}
+
+	if errs := misc.ValidateForm(formData); errs != nil {
+		return setup2faView(c, true)
+	}
+
+	targetUuid := uuid.MustParse(claim["sub"].(string))
+
+	err := internal.Validate2faCode(targetUuid, formData.Token)
+	if err != nil {
+		if err == internal.ErrInvalid2faToken {
+			return setup2faView(c, true)
+		} else {
+			return err
+		}
+	}
+
+	if err := internal.Enable2faAuth(targetUuid); err != nil {
+		return err
+	}
+
+	return c.Redirect("/account/settings/security/2fa/backup", fiber.StatusTemporaryRedirect)
+}
+
+func get2faBackup(c *fiber.Ctx) error {
+	jwtCurrentUserKey := c.Locals(internal.JWTContextKey).(*jwt.Token)
+	if !jwtCurrentUserKey.Valid {
+		return fiber.ErrForbidden
+	}
+
+	claim := jwtCurrentUserKey.Claims.(jwt.MapClaims)
+
+	code, err := internal.Get2faBackupCode(uuid.MustParse(claim["sub"].(string)))
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return c.Redirect("/account/settings/security/2fa/setup", fiber.StatusTemporaryRedirect)
+		} else {
+			return err
+		}
+	}
+
+	return c.Render(
+		"account_settings/security_2fa_backup",
+		fiber.Map{
+			"BackupCodes": code,
 		},
 		"_layout/account",
 	)

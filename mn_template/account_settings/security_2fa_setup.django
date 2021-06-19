@@ -1,3 +1,7 @@
+{% if IsFail %}
+<p>Invalid token. Try again.</p>
+{% endif %}
+
 <img src="{{ QRCode }}" alt="{{ SecretCode }}">
 
 <pre>{{ SecretCode }}</pre>

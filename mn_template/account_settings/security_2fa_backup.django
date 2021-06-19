@@ -1,0 +1,5 @@
+<ul>
+    {% for code in BackupCodes %}
+    <li>{{ code }}</li>
+    {% endfor %}
+</ul>

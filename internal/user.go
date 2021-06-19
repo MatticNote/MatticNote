@@ -16,6 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/pquerna/otp"
+	"github.com/pquerna/otp/totp"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -30,6 +31,8 @@ var (
 	ErrUserSuspended     = errors.New("target user is suspended")
 	ErrInvalidPassword   = errors.New("invalid password")
 	Err2faAlreadyEnabled = errors.New("target user 2fa is already enabled")
+	ErrInvalid2faToken   = errors.New("invalid 2fa token")
+	ErrCantEnable2fa     = errors.New("cannot enable target user's 2fa")
 )
 
 type (
@@ -553,4 +556,53 @@ func Setup2faCode(targetUUid uuid.UUID) (*otp.Key, error) {
 	}
 
 	return totpGen, nil
+}
+
+func Validate2faCode(targetUuid uuid.UUID, token string) error {
+	var secretCode string
+	err := database.DBPool.QueryRow(
+		context.Background(),
+		"select secret_code from user_2fa where uuid = $1;",
+		targetUuid.String(),
+	).Scan(
+		&secretCode,
+	)
+	if err != nil {
+		return err
+	}
+
+	if !totp.Validate(token, secretCode) {
+		return ErrInvalid2faToken
+	}
+
+	return nil
+}
+
+func Enable2faAuth(targetUuid uuid.UUID) error {
+	exec, err := database.DBPool.Exec(
+		context.Background(),
+		"update user_2fa set is_enable = true where uuid = $1;",
+		targetUuid.String(),
+	)
+	if err != nil {
+		return err
+	}
+
+	if exec.RowsAffected() <= 0 {
+		return ErrCantEnable2fa
+	}
+
+	return nil
+}
+
+func Get2faBackupCode(targetUuid uuid.UUID) (code []string, err error) {
+	err = database.DBPool.QueryRow(
+		context.Background(),
+		"select backup_code from user_2fa where uuid = $1 and is_enable = true;",
+		targetUuid.String(),
+	).Scan(
+		&code,
+	)
+
+	return code, err
 }
