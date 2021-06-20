@@ -9,8 +9,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/gofiber/fiber/v2/middleware/session"
 	"time"
 )
+
+var login2faSession *session.Store
 
 func csrfErrorView(c *fiber.Ctx, _ error) error {
 	return c.Status(fiber.StatusForbidden).Render(
@@ -34,6 +37,16 @@ func ConfigureRoute(r fiber.Router) {
 		},
 		Storage: config.GetFiberRedisMemory(),
 	}))
+	login2faSession = session.New(session.Config{
+		Expiration:     5 * time.Minute,
+		Storage:        config.GetFiberRedisMemory(),
+		CookiePath:     "/account",
+		CookieSecure:   config.Config.Server.CookieSecure,
+		CookieHTTPOnly: true,
+		KeyGenerator: func() string {
+			return misc.GenToken(32)
+		},
+	})
 
 	r.Get("/register", registerUserGet)
 	r.Post("/register",
@@ -72,6 +85,8 @@ func ConfigureRoute(r fiber.Router) {
 		}),
 		loginPost,
 	)
+	r.Get("/login/2fa", login2faGet)
+	r.Post("/login/2fa", login2faPost)
 
 	r.Get("/logout", destroySession)
 

@@ -13,6 +13,10 @@ type loginUserStruct struct {
 	Password string `validate:"required"`
 }
 
+type user2faStruct struct {
+	Code string `validate:"required"`
+}
+
 func loginUserGet(c *fiber.Ctx) error {
 	if c.Cookies(internal.JWTAuthCookieName, "") != "" {
 		return c.Redirect(c.Query("next", "/web/"), 307)
@@ -46,8 +50,9 @@ func loginPost(c *fiber.Ctx) error {
 
 	targetUuid, err := internal.ValidateLoginUser(formData.Login, formData.Password)
 	var isSuccess = false
+	var user2faRequired = false
 	defer func() {
-		if targetUuid != uuid.Nil {
+		if targetUuid != uuid.Nil && !user2faRequired {
 			_ = internal.InsertSigninLog(targetUuid, c.IP(), isSuccess)
 		}
 	}()
@@ -57,6 +62,18 @@ func loginPost(c *fiber.Ctx) error {
 			return loginUserView(c, "Incorrect login name or password")
 		case internal.ErrEmailAuthRequired:
 			return loginUserView(c, "Email authentication required")
+		case internal.Err2faRequired:
+			user2faRequired = true
+			s, err := login2faSession.Get(c)
+			if err != nil {
+				return err
+			}
+			s.Set("targetUuid", targetUuid.String())
+			s.Set("next", c.Query("next", "/web/"))
+			if err := s.Save(); err != nil {
+				return err
+			}
+			return c.Redirect("/account/login/2fa", fiber.StatusFound)
 		default:
 			return err
 		}
@@ -79,4 +96,99 @@ func loginPost(c *fiber.Ctx) error {
 	})
 
 	return c.Redirect(c.Query("next", "/web/"))
+}
+
+func login2faGet(c *fiber.Ctx) error {
+	return login2faView(c, false)
+}
+
+func login2faView(c *fiber.Ctx, isFail bool) error {
+	s, err := login2faSession.Get(c)
+	if err != nil {
+		return err
+	}
+	_, ok := s.Get("targetUuid").(string)
+	if !ok {
+		return c.Redirect("/account/login", fiber.StatusFound)
+	}
+
+	return c.Render(
+		"account/2fa",
+		fiber.Map{
+			"isFail":       isFail,
+			"CSRFFormName": misc.CSRFFormName,
+			"CSRFToken":    c.Context().UserValue(misc.CSRFContextKey).(string),
+		},
+		"_layout/account",
+	)
+}
+
+func login2faPost(c *fiber.Ctx) error {
+	s, err := login2faSession.Get(c)
+	if err != nil {
+		return err
+	}
+	targetUuidStr, ok := s.Get("targetUuid").(string)
+	if !ok {
+		return c.Redirect("/account/login", fiber.StatusFound)
+	}
+	targetUuid := uuid.MustParse(targetUuidStr)
+
+	formData := new(user2faStruct)
+
+	if err := c.BodyParser(formData); err != nil {
+		return err
+	}
+
+	if errs := misc.ValidateForm(*formData); errs != nil {
+		return login2faView(c, true)
+	}
+
+	var isSuccess = false
+	defer func() {
+		_ = internal.InsertSigninLog(targetUuid, c.IP(), isSuccess)
+	}()
+
+	err = internal.Validate2faCode(targetUuid, formData.Code)
+	if err != nil {
+		if err == internal.ErrInvalid2faToken {
+			err = internal.Use2faBackupCode(targetUuid, formData.Code)
+			if err != nil {
+				if err == internal.ErrInvalid2faToken {
+					return login2faView(c, true)
+				} else {
+					return err
+				}
+			}
+		} else {
+			return err
+		}
+	}
+
+	next, ok := s.Get("next").(string)
+	if !ok {
+		next = "/web/"
+	}
+
+	jwtSignedString, err := internal.SignJWT(targetUuid)
+	if err != nil {
+		return err
+	}
+
+	isSuccess = true
+	c.Cookie(&fiber.Cookie{
+		Name:     internal.JWTAuthCookieName,
+		Value:    jwtSignedString,
+		Path:     "/",
+		Secure:   config.Config.Server.CookieSecure,
+		HTTPOnly: false,
+		SameSite: "Strict",
+		MaxAge:   int(internal.JWTSignExpiredDuration),
+	})
+
+	if err := s.Destroy(); err != nil {
+		return err
+	}
+
+	return c.Redirect(next)
 }

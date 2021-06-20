@@ -1,0 +1,13 @@
+{% if isFail %}
+<p>Invalid code</p>
+{% endif %}
+<form method="post">
+    <label>
+        2faCode or BackupCode
+        <input name="code" type="text" pattern="[0-9]+" required>
+    </label>
+
+    <input type="hidden" name="{{ CSRFFormName }}" value="{{ CSRFToken }}">
+
+    <input type="submit" value="Submit" class="btn btn-primary">
+</form>

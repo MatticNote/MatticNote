@@ -53,7 +53,7 @@ func securityPageView(c *fiber.Ctx) error {
 				fiber.Map{
 					"SignInLogs": signInLogs,
 				},
-				"_layout/account",
+				"_layout/settings",
 			)
 		} else {
 			return err
@@ -83,7 +83,7 @@ func securityPageView(c *fiber.Ctx) error {
 		fiber.Map{
 			"SignInLogs": signInLogs,
 		},
-		"_layout/account",
+		"_layout/settings",
 	)
 }
 
@@ -127,7 +127,7 @@ func setup2faView(c *fiber.Ctx, isFail bool) error {
 			"CSRFToken":    c.Context().UserValue(misc.CSRFContextKey).(string),
 			"IsFail":       isFail,
 		},
-		"_layout/account",
+		"_layout/settings",
 	)
 }
 
@@ -189,6 +189,6 @@ func get2faBackup(c *fiber.Ctx) error {
 		fiber.Map{
 			"BackupCodes": code,
 		},
-		"_layout/account",
+		"_layout/settings",
 	)
 }

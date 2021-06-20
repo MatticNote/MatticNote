@@ -25,7 +25,7 @@ var (
 	ErrUserExists        = errors.New("username or email is already taken")
 	ErrLoginFailed       = errors.New("there is an error in the login name or password")
 	ErrEmailAuthRequired = errors.New("target user required email authentication")
-	Err2faRequired       = errors.New("target user required two factor authentication") // WIP
+	Err2faRequired       = errors.New("target user required two factor authentication")
 	ErrNoSuchUser        = errors.New("target user was not found")
 	ErrUserGone          = errors.New("target user was gone")
 	ErrUserSuspended     = errors.New("target user is suspended")
@@ -155,16 +155,18 @@ func ValidateLoginUser(login, password string) (uuid.UUID, error) {
 		targetUuid     uuid.UUID
 		isMailVerified bool
 		targetPassword []byte
+		is2faEnabled   misc.NullBool
 	)
 
 	err := database.DBPool.QueryRow(
 		context.Background(),
-		"SELECT \"user\".uuid, is_verified, password FROM \"user\", user_mail um, user_password up WHERE \"user\".uuid = um.uuid AND \"user\".uuid = up.uuid AND email ILIKE $1 OR (username ILIKE $1 AND host IS NULL);",
+		"SELECT \"user\".uuid, is_verified, password, is_enable FROM \"user\" LEFT JOIN user_2fa u2f ON \"user\".uuid = u2f.uuid JOIN user_mail um ON \"user\".uuid = um.uuid JOIN user_password up on \"user\".uuid = up.uuid WHERE email ILIKE $1 OR (username ILIKE $1 AND host IS NULL);",
 		login,
 	).Scan(
 		&targetUuid,
 		&isMailVerified,
 		&targetPassword,
+		&is2faEnabled,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -184,6 +186,10 @@ func ValidateLoginUser(login, password string) (uuid.UUID, error) {
 
 	if !isMailVerified {
 		return targetUuid, ErrEmailAuthRequired
+	}
+
+	if is2faEnabled.Valid && is2faEnabled.Bool {
+		return targetUuid, Err2faRequired
 	}
 
 	return targetUuid, nil
@@ -605,4 +611,33 @@ func Get2faBackupCode(targetUuid uuid.UUID) (code []string, err error) {
 	)
 
 	return code, err
+}
+
+func Use2faBackupCode(targetUuid uuid.UUID, code string) error {
+	currentCode, err := Get2faBackupCode(targetUuid)
+	if err != nil {
+		return err
+	}
+
+	for i, v := range currentCode {
+		if code == v {
+			currentCode[i] = ""
+			currentCodeJson, err := json.Marshal(currentCode)
+			if err != nil {
+				return err
+			}
+			_, err = database.DBPool.Exec(
+				context.Background(),
+				"update user_2fa set backup_code = $1 where uuid = $2;",
+				currentCodeJson,
+				targetUuid.String(),
+			)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+
+	return ErrInvalid2faToken
 }
