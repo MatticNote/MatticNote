@@ -187,8 +187,26 @@ func get2faBackup(c *fiber.Ctx) error {
 	return c.Render(
 		"account_settings/security_2fa_backup",
 		fiber.Map{
-			"BackupCodes": code,
+			"BackupCodes":  code,
+			"CSRFFormName": misc.CSRFFormName,
+			"CSRFToken":    c.Context().UserValue(misc.CSRFContextKey).(string),
 		},
 		"_layout/settings",
 	)
+}
+
+func regenerate2faBackup(c *fiber.Ctx) error {
+	jwtCurrentUserKey := c.Locals(internal.JWTContextKey).(*jwt.Token)
+	if !jwtCurrentUserKey.Valid {
+		return fiber.ErrForbidden
+	}
+
+	claim := jwtCurrentUserKey.Claims.(jwt.MapClaims)
+
+	err := internal.Regenerate2faBackupCode(uuid.MustParse(claim["sub"].(string)))
+	if err != nil {
+		return err
+	}
+
+	return get2faBackup(c)
 }

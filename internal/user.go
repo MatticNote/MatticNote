@@ -641,3 +641,22 @@ func Use2faBackupCode(targetUuid uuid.UUID, code string) error {
 
 	return ErrInvalid2faToken
 }
+
+func Regenerate2faBackupCode(targetUuid uuid.UUID) error {
+	newBackupCode, err := json.Marshal(misc.GenBackupCode())
+	if err != nil {
+		return err
+	}
+
+	_, err = database.DBPool.Exec(
+		context.Background(),
+		"update user_2fa set backup_code = $1 where uuid = $2;",
+		newBackupCode,
+		targetUuid.String(),
+	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -18,4 +18,5 @@ func ConfigureRoute(r fiber.Router) {
 	r.Get("/security/2fa/setup", setup2faGet)
 	r.Post("/security/2fa/setup", setup2faPost)
 	r.Get("/security/2fa/backup", get2faBackup)
+	r.Post("/security/2fa/backup", regenerate2faBackup)
 }

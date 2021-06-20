@@ -1,5 +1,14 @@
 <ul>
     {% for code in BackupCodes %}
+    {% if code == "" %}
+    <li>(Used)</li>
+    {% else %}
     <li>{{ code }}</li>
+    {% endif %}
     {% endfor %}
 </ul>
+
+<form method="post">
+    <input type="hidden" name="{{ CSRFFormName }}" value="{{ CSRFToken }}">
+    <input type="submit" value="Regenerate" class="btn btn-danger">
+</form>
