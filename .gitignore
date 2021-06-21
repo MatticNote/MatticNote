@@ -9,3 +9,4 @@ matticnote.toml
 node_modules/
 .matticnote_private.pem
 .matticnote_public.pem
+/cli-ui/devDist

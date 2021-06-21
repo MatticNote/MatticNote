@@ -2,8 +2,22 @@ const path = require('path');
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development';
 
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+
+const webpackPlugins = [
+    new MiniCssExtractPlugin({
+        filename: 'matticnote-ui.css',
+    })
+]
+
+if (mode === 'development') {
+    webpackPlugins.push(new HtmlWebpackPlugin({
+        template: 'src/ui-scratch.html',
+        filename: 'index.html',
+    }))
+}
 
 module.exports = {
     mode: mode,
@@ -35,15 +49,18 @@ module.exports = {
             },
         ]
     },
-    plugins: [
-        new MiniCssExtractPlugin({
-            filename: 'matticnote-ui.css',
-        })
-    ],
+    plugins: webpackPlugins,
     optimization: {
         minimizer: [
             new TerserPlugin(),
             new OptimizeCSSAssetsPlugin(),
         ]
+    },
+    devServer: {
+        contentBase: path.resolve(__dirname, 'devDist'),
+        writeToDisk: true,
+        watchContentBase: true,
+        compress: true,
+        port: 9000,
     }
 }

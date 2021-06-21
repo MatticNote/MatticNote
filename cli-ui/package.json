@@ -10,7 +10,8 @@
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "build": "webpack --progress",
-    "build:production": "webpack --node-env production --progress"
+    "build:production": "webpack --node-env production --progress",
+    "dev": "webpack serve --progress --output-path ./devDist"
   },
   "dependencies": {},
   "devDependencies": {
@@ -20,6 +21,7 @@
     "autoprefixer": "^10.2.5",
     "babel-loader": "^8.2.2",
     "css-loader": "^5.2.4",
+    "html-webpack-plugin": "^5.3.1",
     "mini-css-extract-plugin": "^1.6.0",
     "optimize-css-assets-webpack-plugin": "^5.0.4",
     "postcss": "^8.2.15",
