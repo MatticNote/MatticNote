@@ -1,4 +1,5 @@
 const path = require('path');
+const glob = require('glob');
 const mode = process.env.NODE_ENV === 'production' ? 'production' : 'development';
 
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
@@ -13,10 +14,13 @@ const webpackPlugins = [
 ]
 
 if (mode === 'development') {
-    webpackPlugins.push(new HtmlWebpackPlugin({
-        template: 'src/ui-scratch.html',
-        filename: 'index.html',
-    }))
+    const scratchFiles = glob.sync('src/playground/*.html')
+    scratchFiles.forEach(file => {
+        webpackPlugins.push(new HtmlWebpackPlugin({
+            template: file,
+            filename: file.replace('src/playground/', '')
+        }))
+    })
 }
 
 module.exports = {

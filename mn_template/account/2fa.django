@@ -1,13 +1,14 @@
+<h3 class="text-center">2-factor authentication</h3>
 {% if isFail %}
-<p>Invalid code</p>
+<div class="alert alert-danger">
+    <p>Invalid code</p>
+</div>
 {% endif %}
 <form method="post">
-    <label>
-        2faCode or BackupCode
-        <input name="code" type="text" pattern="[0-9]+" required>
-    </label>
-
+    <label for="code">2faCode or BackupCode</label>
+    <input id="code" name="code" type="text" pattern="[0-9]+" class="form-input" required>
     <input type="hidden" name="{{ CSRFFormName }}" value="{{ CSRFToken }}">
 
-    <input type="submit" value="Submit" class="btn btn-primary">
+    <hr>
+    <input type="submit" value="Submit" class="btn btn-primary btn-fullwidth">
 </form>

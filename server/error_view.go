@@ -9,6 +9,7 @@ func NotFoundView(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusNotFound).Render(
 			"404",
 			fiber.Map{},
+			"_layout/error",
 		)
 	} else {
 		c.Status(fiber.StatusNotFound)

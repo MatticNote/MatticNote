@@ -21,6 +21,7 @@
     "autoprefixer": "^10.2.5",
     "babel-loader": "^8.2.2",
     "css-loader": "^5.2.4",
+    "glob": "^7.1.7",
     "html-webpack-plugin": "^5.3.1",
     "import-glob-loader": "^1.1.0",
     "mini-css-extract-plugin": "^1.6.0",

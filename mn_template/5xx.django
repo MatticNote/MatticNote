@@ -1,2 +1,2 @@
-<h1>Error</h1>
+<h1 class="text-center">Oops!</h1>
 <p>{{ Error }}</p>

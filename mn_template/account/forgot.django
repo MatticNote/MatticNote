@@ -1,17 +1,21 @@
+<h3 class="text-center">Forgot Password</h3>
 {% if errors %}
-<ul>
-    {% for err in errors %}
-    <li>{{ err }}</li>
-    {% endfor %}
-</ul>
+<div class="alert alert-danger">
+    <ul>
+        {% for err in errors %}
+        <li>{{ err }}</li>
+        {% endfor %}
+    </ul>
+</div>
 {% endif %}
 <form method="post">
-    <label>
-        Email
-        <input name="email" type="email" autofocus required>
-    </label>
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" class="form-input" autofocus required>
 
     <input type="hidden" name="{{ CSRFFormName }}" value="{{ CSRFToken }}">
-
-    <input type="submit" value="Send" class="btn btn-primary">
+    <hr>
+    <input type="submit" value="Send" class="btn btn-primary btn-fullwidth">
 </form>
+<div class="text-center">
+    <a href="/account/login" class="p-2">Return to Login</a>
+</div>

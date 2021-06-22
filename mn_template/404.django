@@ -1,1 +1,2 @@
-<h1>404 NotFound</h1>
+<h1 class="text-center">404</h1>
+<p class="text-center"><a href="/">Go back?</a></p>
