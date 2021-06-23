@@ -49,9 +49,45 @@
             <a href="#">This is link</a>
 
             <h1>Forms</h1>
-            <label>
-                <input type="text">
-            </label>
+            <label for="form-text">Text</label>
+            <input id="form-text" type="text" class="form-input">
+
+            <label for="form-email">Email</label>
+            <input id="form-email" type="email" class="form-input" placeholder="yuzuryo61@example.com">
+
+            <label>Checkbox</label>
+            <div>
+                <label><input type="checkbox" class="form-checkbox"> Checkbox</label>
+                <label><input type="checkbox" class="form-checkbox" checked> Checked</label>
+                <label><input type="checkbox" class="form-checkbox" disabled> Disabled</label>
+                <label><input type="checkbox" class="form-checkbox" checked disabled>Checked Disabled</label>
+            </div>
+
+            <label>Radio</label>
+            <div>
+                <label><input type="radio" name="radio" value="one" class="form-radio" checked> One</label>
+                <label><input type="radio" name="radio" value="one" class="form-radio"> Two</label>
+                <label><input type="radio" name="radio_dc" value="one" class="form-radio" disabled> Disabled</label>
+                <label><input type="radio" name="radio_dc" value="one" class="form-radio" checked disabled> Disabled checked</label>
+            </div>
+
+
+            <label for="form-select">Select</label>
+            <select id="form-select" class="form-input">
+                <option>Option 1</option>
+                <option>Option 2</option>
+                <option>Option 3</option>
+            </select>
+
+            <label for="form-multiselect">Multiple Select</label>
+            <select id="form-multiselect" class="form-input" multiple>
+                <option>Option 1</option>
+                <option>Option 2</option>
+                <option>Option 3</option>
+            </select>
+
+            <label for="form-textarea">Textarea</label>
+            <textarea id="form-textarea" placeholder="textarea" class="form-input"></textarea>
         </div>
     </div>
 </body>
