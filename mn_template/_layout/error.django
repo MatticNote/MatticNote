@@ -3,10 +3,11 @@
 <head>
     <title>MatticNote</title>
     <link rel="stylesheet" href="/static/ui/matticnote-ui.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body class="bg-gbp">
-<div class="flex items-center justify-center h-screen">
+<div class="flex items-center justify-center mt-4 md:mt-0 md:h-screen">
     <div class="mn-box w-full md:w-4/5 xl:w-3/4 2xl:w-3/5">
         {{embed}}
         <p class="text-center">Powered by MatticNote</p>
