@@ -497,3 +497,44 @@ func isUsedUsername(c *fiber.Ctx) error {
 
 	return c.JSON(isUsed)
 }
+
+func relateUser(c *fiber.Ctx) error {
+	err := validateUser(c)
+	if err != nil {
+		switch err {
+		case errNotFoundUser:
+			return notFound(c)
+		case errUserSuspend:
+			return forbidden(c)
+		case errInvalidUUID:
+			return badRequest(c, "Invalid UUID format")
+		case errUserGone:
+			c.Status(fiber.StatusGone)
+			return nil
+		default:
+			return err
+		}
+	}
+
+	currentUsr, err := getCurrentUser(c)
+	if err != nil {
+		if err == errUnauthorized {
+			return unauthorized(c)
+		} else {
+			return err
+		}
+	}
+
+	target, err := internal.GetUser(uuid.MustParse(c.Params("uuid")))
+	if err != nil {
+		return err
+	}
+
+	relation, err := internal.LookupUserRelation(currentUsr.Uuid, target.Uuid)
+	if err != nil {
+		return err
+	}
+
+	// TODO: APIv1に適合した形式にする
+	return c.JSON(relation)
+}

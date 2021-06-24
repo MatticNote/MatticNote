@@ -30,6 +30,7 @@ func ConfigureRoute(r fiber.Router) {
 	user.Delete("/:uuid/mute", unmuteUser)
 	user.Post("/:uuid/block", blockUser)
 	user.Delete("/:uuid/block", unblockUser)
+	user.Get("/:uuid/relate", relateUser)
 
 	userFollowRequests := r.Group("/follow_request")
 	userFollowRequests.Get("/", listRequests)

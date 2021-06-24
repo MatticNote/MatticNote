@@ -54,6 +54,14 @@ type (
 		AcceptManually bool
 		IsBot          bool
 	}
+	UserRelationStruct struct {
+		Following     bool
+		FollowPending bool
+		Follows       bool
+		Muting        bool
+		Blocking      bool
+		Blocked       bool
+	}
 )
 
 const (
@@ -675,4 +683,52 @@ func CheckUsernameUsed(username string) (bool, error) {
 	}
 
 	return checkCount > 0, nil
+}
+
+func LookupUserRelation(fromUuid, targetUuid uuid.UUID) (*UserRelationStruct, error) {
+	rows, err := database.DBPool.Query(
+		context.Background(),
+		"select 'following' as relation from follow_relation where follow_from = $1 and follow_to = $2 and is_pending = false "+
+			"union select 'follow_pending' from follow_relation where follow_from = $1 and follow_to = $2 and is_pending = true "+
+			"union select 'follows' from follow_relation where follow_from = $1 and follow_to = $2 and is_pending = false "+
+			"union select 'muting' from mute_relation where mute_from = $1 and mute_to = $2"+
+			"union select 'blocking' from block_relation where block_from = $1 and block_to = $2 "+
+			"union select 'blocked' from block_relation where block_to = $1 and block_from = $2;",
+		fromUuid.String(),
+		targetUuid.String(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	relationStruct := new(UserRelationStruct)
+
+	for rows.Next() {
+		var relation string
+		err := rows.Scan(&relation)
+		if err != nil {
+			return nil, err
+		}
+		switch relation {
+		case "following":
+			relationStruct.Following = true
+		case "follow_pending":
+			relationStruct.FollowPending = true
+		case "follows":
+			relationStruct.Follows = true
+		case "muting":
+			relationStruct.Muting = true
+		case "blocking":
+			relationStruct.Blocking = true
+		case "blocked":
+			relationStruct.Blocked = true
+		}
+	}
+
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	return relationStruct, nil
 }
