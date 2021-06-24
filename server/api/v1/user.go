@@ -483,3 +483,17 @@ func rejectRequests(c *fiber.Ctx) error {
 	c.Status(fiber.StatusNoContent)
 	return nil
 }
+
+func isUsedUsername(c *fiber.Ctx) error {
+	username := c.Query("username", "")
+	if username == "" {
+		return badRequest(c, "query username cannot be empty")
+	}
+
+	isUsed, err := internal.CheckUsernameUsed(username)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(isUsed)
+}

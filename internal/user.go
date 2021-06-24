@@ -660,3 +660,19 @@ func Regenerate2faBackupCode(targetUuid uuid.UUID) error {
 
 	return nil
 }
+
+func CheckUsernameUsed(username string) (bool, error) {
+	var checkCount int
+	err := database.DBPool.QueryRow(
+		context.Background(),
+		"select count(*) from \"user\" where username ilike $1 and host is null;",
+		username,
+	).Scan(
+		&checkCount,
+	)
+	if err != nil {
+		return false, err
+	}
+
+	return checkCount > 0, nil
+}

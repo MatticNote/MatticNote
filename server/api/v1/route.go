@@ -22,6 +22,7 @@ func ConfigureRoute(r fiber.Router) {
 	)
 
 	user := r.Group("/user")
+	user.Get("/is_used_username", isUsedUsername)
 	user.Get("/:uuid", getUser)
 	user.Post("/:uuid/follow", followUser)
 	user.Delete("/:uuid/follow", unfollowUser)

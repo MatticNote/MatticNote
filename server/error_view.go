@@ -41,6 +41,7 @@ func ErrorView(c *fiber.Ctx, err error) error {
 				fiber.Map{
 					"Error": err.Error(),
 				},
+				"_layout/error",
 			)
 		} else {
 			return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
