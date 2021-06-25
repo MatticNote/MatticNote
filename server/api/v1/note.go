@@ -42,7 +42,11 @@ func postNote(c *fiber.Ctx) error {
 		formData.LocalOnly,
 	)
 	if err != nil {
-		return err
+		if err == internal.ErrNoteNotFound {
+			return badRequest(c, "Reply Note ID or ReText Note ID not found")
+		} else {
+			return err
+		}
 	}
 
 	return c.Status(fiber.StatusOK).JSON(convFromInternalNote(*newNote))

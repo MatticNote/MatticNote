@@ -76,7 +76,7 @@ func CreateNoteFromLocal(authorUuid uuid.UUID, cw, text string, replyUuid, reTex
 			newNoteUuid,
 		)
 		if err != nil {
-			return nil, err
+			return nil, ErrNoteNotFound
 		}
 	}
 
@@ -88,7 +88,7 @@ func CreateNoteFromLocal(authorUuid uuid.UUID, cw, text string, replyUuid, reTex
 			newNoteUuid,
 		)
 		if err != nil {
-			return nil, err
+			return nil, ErrNoteNotFound
 		}
 	}
 
