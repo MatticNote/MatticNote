@@ -26,6 +26,15 @@ type (
 		Body      misc.NullString `json:"body"`
 		LocalOnly bool            `json:"local_only"`
 	}
+
+	v1UserRelationRes struct {
+		Following     bool `json:"following"`
+		FollowPending bool `json:"follow_pending"`
+		Follows       bool `json:"follows"`
+		Muting        bool `json:"muting"`
+		Blocking      bool `json:"blocking"`
+		Blocked       bool `json:"blocked"`
+	}
 )
 
 type (
@@ -60,5 +69,16 @@ func convFromInternalNote(ns internal.NoteStruct) *v1NoteRes {
 		Cw:        ns.Cw,
 		Body:      ns.Body,
 		LocalOnly: ns.LocalOnly,
+	}
+}
+
+func convFromInternalUserRelate(ur internal.UserRelationStruct) *v1UserRelationRes {
+	return &v1UserRelationRes{
+		Following:     ur.Following,
+		FollowPending: ur.FollowPending,
+		Follows:       ur.Follows,
+		Muting:        ur.Muting,
+		Blocking:      ur.Blocking,
+		Blocked:       ur.Blocked,
 	}
 }

@@ -686,6 +686,10 @@ func CheckUsernameUsed(username string) (bool, error) {
 }
 
 func LookupUserRelation(fromUuid, targetUuid uuid.UUID) (*UserRelationStruct, error) {
+	if fromUuid == targetUuid {
+		return nil, ErrCantRelateYourself
+	}
+
 	rows, err := database.DBPool.Query(
 		context.Background(),
 		"select 'following' as relation from follow_relation where follow_from = $1 and follow_to = $2 and is_pending = false "+

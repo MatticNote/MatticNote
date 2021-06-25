@@ -532,9 +532,12 @@ func relateUser(c *fiber.Ctx) error {
 
 	relation, err := internal.LookupUserRelation(currentUsr.Uuid, target.Uuid)
 	if err != nil {
-		return err
+		if err == internal.ErrCantRelateYourself {
+			return badRequest(c, "Can't lookup yourself")
+		} else {
+			return err
+		}
 	}
 
-	// TODO: APIv1に適合した形式にする
-	return c.JSON(relation)
+	return c.JSON(convFromInternalUserRelate(*relation))
 }
