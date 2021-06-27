@@ -323,6 +323,27 @@ func GetLocalUser(targetUuid uuid.UUID) (*LocalUserStruct, error) {
 	return target, nil
 }
 
+func GetLocalUserFromUsername(username string) (*LocalUserStruct, error) {
+	var targetUuid uuid.UUID
+
+	err := database.DBPool.QueryRow(
+		context.Background(),
+		"select uuid from \"user\" where username ilike $1 and host is null",
+		username,
+	).Scan(
+		&targetUuid,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, ErrNoSuchUser
+		} else {
+			return nil, err
+		}
+	}
+
+	return GetLocalUser(targetUuid)
+}
+
 func IssueForgotPassword(targetEmail string) error {
 	verifyToken := misc.GenToken(64)
 
