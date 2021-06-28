@@ -17,4 +17,14 @@ func ConfigureRoute(r fiber.Router) {
 		}),
 		webfinger,
 	)
+	r.Get("/nodeinfo",
+		cors.New(cors.Config{
+			AllowOrigins:     "*",
+			AllowMethods:     "GET",
+			AllowHeaders:     "Accept, Content-Type, Origin",
+			AllowCredentials: false,
+			MaxAge:           3600,
+		}),
+		nodeinfoWK,
+	)
 }
