@@ -24,6 +24,10 @@ func ConfigureRoute(app *fiber.App) {
 			"_layout/index",
 		)
 	})
+	app.Get("/login", func(c *fiber.Ctx) error {
+		// alias path
+		return c.Redirect("/account/login", fiber.StatusPermanentRedirect)
+	})
 
 	app.Get("/@:username", userProfileController)
 	app.Get("/user/:username", userProfileController) // alias path
