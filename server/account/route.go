@@ -37,6 +37,11 @@ func ConfigureRoute(r fiber.Router) {
 		},
 		Storage: config.GetFiberRedisMemory(),
 	}))
+	r.Use(func(c *fiber.Ctx) error {
+		// Deny frame and iframe tag
+		c.Set("X-Frame-Options", "DENY")
+		return c.Next()
+	})
 	login2faSession = session.New(session.Config{
 		Expiration:     5 * time.Minute,
 		Storage:        config.GetFiberRedisMemory(),
