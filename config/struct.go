@@ -21,6 +21,7 @@ type (
 	MNCServer struct {
 		ListenAddress                 string `toml:"listen_address" validate:"required,hostname_rfc1123"`
 		ListenPort                    uint16 `toml:"listen_port" validate:"gte=0,lte=65535"`
+		Prefork                       bool   `toml:"prefork"`
 		DisableAccountRateLimit       bool   `toml:"disable_account_rate_limit"`
 		AccountRegistrationLimitCount uint   `toml:"account_registration_limit_count"`
 		CookieSecure                  bool   `toml:"cookie_secure"`

@@ -18,6 +18,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 const (
@@ -173,7 +175,6 @@ func startServer(c *cli.Context) error {
 	if err := database.ConnectDB(); err != nil {
 		return err
 	}
-	defer database.DisconnectDB()
 
 	err = internal.LoadJWTSignKey()
 	if err != nil {
@@ -187,7 +188,7 @@ func startServer(c *cli.Context) error {
 	}
 
 	app := fiber.New(fiber.Config{
-		Prefork:               false,
+		Prefork:               config.Config.Server.Prefork,
 		ServerHeader:          "MatticNote",
 		CaseSensitive:         true,
 		Views:                 django.NewFileSystem(http.FS(mn_template.Templates), ".django"),
@@ -255,8 +256,25 @@ func startServer(c *cli.Context) error {
 		log.Println(fmt.Sprintf("MatticNote is running at http://%s", listen))
 	}
 
-	if err := app.Listen(listen); err != nil {
-		panic(err)
+	go func() {
+		if err := app.Listen(listen); err != nil {
+			panic(err)
+		}
+	}()
+
+	sc := make(chan os.Signal, 1)
+	signal.Notify(sc, os.Interrupt, syscall.SIGTERM)
+
+	_ = <-sc
+	if !fiber.IsChild() {
+		log.Println("MatticNote is shutting down...")
+	}
+
+	_ = app.Shutdown()
+	database.DisconnectDB()
+
+	if !fiber.IsChild() {
+		fmt.Println("MatticNote is successful shutdown.")
 	}
 
 	return nil
