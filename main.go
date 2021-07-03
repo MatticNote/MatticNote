@@ -34,6 +34,7 @@ var webCliFS embed.FS
 var mnAppCli = &cli.App{
 	Name:                 "MatticNote",
 	Description:          "ActivityPub compatible SNS that aims to be easy for everyone to use",
+	Version:              fmt.Sprintf("%s-%s", internal.Version, internal.Revision),
 	EnableBashCompletion: true,
 	Commands: []*cli.Command{
 		{
