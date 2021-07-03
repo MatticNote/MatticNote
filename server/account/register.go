@@ -1,15 +1,17 @@
 package account
 
 import (
+	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/gofiber/fiber/v2"
 )
 
 type registerUserStruct struct {
-	Username string `validate:"required,username"`
-	Email    string `validate:"required,email"`
-	Password string `validate:"required,min=8"`
+	Username          string `validate:"required,username"`
+	Email             string `validate:"required,email"`
+	Password          string `validate:"required,min=8"`
+	ReCaptchaResponse string `form:"g-recaptcha-response"`
 	// TODO: CAPTCHAなどの対策用のフォーム内容も含める
 }
 
@@ -28,6 +30,7 @@ func registerUserView(c *fiber.Ctx, errors ...string) error {
 			"CSRFFormName": misc.CSRFFormName,
 			"CSRFToken":    c.Context().UserValue(misc.CSRFContextKey).(string),
 			"errors":       errors,
+			"reCaptchaKey": config.Config.Server.RecaptchaSiteKey,
 		},
 		"_layout/account",
 	)

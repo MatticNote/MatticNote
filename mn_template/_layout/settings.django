@@ -8,6 +8,6 @@
 
   <body>
     {{embed}}
+    <script defer type="application/javascript" src="/static/ui/matticnote-ui.js"></script>
   </body>
-  <script defer type="application/javascript" src="/static/ui/matticnote-ui.js"></script>
 </html>

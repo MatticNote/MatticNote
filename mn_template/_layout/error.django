@@ -13,6 +13,6 @@
         <p class="text-center">Powered by MatticNote</p>
     </div>
 </div>
-</body>
 <script defer type="application/javascript" src="/static/ui/matticnote-ui.js"></script>
+</body>
 </html>

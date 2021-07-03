@@ -18,6 +18,10 @@
     <label for="password">Password</label>
     <input id="password" name="password" type="password" class="form-input" minlength="8" required>
 
+    {% if reCaptchaKey != "" %}
+    <div class="g-recaptcha" data-sitekey="{{ reCaptchaKey }}"></div>
+    {% endif %}
+
     <input type="hidden" name="{{ CSRFFormName }}" value="{{ CSRFToken }}">
 
     <hr>
@@ -26,3 +30,5 @@
 <div class="text-center">
     <a href="/account/login" class="p-2">Return to Login</a>
 </div>
+
+{% if reCaptchaKey != "" %}<script src="https://www.google.com/recaptcha/api.js" async defer></script>{% endif %}

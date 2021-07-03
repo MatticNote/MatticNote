@@ -34,8 +34,12 @@ func ValidateConfig() error {
 		for _, err := range err.(validator.ValidationErrors) {
 			returnErrStr += fmt.Sprintf("%s, ", err.StructNamespace())
 		}
-		err = errors.New(returnErrStr)
+		return errors.New(returnErrStr)
 	}
 
-	return err
+	if (Config.Server.RecaptchaSiteKey == "" && Config.Server.RecaptchaSecretKey != "") || (Config.Server.RecaptchaSiteKey != "" && Config.Server.RecaptchaSecretKey == "") {
+		return errors.New("missing reCAPTCHA site key or secret key")
+	}
+
+	return nil
 }

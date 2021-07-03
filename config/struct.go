@@ -26,6 +26,8 @@ type (
 		CookieSecure                  bool   `toml:"cookie_secure"`
 		Endpoint                      string `validate:"required"`
 		OAuthSecretKey                string `toml:"oauth_secret_key" validate:"required,len=32"`
+		RecaptchaSiteKey              string `toml:"recaptcha_site_key"`
+		RecaptchaSecretKey            string `toml:"recaptcha_secret_key"`
 	}
 
 	MNCRedis struct {
