@@ -1,3 +1,19 @@
+{% if Is2faEnabled %}
+{% if InvalidForm %}
+<div class="alert alert-danger">
+    <p>Invalid password</p>
+</div>
+{% endif %}
+<form method="post" action="/account/settings/security/2fa/disable">
+    <label>
+        Password
+        <input type="password" name="password" required>
+    </label>
+    <input type="hidden" name="{{ CSRFFormName }}" value="{{ CSRFToken }}">
+    <input type="submit" value="Disable 2fa" class="btn btn-danger">
+</form>
+{% endif %}
+
 <ul>
     {% for log in SignInLogs %}
     <li>{{ log.IsSuccess }} - {{ log.FromIp.String }} - {{ log.TriedAt }}</li>

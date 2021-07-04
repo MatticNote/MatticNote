@@ -17,21 +17,27 @@ import (
 	"time"
 )
 
-type signinLogStruct struct {
-	TriedAt   time.Time
-	IsSuccess bool
-	FromIp    sql.NullString
-}
+type (
+	signinLogStruct struct {
+		TriedAt   time.Time
+		IsSuccess bool
+		FromIp    sql.NullString
+	}
 
-type user2faSetupForm struct {
-	Token string `validate:"required,len=6,containsany=0123456789"`
-}
+	user2faSetupForm struct {
+		Token string `validate:"required,len=6,containsany=0123456789"`
+	}
+
+	user2faDisableFormStruct struct {
+		Password string `form:"password" validate:"required"`
+	}
+)
 
 func securityPageGet(c *fiber.Ctx) error {
-	return securityPageView(c)
+	return securityPageView(c, false)
 }
 
-func securityPageView(c *fiber.Ctx) error {
+func securityPageView(c *fiber.Ctx, invalidForm bool) error {
 	jwtCurrentUserKey := c.Locals(internal.JWTContextKey).(*jwt.Token)
 	if !jwtCurrentUserKey.Valid {
 		return fiber.ErrForbidden
@@ -39,20 +45,29 @@ func securityPageView(c *fiber.Ctx) error {
 
 	claim := jwtCurrentUserKey.Claims.(jwt.MapClaims)
 
-	var signInLogs []signinLogStruct
+	var currentUserUuid = uuid.MustParse(claim["sub"].(string))
+	is2faEnabled, err := internal.StatusUser2fa(currentUserUuid)
+	if err != nil {
+		return err
+	}
+	var viewBind = fiber.Map{
+		"SignInLogs":   make([]signinLogStruct, 0),
+		"InvalidForm":  invalidForm,
+		"Is2faEnabled": is2faEnabled,
+		"CSRFFormName": misc.CSRFFormName,
+		"CSRFToken":    c.Context().UserValue(misc.CSRFContextKey).(string),
+	}
 
 	rows, err := database.DBPool.Query(
 		context.Background(),
 		"select tried_at, is_success, from_ip from signin where target_user = $1 order by tried_at desc limit 20;",
-		uuid.MustParse(claim["sub"].(string)).String(),
+		currentUserUuid.String(),
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return c.Render(
 				"account_settings/security",
-				fiber.Map{
-					"SignInLogs": signInLogs,
-				},
+				viewBind,
 				"_layout/settings",
 			)
 		} else {
@@ -71,7 +86,7 @@ func securityPageView(c *fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
-		signInLogs = append(signInLogs, data)
+		viewBind["SignInLogs"] = append(viewBind["SignInLogs"].([]signinLogStruct), data)
 	}
 
 	if rows.Err() != nil {
@@ -80,9 +95,7 @@ func securityPageView(c *fiber.Ctx) error {
 
 	return c.Render(
 		"account_settings/security",
-		fiber.Map{
-			"SignInLogs": signInLogs,
-		},
+		viewBind,
 		"_layout/settings",
 	)
 }
@@ -209,4 +222,45 @@ func regenerate2faBackup(c *fiber.Ctx) error {
 	}
 
 	return get2faBackup(c)
+}
+
+func disable2faPost(c *fiber.Ctx) error {
+	jwtCurrentUserKey := c.Locals(internal.JWTContextKey).(*jwt.Token)
+	if !jwtCurrentUserKey.Valid {
+		return fiber.ErrForbidden
+	}
+
+	claim := jwtCurrentUserKey.Claims.(jwt.MapClaims)
+
+	formData := new(user2faDisableFormStruct)
+
+	if err := c.BodyParser(formData); err != nil {
+		return err
+	}
+
+	if errs := misc.ValidateForm(formData); errs != nil {
+		return securityPageView(c, true)
+	}
+
+	targetUuid := uuid.MustParse(claim["sub"].(string))
+
+	err := internal.ValidateUserPassword(targetUuid, formData.Password)
+	if err != nil {
+		if err == internal.ErrInvalidPassword {
+			return securityPageView(c, true)
+		} else {
+			return err
+		}
+	}
+
+	err = internal.Disable2faAuth(targetUuid)
+	if err != nil {
+		if err == internal.ErrCantDisable2fa {
+			return c.Redirect("/account/settings/security")
+		} else {
+			return err
+		}
+	}
+
+	return c.Redirect("/account/settings/security")
 }

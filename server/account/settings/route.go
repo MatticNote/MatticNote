@@ -19,4 +19,5 @@ func ConfigureRoute(r fiber.Router) {
 	r.Post("/security/2fa/setup", setup2faPost)
 	r.Get("/security/2fa/backup", get2faBackup)
 	r.Post("/security/2fa/backup", regenerate2faBackup)
+	r.Post("/security/2fa/disable", disable2faPost)
 }

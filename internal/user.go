@@ -33,6 +33,7 @@ var (
 	Err2faAlreadyEnabled = errors.New("target user 2fa is already enabled")
 	ErrInvalid2faToken   = errors.New("invalid 2fa token")
 	ErrCantEnable2fa     = errors.New("cannot enable target user's 2fa")
+	ErrCantDisable2fa    = errors.New("cannot disable target user's 2fa")
 )
 
 type (
@@ -625,6 +626,36 @@ func Enable2faAuth(targetUuid uuid.UUID) error {
 
 	if exec.RowsAffected() <= 0 {
 		return ErrCantEnable2fa
+	}
+
+	return nil
+}
+
+func StatusUser2fa(targetUuid uuid.UUID) (bool, error) {
+	var isEnabled bool
+	err := database.DBPool.QueryRow(
+		context.Background(),
+		"select count(*) > 0 as is_enabled from user_2fa where uuid = $1;",
+		targetUuid.String(),
+	).Scan(
+		&isEnabled,
+	)
+
+	return isEnabled, err
+}
+
+func Disable2faAuth(targetUuid uuid.UUID) error {
+	exec, err := database.DBPool.Exec(
+		context.Background(),
+		"delete from user_2fa where uuid = $1;",
+		targetUuid.String(),
+	)
+	if err != nil {
+		return err
+	}
+
+	if exec.RowsAffected() <= 0 {
+		return ErrCantDisable2fa
 	}
 
 	return nil
