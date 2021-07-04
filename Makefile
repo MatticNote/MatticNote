@@ -16,7 +16,7 @@ fetch-meta:
 	$(eval MN_VERSION=$(or $(shell git describe --tags --abbrev=0), unknown))
 	$(eval MN_REVISION=$(shell git rev-parse --short HEAD))
 	@echo Version: $(MN_VERSION)-$(MN_REVISION)
-build: fetch-meta
+build: build-client fetch-meta
 	go build \
 	-o build/matticnote-$(MN_VERSION)-$(MN_REVISION)-${ARG} \
 	-ldflags "-X ${PACKAGE_NAME}/internal.Version=$(MN_VERSION) \
