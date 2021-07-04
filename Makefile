@@ -1,8 +1,8 @@
 # MatticNote Makefile
-CLI_UI_PATH  = ./cli-ui
-CLIENT_PATH  = ./client
-PACKAGE_NAME = github.com/MatticNote/MatticNote
-ARG          = unknown
+CLI_UI_PATH   = ./cli-ui
+CLIENT_PATH   = ./client
+PACKAGE_NAME  = github.com/MatticNote/MatticNote
+BUILD_SUFFIX := $(or $(BUILD_SUFFIX), unknown)
 
 .PHONY: build
 
@@ -18,6 +18,6 @@ fetch-meta:
 	@echo Version: $(MN_VERSION)-$(MN_REVISION)
 build: build-client fetch-meta
 	go build \
-	-o build/matticnote-$(MN_VERSION)-$(MN_REVISION)-${ARG} \
+	-o build/matticnote-$(MN_VERSION)-$(MN_REVISION)-$(BUILD_SUFFIX) \
 	-ldflags "-X ${PACKAGE_NAME}/internal.Version=$(MN_VERSION) \
 	-X ${PACKAGE_NAME}/internal.Revision=$(MN_REVISION)"

@@ -58,10 +58,11 @@ jobs:
           ref: main
       - name: Build via Makefile
         env:
-          goos: ${{ matrix.goos }}
-          goarch: ${{ matrix.arch }}
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.arch }}
+          BUILD_SUFFIX: ${{ matrix.goos }}-${{ matrix.arch }}${{ matrix.extension }}
         run: |
-          GOOS=$goos GOARCH=$goarch make build ARGS=${{ matrix.goos }}-${{ matrix.arch }}${{ matrix.extension }}
+          make build
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
