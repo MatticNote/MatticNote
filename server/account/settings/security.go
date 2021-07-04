@@ -102,7 +102,7 @@ func setup2faView(c *fiber.Ctx, isFail bool) error {
 	totpCode, err := internal.Setup2faCode(uuid.MustParse(claim["sub"].(string)))
 	if err != nil {
 		if err == internal.Err2faAlreadyEnabled {
-			return c.Redirect("/account/settings/security", fiber.StatusTemporaryRedirect)
+			return c.Redirect("/account/settings/security")
 		} else {
 			return err
 		}
@@ -164,7 +164,7 @@ func setup2faPost(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.Redirect("/account/settings/security/2fa/backup", fiber.StatusTemporaryRedirect)
+	return c.Redirect("/account/settings/security/2fa/backup")
 }
 
 func get2faBackup(c *fiber.Ctx) error {
