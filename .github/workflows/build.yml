@@ -1,5 +1,6 @@
 name: build
 on:
+  # TODO: リリース・プルリクエストのみの処理にする予定
   push:
     branches:
       - main
