@@ -61,8 +61,7 @@ jobs:
           goos: ${{ matrix.goos }}
           goarch: ${{ matrix.arch }}
         run: |
-          mkdir build
-          GOOS=$goos GOARCH=$goarch make build ARGS=$goos-$goarch${{ matrix.extension }}
+          GOOS=$goos GOARCH=$goarch make build ARGS=${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.extension }}
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
