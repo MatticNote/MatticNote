@@ -56,6 +56,11 @@ func CreateFollowRelation(fromUser, targetUser uuid.UUID, isPending bool) error 
 		return ErrAlreadyFollowing
 	}
 
+	err = MakeFollowNotification(fromUser, targetUser)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
