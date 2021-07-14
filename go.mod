@@ -5,13 +5,16 @@ go 1.16
 require (
 	github.com/andybalholm/brotli v1.0.2 // indirect
 	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
+	github.com/friendsofgo/graphiql v0.2.2 // indirect
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/go-playground/validator v9.31.0+incompatible
-	github.com/gofiber/fiber/v2 v2.13.0
+	github.com/gofiber/adaptor/v2 v2.1.8 // indirect
+	github.com/gofiber/fiber/v2 v2.14.0
 	github.com/gofiber/jwt/v2 v2.2.1
 	github.com/gofiber/storage/redis v0.0.0-20210518110040-7bbbc01f8475
 	github.com/gofiber/template v1.6.9
 	github.com/google/uuid v1.2.0
+	github.com/graphql-go/graphql v0.7.9 // indirect
 	github.com/jackc/pgx/v4 v4.11.0
 	github.com/karrick/godirwalk v1.16.1 // indirect
 	github.com/klauspost/compress v1.12.2 // indirect
