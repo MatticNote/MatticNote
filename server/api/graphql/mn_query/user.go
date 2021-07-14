@@ -19,22 +19,12 @@ var CurrentUser = &graphql.Field{
 			return nil, errors.New("authorize required")
 		}
 
-		targetUser, err := internal.GetLocalUser(currentUser)
+		targetUser, err := internal.GetUser(currentUser)
 		if err != nil {
 			return nil, err
 		}
 
-		output := mn_type.UserType{
-			Uuid:           targetUser.Uuid,
-			Username:       targetUser.Username,
-			Host:           mn_misc.Conv2Interface(targetUser.Host),
-			DisplayName:    mn_misc.Conv2Interface(targetUser.DisplayName),
-			Summary:        mn_misc.Conv2Interface(targetUser.Summary),
-			CreatedAt:      mn_misc.Conv2Interface(targetUser.CreatedAt),
-			UpdatedAt:      mn_misc.Conv2Interface(targetUser.UpdatedAt),
-			AcceptManually: targetUser.AcceptManually,
-			IsBot:          targetUser.IsBot,
-		}
+		output := mn_misc.ConvInternal2GQLType(targetUser)
 
 		return output, nil
 	},
