@@ -6,6 +6,7 @@ import (
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
+	"regexp"
 )
 
 type loginUserStruct struct {
@@ -46,6 +47,12 @@ func loginPost(c *fiber.Ctx) error {
 
 	if errs := misc.ValidateForm(*formData); errs != nil {
 		return loginUserView(c, errs...)
+	}
+
+	nextQuery := c.Query("next", "/web/")
+	if !regexp.MustCompile(`^/[a-zA-Z0-9\-_@].*$`).Match([]byte(nextQuery)) {
+		c.Status(fiber.StatusForbidden)
+		return nil
 	}
 
 	targetUuid, err := internal.ValidateLoginUser(formData.Login, formData.Password)
