@@ -13,17 +13,16 @@ import (
 )
 
 func ConfigureRoute(r fiber.Router) {
-	r.Use(cors.New(cors.Config{
+	//v1.ConfigureRoute(r.Group("/v1"))
+
+	graphqlGroup := r.Group("/graphql")
+	graphqlGroup.Use(cors.New(cors.Config{
 		AllowOrigins:     "*",
-		AllowMethods:     "GET,POST,HEAD,PUT,DELETE,PATCH",
+		AllowMethods:     "POST",
 		AllowHeaders:     "Authorization, Accept, Content-Type, Origin",
 		AllowCredentials: false,
 		MaxAge:           3600,
 	}))
-
-	//v1.ConfigureRoute(r.Group("/v1"))
-
-	graphqlGroup := r.Group("/graphql")
 	graphqlGroup.Use(
 		internal.RegisterFiberJWT("header", false),
 		internal.AuthenticationUser,
