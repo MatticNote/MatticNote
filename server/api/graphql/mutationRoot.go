@@ -10,5 +10,6 @@ var mutationRoot = graphql.ObjectConfig{
 	Description: "MatticNote Mutation",
 	Fields: graphql.Fields{
 		"createNote": mn_mutation.CreateNote,
+		"deleteNote": mn_mutation.DeleteNote,
 	},
 }
