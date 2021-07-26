@@ -11,5 +11,6 @@ var queryRoot = graphql.ObjectConfig{
 	Fields: graphql.Fields{
 		"meta":        mn_query.Meta,
 		"currentUser": mn_query.CurrentUser,
+		"getUser":     mn_query.GetUser,
 	},
 }

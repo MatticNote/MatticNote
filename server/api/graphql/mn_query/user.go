@@ -23,8 +23,31 @@ var CurrentUser = &graphql.Field{
 			return nil, err
 		}
 
-		output := mn_type.ConvUsrInternal2GQLType(targetUser)
+		return mn_type.ConvUsrInternal2GQLType(targetUser), nil
+	},
+}
 
-		return output, nil
+var GetUser = &graphql.Field{
+	Name:        "Get the user",
+	Description: "Get the user.",
+	Args: graphql.FieldConfigArgument{
+		"targetID": &graphql.ArgumentConfig{
+			Type:        graphql.NewNonNull(graphql.ID),
+			Description: "Target userID",
+		},
+	},
+	Type: mn_type.UserQLType,
+	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+		targetUserId, err := uuid.Parse(p.Args["targetID"].(string))
+		if err != nil {
+			return nil, errors.New("invalid uuid")
+		}
+
+		targetUser, err := internal.GetUser(targetUserId)
+		if err != nil {
+			return nil, err
+		}
+
+		return mn_type.ConvUsrInternal2GQLType(targetUser), nil
 	},
 }
