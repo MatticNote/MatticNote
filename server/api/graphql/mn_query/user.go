@@ -3,7 +3,6 @@ package mn_query
 import (
 	"errors"
 	"github.com/MatticNote/MatticNote/internal"
-	"github.com/MatticNote/MatticNote/server/api/graphql/mn_misc"
 	"github.com/MatticNote/MatticNote/server/api/graphql/mn_type"
 	"github.com/google/uuid"
 	"github.com/graphql-go/graphql"
@@ -24,7 +23,7 @@ var CurrentUser = &graphql.Field{
 			return nil, err
 		}
 
-		output := mn_misc.ConvInternal2GQLType(targetUser)
+		output := mn_type.ConvUsrInternal2GQLType(targetUser)
 
 		return output, nil
 	},
