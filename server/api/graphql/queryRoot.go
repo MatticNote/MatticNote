@@ -6,10 +6,10 @@ import (
 )
 
 var queryRoot = graphql.ObjectConfig{
-	Name: "MNQuery",
+	Name:        "MNQuery",
+	Description: "MatticNote Query",
 	Fields: graphql.Fields{
 		"meta":        mn_query.Meta,
 		"currentUser": mn_query.CurrentUser,
 	},
-	Description: "MatticNote Query",
 }
