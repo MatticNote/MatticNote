@@ -11,6 +11,12 @@ import (
 )
 
 func ConfigureRoute(app *fiber.App) {
+	app.Use(func(c *fiber.Ctx) error {
+		// Security Header
+		c.Set("X-Frame-Options", "DENY")
+		c.Set("X-Content-Type-Options", "nosniff")
+		return c.Next()
+	})
 	app.Get("/", internal.RegisterFiberJWT("cookie", false), func(c *fiber.Ctx) error {
 		_, isLogin := c.Locals(internal.JWTContextKey).(*jwt.Token)
 

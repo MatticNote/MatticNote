@@ -37,11 +37,6 @@ func ConfigureRoute(r fiber.Router) {
 		},
 		Storage: config.GetFiberRedisMemory(),
 	}))
-	r.Use(func(c *fiber.Ctx) error {
-		// Deny frame and iframe tag
-		c.Set("X-Frame-Options", "DENY")
-		return c.Next()
-	})
 	login2faSession = session.New(session.Config{
 		Expiration:     5 * time.Minute,
 		Storage:        config.GetFiberRedisMemory(),
@@ -125,7 +120,7 @@ func ConfigureRoute(r fiber.Router) {
 			Expiration: 3 * time.Hour,
 			LimitReached: func(c *fiber.Ctx) error {
 				c.Status(fiber.StatusTooManyRequests)
-				return c.Send([]byte(""))
+				return nil
 			},
 			Storage: config.GetFiberRedisMemory(),
 		}),
@@ -143,7 +138,7 @@ func ConfigureRoute(r fiber.Router) {
 			Expiration: 3 * time.Hour,
 			LimitReached: func(c *fiber.Ctx) error {
 				c.Status(fiber.StatusTooManyRequests)
-				return c.Send([]byte(""))
+				return nil
 			},
 			Storage: config.GetFiberRedisMemory(),
 		}),
@@ -181,7 +176,7 @@ func ConfigureRoute(r fiber.Router) {
 			Expiration: 1 * time.Hour,
 			LimitReached: func(c *fiber.Ctx) error {
 				c.Status(fiber.StatusTooManyRequests)
-				return c.Send([]byte(""))
+				return nil
 			},
 			Storage: config.GetFiberRedisMemory(),
 		}),
