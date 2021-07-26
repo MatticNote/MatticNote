@@ -24,7 +24,6 @@ import (
 
 const (
 	DefaultPort = 3000
-	DefaultAddr = "127.0.0.1"
 )
 
 //go:embed static/**
@@ -58,8 +57,8 @@ var mnAppCli = &cli.App{
 					Usage:       "Specified the address for listening to the server",
 					Aliases:     []string{"a"},
 					EnvVars:     []string{"MN_ADDR"},
-					Value:       DefaultAddr,
-					DefaultText: "127.0.0.1",
+					Value:       "",
+					DefaultText: "",
 				},
 				&cli.BoolFlag{
 					Name:    "skip-migration",
@@ -243,7 +242,7 @@ func startServer(c *cli.Context) error {
 
 	app.Use(server.NotFoundView)
 
-	if addr == DefaultAddr {
+	if addr == "" {
 		addr = config.Config.Server.ListenAddress
 	}
 
@@ -251,11 +250,15 @@ func startServer(c *cli.Context) error {
 		addrPort = uint(config.Config.Server.ListenPort)
 	}
 
-	listen := fmt.Sprintf("%s:%d", addr, addrPort)
 	if !fiber.IsChild() {
-		log.Println(fmt.Sprintf("MatticNote is running at http://%s", listen))
+		listenAddr := addr
+		if addr == "" {
+			listenAddr = "0.0.0.0"
+		}
+		log.Println(fmt.Sprintf("MatticNote is running at http://%s:%d", listenAddr, addrPort))
 	}
 
+	listen := fmt.Sprintf("%s:%d", addr, addrPort)
 	go func() {
 		if err := app.Listen(listen); err != nil {
 			panic(err)
