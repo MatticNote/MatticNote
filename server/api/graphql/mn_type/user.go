@@ -79,3 +79,19 @@ func ConvUsrInternal2GQLType(ius *internal.UserStruct) UserType {
 		IsBot:          ius.IsBot,
 	}
 }
+
+type UserCreateFollowRelationType struct {
+	IsPending bool `json:"is_pending"`
+}
+
+var UserCreateFollowRelationQLType = graphql.NewObject(graphql.ObjectConfig{
+	Name:        "UserCreateFollowRelation",
+	Description: "User create follow relation type",
+	Fields: graphql.Fields{
+		"isPending": &graphql.Field{
+			Name:        "isPending",
+			Type:        graphql.NewNonNull(graphql.Boolean),
+			Description: "True if follow is awaiting approval",
+		},
+	},
+})

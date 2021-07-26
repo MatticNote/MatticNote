@@ -11,5 +11,6 @@ var mutationRoot = graphql.ObjectConfig{
 	Fields: graphql.Fields{
 		"createNote": mn_mutation.CreateNote,
 		"deleteNote": mn_mutation.DeleteNote,
+		"followUser": mn_mutation.FollowUser,
 	},
 }
