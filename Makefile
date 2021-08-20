@@ -11,7 +11,7 @@ build-css:
 	npm --prefix ${CLI_UI_PATH} run build:production
 build-client: build-css
 	npm --prefix ${CLIENT_PATH} install ${CLIENT_PATH} --no-bin-links
-	npm --prefix ${CLIENT_PATH} run build
+	npm --prefix ${CLIENT_PATH} run build:production
 fetch-meta:
 	$(eval MN_VERSION=$(or $(shell git describe --tags --abbrev=0), unknown))
 	$(eval MN_REVISION=$(shell git rev-parse --short HEAD))
