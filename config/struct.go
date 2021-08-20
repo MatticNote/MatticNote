@@ -6,6 +6,7 @@ type (
 		Server   MNCServer   `validate:"required"`
 		Redis    MNCRedis    `validate:"required"`
 		Mail     MNCMail     `validate:"required"`
+		Job      MNCJob      `validate:"required"`
 	}
 
 	MNCDatabase struct {
@@ -37,6 +38,11 @@ type (
 		Username string
 		Password string
 		Database int
+	}
+
+	MNCJob struct {
+		MaxActive int `validate:"required" toml:"max_active"`
+		MaxIdle   int `validate:"required" toml:"max_idle"`
 	}
 
 	MNCMail struct {

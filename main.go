@@ -8,6 +8,7 @@ import (
 	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/mn_template"
 	"github.com/MatticNote/MatticNote/server"
+	"github.com/MatticNote/MatticNote/worker"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	fr "github.com/gofiber/fiber/v2/middleware/recover"
@@ -229,6 +230,8 @@ func startServer(c *cli.Context) error {
 		addrPort = uint(config.Config.Server.ListenPort)
 	}
 
+	worker.InitWorker()
+
 	if !fiber.IsChild() {
 		listenAddr := addr
 		if addr == "" {
@@ -239,6 +242,7 @@ func startServer(c *cli.Context) error {
 
 	listen := fmt.Sprintf("%s:%d", addr, addrPort)
 	go func() {
+		worker.Worker.Start()
 		if err := app.Listen(listen); err != nil {
 			panic(err)
 		}
@@ -253,6 +257,7 @@ func startServer(c *cli.Context) error {
 	}
 
 	_ = app.Shutdown()
+	worker.Worker.Stop()
 	database.DisconnectDB()
 
 	if !fiber.IsChild() {
