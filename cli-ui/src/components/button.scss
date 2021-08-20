@@ -8,6 +8,7 @@
 
 .btn:disabled, .btn-disabled {
   @apply opacity-50 shadow-none pointer-events-none;
+  user-select: none;
 }
 
 .btn-fullwidth {
