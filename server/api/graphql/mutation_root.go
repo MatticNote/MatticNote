@@ -9,8 +9,13 @@ var mutationRoot = graphql.ObjectConfig{
 	Name:        "MNMutation",
 	Description: "MatticNote Mutation",
 	Fields: graphql.Fields{
-		"createNote": mn_mutation.CreateNote,
-		"deleteNote": mn_mutation.DeleteNote,
-		"followUser": mn_mutation.FollowUser,
+		"createNote":   mn_mutation.CreateNote,
+		"deleteNote":   mn_mutation.DeleteNote,
+		"followUser":   mn_mutation.FollowUser,
+		"unfollowUser": mn_mutation.UnFollowUser,
+		"muteUser":     mn_mutation.MuteUser,
+		"unmuteUser":   mn_mutation.UnMuteUser,
+		"blockUser":    mn_mutation.BlockUser,
+		"unblockUser":  mn_mutation.UnBlockUser,
 	},
 }

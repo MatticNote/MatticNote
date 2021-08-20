@@ -3,6 +3,7 @@ package mn_query
 import (
 	"errors"
 	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/server/api/graphql/common"
 	"github.com/MatticNote/MatticNote/server/api/graphql/mn_type"
 	"github.com/google/uuid"
 	"github.com/graphql-go/graphql"
@@ -40,7 +41,7 @@ var GetUser = &graphql.Field{
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 		targetUserId, err := uuid.Parse(p.Args["targetID"].(string))
 		if err != nil {
-			return nil, errors.New("invalid uuid")
+			return nil, common.ErrInvalidUUID
 		}
 
 		targetUser, err := internal.GetUser(targetUserId)

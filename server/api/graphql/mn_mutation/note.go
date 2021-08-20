@@ -3,6 +3,7 @@ package mn_mutation
 import (
 	"errors"
 	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/server/api/graphql/common"
 	"github.com/MatticNote/MatticNote/server/api/graphql/mn_type"
 	"github.com/google/uuid"
 	"github.com/graphql-go/graphql"
@@ -42,7 +43,7 @@ var CreateNote = &graphql.Field{
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 		currentUser, ok := p.Context.Value("currentUser").(uuid.UUID)
 		if !ok {
-			return nil, ErrAuthorizeRequired
+			return nil, common.ErrAuthorizeRequired
 		}
 
 		var (
@@ -82,12 +83,12 @@ var DeleteNote = &graphql.Field{
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 		currentUser, ok := p.Context.Value("currentUser").(uuid.UUID)
 		if !ok {
-			return nil, ErrAuthorizeRequired
+			return nil, common.ErrAuthorizeRequired
 		}
 
 		targetNoteUuid, err := uuid.Parse(p.Args["noteId"].(string))
 		if err != nil {
-			return nil, errors.New("invalid UUID")
+			return nil, common.ErrInvalidUUID
 		}
 
 		targetNote, err := internal.GetNote(targetNoteUuid)
