@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import {URLTrusterService} from "../../service/url-truster/url-truster.service";
 
 @Component({
   selector: 'app-index',
@@ -7,7 +8,9 @@ import { Component, OnInit } from '@angular/core';
 })
 export class IndexComponent implements OnInit {
 
-  constructor() { }
+  constructor(
+    public ut: URLTrusterService,
+  ) { }
 
   ngOnInit(): void {
   }
