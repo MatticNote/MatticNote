@@ -10,7 +10,6 @@ import (
 	"github.com/MatticNote/MatticNote/server"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
-	"github.com/gofiber/fiber/v2/middleware/proxy"
 	fr "github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/template/django"
 	"github.com/urfave/cli/v2"
@@ -65,11 +64,6 @@ var mnAppCli = &cli.App{
 					Usage:   "Start the server without the migration process. Specify when all migrations are applicable.",
 					Aliases: []string{"m"},
 					EnvVars: []string{"MN_SKIP_MIGRATION"},
-				},
-				&cli.BoolFlag{
-					Name:    "client-dev",
-					Usage:   "Connect the web client through a proxy",
-					EnvVars: []string{"MN_CLIENT_DEV_MODE"},
 				},
 				&cli.StringFlag{
 					Name:    "client-addr",
@@ -212,33 +206,18 @@ func startServer(c *cli.Context) error {
 		Browse: false,
 	}))
 
-	if c.Bool("client-dev") {
-		if !fiber.IsChild() {
-			log.Println("Client development mode enabled")
-		}
-		app.Use("/web",
-			internal.RegisterFiberJWT("cookie", true),
-			func(ctx *fiber.Ctx) error {
-				if err := proxy.Do(ctx, fmt.Sprintf("%s%s", c.String("client-addr"), ctx.Path())); err != nil {
-					return fiber.ErrBadGateway
-				}
-
-				ctx.Response().Header.Del(fiber.HeaderServer)
-				return nil
-			},
-		)
-	} else {
-		app.Use("/web", internal.RegisterFiberJWT("cookie", true), filesystem.New(filesystem.Config{
-			Root: func() http.FileSystem {
-				webCliFSDist, err := fs.Sub(webCliFS, "client/dist/cli")
-				if err != nil {
-					panic(err)
-				}
-				return http.FS(webCliFSDist)
-			}(),
-			Browse: false,
-		}))
-	}
+	app.Use("/web", internal.RegisterFiberJWT("cookie", true), filesystem.New(filesystem.Config{
+		Root: func() http.FileSystem {
+			webCliFSDist, err := fs.Sub(webCliFS, "client/dist/cli")
+			if err != nil {
+				panic(err)
+			}
+			return http.FS(webCliFSDist)
+		}(),
+		Browse:       false,
+		Index:        "index.html",
+		NotFoundFile: "index.html",
+	}))
 
 	app.Use(server.NotFoundView)
 
