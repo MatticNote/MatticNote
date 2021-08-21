@@ -2,7 +2,7 @@
 -- +migrate Up
 create table notification
 (
-    uuid        uuid              not null
+    uuid        uuid default gen_random_uuid() not null
         constraint notification_pk
             primary key,
     target_user uuid
@@ -17,10 +17,7 @@ create table notification
         constraint notification_note_uuid_fk
             references note
             on update restrict on delete cascade,
-    type        integer default 1 not null
-        constraint notification_mst_notification_type_notify_id_fk
-            references mst_notification_type
-            on update cascade on delete set default,
+    type        notification_type not null,
     metadata    jsonb
 );
 
