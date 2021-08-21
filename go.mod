@@ -6,6 +6,7 @@ require (
 	github.com/andybalholm/brotli v1.0.2 // indirect
 	github.com/form3tech-oss/jwt-go v3.2.2+incompatible
 	github.com/friendsofgo/graphiql v0.2.2 // indirect
+	github.com/go-fed/httpsig v1.1.0 // indirect
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/gocraft/work v0.5.1 // indirect

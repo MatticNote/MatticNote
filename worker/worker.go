@@ -12,7 +12,7 @@ var (
 	Client  *work.Client
 )
 
-const workerName = "mn_worker"
+const workerNamespace = "mn_worker"
 
 func getRedisPool() *redis.Pool {
 	return &redis.Pool{
@@ -25,13 +25,13 @@ func getRedisPool() *redis.Pool {
 
 func InitEnqueue() {
 	redisPool := getRedisPool()
-	Enqueue = work.NewEnqueuer(workerName, redisPool)
-	Client = work.NewClient(workerName, redisPool)
+	Enqueue = work.NewEnqueuer(workerNamespace, redisPool)
+	Client = work.NewClient(workerNamespace, redisPool)
 }
 
 func InitWorker() {
 	redisPool := getRedisPool()
-	Worker = work.NewWorkerPool(Context{}, uint(config.Config.Job.MaxActive), workerName, redisPool)
+	Worker = work.NewWorkerPool(Context{}, uint(config.Config.Job.MaxActive), workerNamespace, redisPool)
 
 	Worker.JobWithOptions("inbox_worker", work.JobOptions{
 		MaxFails: 10,
