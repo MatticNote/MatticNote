@@ -3,9 +3,11 @@ package internal
 import (
 	"bytes"
 	"context"
+	"crypto"
 	"crypto/rand"
 	"encoding/base32"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"github.com/MatticNote/MatticNote/config"
@@ -18,6 +20,8 @@ import (
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 	"golang.org/x/crypto/bcrypt"
+	"net/url"
+	"strings"
 )
 
 //goland:noinspection GoUnusedGlobalVariable
@@ -34,6 +38,8 @@ var (
 	ErrInvalid2faToken   = errors.New("invalid 2fa token")
 	ErrCantEnable2fa     = errors.New("cannot enable target user's 2fa")
 	ErrCantDisable2fa    = errors.New("cannot disable target user's 2fa")
+	ErrInvalidKeyId      = errors.New("invalid keyId")
+	ErrInvalidKey        = errors.New("invalid public key")
 )
 
 type (
@@ -787,4 +793,74 @@ func LookupUserRelation(fromUuid, targetUuid uuid.UUID) (*UserRelationStruct, er
 	}
 
 	return relationStruct, nil
+}
+
+func GetUserPublicKey(keyId string) (crypto.PublicKey, error) {
+	var (
+		err          error
+		publicKeyRaw string
+		isActive     bool
+		isSuspend    bool
+	)
+
+	if strings.HasPrefix(keyId, config.Config.Server.Endpoint) {
+		urlParse, err := url.Parse(keyId)
+		if err != nil {
+			return nil, err
+		}
+		if !strings.HasPrefix(urlParse.Path, "/activity/user/") {
+			return nil, ErrInvalidKeyId
+		}
+		targetUuidStr := strings.Replace(
+			strings.TrimPrefix(urlParse.Path, "/activity/user/"), "/", "", -1,
+		)
+		targetUuid, err := uuid.Parse(targetUuidStr)
+		if err != nil {
+			return nil, ErrInvalidKeyId
+		}
+		err = database.DBPool.QueryRow(
+			context.Background(),
+			"select public_key, is_active, is_suspend from user_signature_key, \"user\" where uuid = ? and \"user\".uuid = user_signature_key.uuid;",
+			targetUuid.String(),
+		).Scan(
+			&publicKeyRaw,
+			&isActive,
+			&isSuspend,
+		)
+	} else {
+		err = database.DBPool.QueryRow(
+			context.Background(),
+			"select public_key, is_active, is_suspend from user_signature_key, \"user\" where key_id = ? and \"user\".uuid = user_signature_key.uuid;",
+			keyId,
+		).Scan(
+			&publicKeyRaw,
+			&isActive,
+			&isSuspend,
+		)
+	}
+
+	if !isActive {
+		return nil, ErrUserGone
+	}
+
+	if isSuspend {
+		return nil, ErrUserSuspended
+	}
+
+	if publicKeyRaw == "" {
+		return nil, ErrInvalidKey
+	}
+
+	if err != nil && err == pgx.ErrNoRows {
+		return nil, ErrNoSuchUser
+	} else if err == nil {
+		return nil, err
+	}
+	pubKeyPem, _ := pem.Decode([]byte(publicKeyRaw))
+
+	if pubKeyPem.Type != "PUBLIC KEY" {
+		return nil, ErrInvalidKey
+	}
+
+	return pubKeyPem, nil
 }

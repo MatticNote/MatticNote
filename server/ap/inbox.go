@@ -1,6 +1,7 @@
 package ap
 
 import (
+	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/worker"
 	"github.com/go-fed/httpsig"
 	"github.com/gocraft/work"
@@ -20,11 +21,18 @@ func inboxPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// todo: keyIdで共有鍵を探す
-	verifier.KeyId()
-	// todo: keyIdが見つからない・署名エラーが出たらinbox処理をしない
+	userPK, err := internal.GetUserPublicKey(verifier.KeyId())
+	if err != nil {
+		// Signature missing. ignore.
+		return
+	}
+	err = verifier.Verify(userPK, httpsig.RSA_SHA256)
+	if err != nil {
+		// Invalid HTTP Signature. ignore.
+		return
+	}
 
-	_, err = worker.Enqueue.Enqueue("inbox_worker", work.Q{})
+	_, err = worker.Enqueue.Enqueue(worker.JobInboxProcess, work.Q{})
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

@@ -12,7 +12,14 @@ var (
 	Client  *work.Client
 )
 
-const workerNamespace = "mn_worker"
+const (
+	workerNamespace = "mn_worker"
+)
+
+const (
+	JobInboxProcess = "inbox_process"
+	JobDeliver      = "deliver"
+)
 
 func getRedisPool() *redis.Pool {
 	return &redis.Pool{
@@ -34,14 +41,14 @@ func InitWorker() {
 	Worker = work.NewWorkerPool(Context{}, uint(config.Config.Job.MaxActive), workerNamespace, redisPool)
 
 	Worker.JobWithOptions(
-		"inbox_worker",
+		JobInboxProcess,
 		work.JobOptions{
 			MaxFails: 10,
 		},
 		(*Context).ProcessInbox,
 	)
 	Worker.JobWithOptions(
-		"deliver",
+		JobDeliver,
 		work.JobOptions{
 			MaxFails: 10,
 		},
