@@ -33,7 +33,18 @@ func InitWorker() {
 	redisPool := getRedisPool()
 	Worker = work.NewWorkerPool(Context{}, uint(config.Config.Job.MaxActive), workerNamespace, redisPool)
 
-	Worker.JobWithOptions("inbox_worker", work.JobOptions{
-		MaxFails: 10,
-	}, (*Context).ProcessInbox)
+	Worker.JobWithOptions(
+		"inbox_worker",
+		work.JobOptions{
+			MaxFails: 10,
+		},
+		(*Context).ProcessInbox,
+	)
+	Worker.JobWithOptions(
+		"deliver",
+		work.JobOptions{
+			MaxFails: 10,
+		},
+		(*Context).Deliver,
+	)
 }
