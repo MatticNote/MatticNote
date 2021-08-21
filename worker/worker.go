@@ -9,6 +9,7 @@ import (
 var (
 	Enqueue *work.Enqueuer
 	Worker  *work.WorkerPool
+	Client  *work.Client
 )
 
 const workerName = "mn_worker"
@@ -25,6 +26,7 @@ func getRedisPool() *redis.Pool {
 func InitEnqueue() {
 	redisPool := getRedisPool()
 	Enqueue = work.NewEnqueuer(workerName, redisPool)
+	Client = work.NewClient(workerName, redisPool)
 }
 
 func InitWorker() {
