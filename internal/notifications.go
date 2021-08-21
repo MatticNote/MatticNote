@@ -11,7 +11,7 @@ func makeNotification(
 	targetUserUuid,
 	fromUserUuid uuid.UUID,
 	relateNoteUuid *uuid.UUID,
-	notificationType int,
+	notificationType string,
 	metaData interface{}) error {
 	var metaDataJson *[]byte = nil
 	if metaData != nil {
@@ -41,5 +41,5 @@ func makeNotification(
 }
 
 func MakeFollowNotification(fromUserUuid, targetUserUuid uuid.UUID) error {
-	return makeNotification(targetUserUuid, fromUserUuid, nil, 5, nil)
+	return makeNotification(targetUserUuid, fromUserUuid, nil, "FOLLOWED", nil)
 }
