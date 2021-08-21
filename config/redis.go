@@ -18,7 +18,7 @@ func GetFiberRedisMemory() fiber.Storage {
 	})
 }
 
-func GetRedisPool() (redigo.Conn, error) {
+func GetRedisDial() (redigo.Conn, error) {
 	return redigo.Dial(
 		"tcp",
 		fmt.Sprintf("%s:%d", Config.Redis.Address, Config.Redis.Port),

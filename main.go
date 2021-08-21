@@ -3,23 +3,10 @@ package main
 import (
 	"embed"
 	"fmt"
-	"github.com/MatticNote/MatticNote/config"
-	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/internal"
-	"github.com/MatticNote/MatticNote/mn_template"
-	"github.com/MatticNote/MatticNote/server"
-	"github.com/MatticNote/MatticNote/worker"
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/filesystem"
-	fr "github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/gofiber/template/django"
 	"github.com/urfave/cli/v2"
-	"io/fs"
 	"log"
-	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 )
 
 const (
@@ -66,11 +53,11 @@ var mnAppCli = &cli.App{
 					Aliases: []string{"m"},
 					EnvVars: []string{"MN_SKIP_MIGRATION"},
 				},
-				&cli.StringFlag{
-					Name:    "client-addr",
-					Usage:   "Specify the address of the web client",
-					EnvVars: []string{"MN_CLIENT_ADDRESS"},
-					Value:   "http://localhost:4200",
+				&cli.BoolFlag{
+					Name:    "no-worker",
+					Usage:   "Launch the web app without launching the worker.",
+					Aliases: []string{"w"},
+					EnvVars: []string{"MN_NO_WORKER"},
 				},
 			},
 		},
@@ -79,6 +66,12 @@ var mnAppCli = &cli.App{
 			Aliases: []string{"m"},
 			Usage:   "Migrate database",
 			Action:  migrateDB,
+		},
+		{
+			Name:    "worker",
+			Aliases: []string{"w"},
+			Usage:   "Start worker",
+			Action:  startWorker,
 		},
 		{
 			Name:    "testmail",
@@ -93,178 +86,6 @@ var mnAppCli = &cli.App{
 			Action: testSendMail,
 		},
 	},
-}
-
-func testSendMail(c *cli.Context) error {
-	err := config.LoadConf()
-	if err != nil {
-		return err
-	}
-
-	if err := config.ValidateConfig(); err != nil {
-		return err
-	}
-
-	err = internal.SendMail(
-		c.String("to"),
-		"MatticNote Test mail / MatticNote テストメール",
-		"text/plain",
-		"If you can see this mail, configuration is correct!\n"+
-			"このメッセージが見えている場合、設定は正しいです！",
-	)
-	if err == nil {
-		log.Println("Test mail was sent!")
-	}
-	return err
-}
-
-func migrateDB(_ *cli.Context) error {
-	err := config.LoadConf()
-	if err != nil {
-		return err
-	}
-
-	if err := config.ValidateConfig(); err != nil {
-		return err
-	}
-
-	err = database.MigrateProcess()
-	if err != nil {
-		return err
-	}
-
-	log.Println("Migrate process successfully.")
-	return nil
-}
-
-func startServer(c *cli.Context) error {
-	var (
-		addr     = c.String("address")
-		addrPort = c.Uint("port")
-	)
-
-	err := config.LoadConf()
-	if err != nil {
-		return err
-	}
-
-	if !fiber.IsChild() {
-		if err := config.ValidateConfig(); err != nil {
-			return err
-		}
-
-		if !c.Bool("skip-migration") {
-			err := database.MigrateProcess()
-			if err != nil {
-				return err
-			}
-		}
-
-		err = internal.GenerateJWTSignKey(false)
-		if err != nil {
-			return err
-		}
-	}
-
-	if err := database.ConnectDB(); err != nil {
-		return err
-	}
-
-	err = internal.LoadJWTSignKey()
-	if err != nil {
-		return err
-	}
-
-	if !fiber.IsChild() {
-		if err := internal.VerifyRSASign(); err != nil {
-			return err
-		}
-	}
-
-	app := fiber.New(fiber.Config{
-		Prefork:               config.Config.Server.Prefork,
-		ServerHeader:          "MatticNote",
-		CaseSensitive:         true,
-		Views:                 django.NewFileSystem(http.FS(mn_template.Templates), ".django"),
-		ErrorHandler:          server.ErrorView,
-		DisableStartupMessage: true,
-	})
-
-	app.Use(fr.New(fr.Config{
-		EnableStackTrace: true,
-	}))
-
-	server.ConfigureRoute(app)
-
-	app.Use("/static", filesystem.New(filesystem.Config{
-		Root: func() http.FileSystem {
-			staticFSDist, err := fs.Sub(staticFS, "static")
-			if err != nil {
-				panic(err)
-			}
-			return http.FS(staticFSDist)
-		}(),
-		Browse: false,
-	}))
-
-	app.Use("/web", internal.RegisterFiberJWT("cookie", true), filesystem.New(filesystem.Config{
-		Root: func() http.FileSystem {
-			webCliFSDist, err := fs.Sub(webCliFS, "client/dist/cli")
-			if err != nil {
-				panic(err)
-			}
-			return http.FS(webCliFSDist)
-		}(),
-		Browse:       false,
-		Index:        "index.html",
-		NotFoundFile: "index.html",
-	}))
-
-	app.Use(server.NotFoundView)
-
-	if addr == "" {
-		addr = config.Config.Server.ListenAddress
-	}
-
-	if addrPort == DefaultPort {
-		addrPort = uint(config.Config.Server.ListenPort)
-	}
-
-	worker.InitWorker()
-
-	if !fiber.IsChild() {
-		listenAddr := addr
-		if addr == "" {
-			listenAddr = "0.0.0.0"
-		}
-		log.Println(fmt.Sprintf("MatticNote is running at http://%s:%d", listenAddr, addrPort))
-	}
-
-	listen := fmt.Sprintf("%s:%d", addr, addrPort)
-	go func() {
-		worker.Worker.Start()
-		if err := app.Listen(listen); err != nil {
-			panic(err)
-		}
-	}()
-
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, os.Interrupt, syscall.SIGTERM)
-
-	_ = <-sc
-	if !fiber.IsChild() {
-		log.Println("MatticNote is shutting down...")
-	}
-
-	_ = app.Shutdown()
-	worker.Worker.Stop()
-	database.DisconnectDB()
-
-	if !fiber.IsChild() {
-		fmt.Println("MatticNote is successful shutdown.")
-	}
-
-	return nil
 }
 
 func main() {
