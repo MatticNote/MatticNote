@@ -150,7 +150,10 @@ func startServer(c *cli.Context) error {
 
 	_ = app.Shutdown()
 	if !c.Bool("no-worker") {
-		worker.Worker.Stop()
+		if !fiber.IsChild() {
+			worker.Worker.Stop()
+			log.Println("MatticNote worker is successful shutdown.")
+		}
 	}
 	database.DisconnectDB()
 
