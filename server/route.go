@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/server/account"
+	"github.com/MatticNote/MatticNote/server/ap"
 	"github.com/MatticNote/MatticNote/server/api"
 	"github.com/MatticNote/MatticNote/server/nodeinfo"
 	"github.com/MatticNote/MatticNote/server/well_known"
@@ -42,4 +43,5 @@ func ConfigureRoute(app *fiber.App) {
 	api.ConfigureRoute(app.Group("/api"))
 	well_known.ConfigureRoute(app.Group("/.well-known"))
 	nodeinfo.ConfigureRoute(app.Group("/nodeinfo"))
+	ap.ConfigureRoute(app.Group("/activity"))
 }

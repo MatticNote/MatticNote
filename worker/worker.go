@@ -6,7 +6,12 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-var Worker *work.WorkerPool
+var (
+	Enqueue *work.Enqueuer
+	Worker  *work.WorkerPool
+)
+
+const workerName = "mn_worker"
 
 func InitWorker() {
 	redisPool := &redis.Pool{
@@ -15,5 +20,10 @@ func InitWorker() {
 		Wait:      true,
 		Dial:      config.GetRedisPool,
 	}
-	Worker = work.NewWorkerPool(struct{}{}, uint(config.Config.Job.MaxActive), "mn_worker", redisPool)
+	Enqueue = work.NewEnqueuer(workerName, redisPool)
+	Worker = work.NewWorkerPool(Context{}, uint(config.Config.Job.MaxActive), workerName, redisPool)
+
+	Worker.JobWithOptions("inbox_worker", work.JobOptions{
+		MaxFails: 10,
+	}, (*Context).ProcessInbox)
 }
