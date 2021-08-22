@@ -76,7 +76,7 @@ const (
 	UserKeyPairLength    = 2048
 )
 
-func RegisterLocalUser(email, username, password string, skipEmailVerify bool) (uuid.UUID, error) {
+func RegisterLocalUser(email, username, password string, skipEmailVerify bool) (*uuid.UUID, error) {
 	var count int
 	err := database.DBPool.QueryRow(
 		context.Background(),
@@ -85,18 +85,18 @@ func RegisterLocalUser(email, username, password string, skipEmailVerify bool) (
 		email,
 	).Scan(&count)
 	if err != nil && err != pgx.ErrNoRows {
-		return uuid.Nil, err
+		return nil, err
 	}
 
 	if count > 0 {
-		return uuid.Nil, ErrUserExists
+		return nil, ErrUserExists
 	}
 
 	newUuid := uuid.Must(uuid.NewRandom())
 
 	tx, err := database.DBPool.Begin(context.Background())
 	if err != nil {
-		return uuid.Nil, err
+		return nil, err
 	}
 	defer func(tx pgx.Tx) {
 		_ = tx.Rollback(context.Background())
@@ -109,7 +109,7 @@ func RegisterLocalUser(email, username, password string, skipEmailVerify bool) (
 		username,
 	)
 	if err != nil {
-		return uuid.Nil, err
+		return nil, err
 	}
 
 	_, err = tx.Exec(
@@ -120,12 +120,12 @@ func RegisterLocalUser(email, username, password string, skipEmailVerify bool) (
 		skipEmailVerify,
 	)
 	if err != nil {
-		return uuid.Nil, err
+		return nil, err
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), UserPasswordHashCost)
 	if err != nil {
-		return uuid.Nil, err
+		return nil, err
 	}
 
 	_, err = tx.Exec(
@@ -135,7 +135,7 @@ func RegisterLocalUser(email, username, password string, skipEmailVerify bool) (
 		hashedPassword,
 	)
 	if err != nil {
-		return uuid.Nil, err
+		return nil, err
 	}
 
 	rsaPrivateKey, rsaPublicKey := misc.GenerateRSAKeypair(UserKeyPairLength)
@@ -148,21 +148,21 @@ func RegisterLocalUser(email, username, password string, skipEmailVerify bool) (
 		string(rsaPrivateKey),
 	)
 	if err != nil {
-		return uuid.Nil, err
+		return nil, err
 	}
 
 	if !skipEmailVerify {
 		if err := IssueVerifyEmail(newUuid, email, tx); err != nil {
-			return uuid.Nil, err
+			return nil, err
 		}
 	}
 
 	err = tx.Commit(context.Background())
 	if err != nil {
-		return uuid.Nil, err
+		return nil, err
 	}
 
-	return newUuid, err
+	return &newUuid, err
 }
 
 func ValidateLoginUser(login, password string) (uuid.UUID, error) {
