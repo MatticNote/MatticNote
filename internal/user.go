@@ -839,6 +839,12 @@ func GetUserPublicKey(keyId string) (crypto.PublicKey, error) {
 		)
 	}
 
+	if err != nil && err == pgx.ErrNoRows {
+		return nil, ErrNoSuchUser
+	} else if err != nil {
+		return nil, err
+	}
+
 	if !isActive {
 		return nil, ErrUserGone
 	}
@@ -851,11 +857,6 @@ func GetUserPublicKey(keyId string) (crypto.PublicKey, error) {
 		return nil, ErrInvalidKey
 	}
 
-	if err != nil && err == pgx.ErrNoRows {
-		return nil, ErrNoSuchUser
-	} else if err == nil {
-		return nil, err
-	}
 	pubKeyPem, _ := pem.Decode([]byte(publicKeyRaw))
 
 	if pubKeyPem.Type != "PUBLIC KEY" {
@@ -863,4 +864,46 @@ func GetUserPublicKey(keyId string) (crypto.PublicKey, error) {
 	}
 
 	return pubKeyPem, nil
+}
+
+func GetUserPrivateKey(targetUuid uuid.UUID) (crypto.PrivateKey, error) {
+	var (
+		privateKeyRaw string
+		isActive      bool
+		isSuspend     bool
+	)
+	err := database.DBPool.QueryRow(
+		context.Background(),
+		"select private_key, is_active, is_suspend from user_signature_key, \"user\" where \"user\".uuid = $1 and \"user\".uuid = user_signature_key.uuid;",
+		targetUuid.String(),
+	).Scan(
+		&privateKeyRaw,
+		&isActive,
+		&isSuspend,
+	)
+	if err != nil && err == pgx.ErrNoRows {
+		return nil, ErrNoSuchUser
+	} else if err != nil {
+		return nil, err
+	}
+
+	if !isActive {
+		return nil, ErrUserGone
+	}
+
+	if isSuspend {
+		return nil, ErrUserSuspended
+	}
+
+	if privateKeyRaw == "" {
+		return nil, ErrInvalidKey
+	}
+
+	privateKey, _ := pem.Decode([]byte(privateKeyRaw))
+
+	if privateKey.Type != "PRIVATE KEY" {
+		return nil, ErrInvalidKey
+	}
+
+	return privateKey, nil
 }
