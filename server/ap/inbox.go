@@ -96,7 +96,7 @@ func inboxPost(w http.ResponseWriter, r *http.Request) {
 	//	return
 	//}
 	//
-	//userPK, err := internal.GetUserPublicKey(verifier.KeyId())
+	//userPK, err := internal.GetUserPublicKeyFromKeyId(verifier.KeyId())
 	//if err != nil {
 	//	// Signature missing. ignore.
 	//	return

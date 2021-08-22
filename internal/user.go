@@ -3,7 +3,6 @@ package internal
 import (
 	"bytes"
 	"context"
-	"crypto"
 	"crypto/rand"
 	"encoding/base32"
 	"encoding/json"
@@ -294,7 +293,7 @@ func GetLocalUser(targetUuid uuid.UUID) (*LocalUserStruct, error) {
 
 	err := database.DBPool.QueryRow(
 		context.Background(),
-		"select \"user\".uuid, username, email, display_name, summary, created_at, updated_at, is_silence, accept_manually, is_superuser, is_bot, is_suspend, is_active from \"user\" left join user_mail um on \"user\".uuid = um.uuid where \"user\".uuid = $1",
+		"select \"user\".uuid, username, email, display_name, summary, created_at, updated_at, is_silence, accept_manually, is_superuser, is_bot, is_suspend, is_active from \"user\" left join user_mail um on \"user\".uuid = um.uuid where \"user\".uuid = $1 and \"user\".host is null",
 		targetUuid.String(),
 	).Scan(
 		&target.Uuid,
@@ -349,6 +348,27 @@ func GetLocalUserFromUsername(username string) (*LocalUserStruct, error) {
 	}
 
 	return GetLocalUser(targetUuid)
+}
+
+func GetLocalUserUUIDFromUsername(username string) (*uuid.UUID, error) {
+	var targetUuid uuid.UUID
+
+	err := database.DBPool.QueryRow(
+		context.Background(),
+		"select uuid from \"user\" where username ilike $1 and host is null",
+		username,
+	).Scan(
+		&targetUuid,
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, ErrNoSuchUser
+		} else {
+			return nil, err
+		}
+	}
+
+	return &targetUuid, nil
 }
 
 func IssueForgotPassword(targetEmail string) error {
@@ -795,7 +815,50 @@ func LookupUserRelation(fromUuid, targetUuid uuid.UUID) (*UserRelationStruct, er
 	return relationStruct, nil
 }
 
-func GetUserPublicKey(keyId string) (crypto.PublicKey, error) {
+func GetUserPublicKey(targetUuid uuid.UUID) (*pem.Block, error) {
+	var (
+		err          error
+		publicKeyRaw string
+		isActive     bool
+		isSuspend    bool
+	)
+	err = database.DBPool.QueryRow(
+		context.Background(),
+		"select public_key, is_active, is_suspend from user_signature_key, \"user\" where \"user\".uuid = $1 and \"user\".uuid = user_signature_key.uuid;",
+		targetUuid.String(),
+	).Scan(
+		&publicKeyRaw,
+		&isActive,
+		&isSuspend,
+	)
+	if err != nil && err == pgx.ErrNoRows {
+		return nil, ErrNoSuchUser
+	} else if err != nil {
+		return nil, err
+	}
+
+	if !isActive {
+		return nil, ErrUserGone
+	}
+
+	if isSuspend {
+		return nil, ErrUserSuspended
+	}
+
+	if publicKeyRaw == "" {
+		return nil, ErrInvalidKey
+	}
+
+	pubKeyPem, _ := pem.Decode([]byte(publicKeyRaw))
+
+	if pubKeyPem.Type != "PUBLIC KEY" {
+		return nil, ErrInvalidKey
+	}
+
+	return pubKeyPem, nil
+}
+
+func GetUserPublicKeyFromKeyId(keyId string) (*pem.Block, error) {
 	var (
 		err          error
 		publicKeyRaw string
@@ -820,7 +883,7 @@ func GetUserPublicKey(keyId string) (crypto.PublicKey, error) {
 		}
 		err = database.DBPool.QueryRow(
 			context.Background(),
-			"select public_key, is_active, is_suspend from user_signature_key, \"user\" where uuid = ? and \"user\".uuid = user_signature_key.uuid;",
+			"select public_key, is_active, is_suspend from user_signature_key, \"user\" where \"user\".uuid = $1 and \"user\".uuid = user_signature_key.uuid;",
 			targetUuid.String(),
 		).Scan(
 			&publicKeyRaw,
@@ -830,7 +893,7 @@ func GetUserPublicKey(keyId string) (crypto.PublicKey, error) {
 	} else {
 		err = database.DBPool.QueryRow(
 			context.Background(),
-			"select public_key, is_active, is_suspend from user_signature_key, \"user\" where key_id = ? and \"user\".uuid = user_signature_key.uuid;",
+			"select public_key, is_active, is_suspend from user_signature_key, \"user\" where key_id = $1 and \"user\".uuid = user_signature_key.uuid;",
 			keyId,
 		).Scan(
 			&publicKeyRaw,
@@ -866,7 +929,7 @@ func GetUserPublicKey(keyId string) (crypto.PublicKey, error) {
 	return pubKeyPem, nil
 }
 
-func GetUserPrivateKey(targetUuid uuid.UUID) (crypto.PrivateKey, error) {
+func GetUserPrivateKey(targetUuid uuid.UUID) (*pem.Block, error) {
 	var (
 		privateKeyRaw string
 		isActive      bool

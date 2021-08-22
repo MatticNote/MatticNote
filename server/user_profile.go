@@ -3,7 +3,9 @@ package server
 import (
 	"context"
 	"github.com/MatticNote/MatticNote/database"
+	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/misc"
+	"github.com/MatticNote/MatticNote/server/ap"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v4"
 )
@@ -11,7 +13,13 @@ import (
 func userProfileController(c *fiber.Ctx) error {
 	if misc.IsAPAcceptHeader(c) {
 		// ActivityPub Render
-		return c.SendString("ActivityPub Render")
+		targetUuid, err := internal.GetLocalUserUUIDFromUsername(c.Params("username"))
+		if err != nil && err == internal.ErrNoSuchUser {
+			return fiber.ErrNotFound
+		} else if err != nil {
+			return err
+		}
+		return ap.RenderUser(c, *targetUuid)
 	} else {
 		// Normal render
 		return userProfileView(c)
