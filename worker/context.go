@@ -1,10 +1,12 @@
 package worker
 
 import (
+	"errors"
 	"fmt"
 	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/gocraft/work"
+	"github.com/piprate/json-gold/ld"
 	"log"
 	"net/http"
 )
@@ -12,8 +14,42 @@ import (
 type Context struct {
 }
 
+var (
+	jldProc    = ld.NewJsonLdProcessor()
+	jldOptions = ld.NewJsonLdOptions("")
+	jldDoc     = map[string]interface{}{
+		"@context": "https://www.w3.org/ns/activitystreams",
+	}
+)
+
 func (c *Context) ProcessInbox(j *work.Job) error {
-	log.Println("it works!")
+	data, ok := j.Args["data"]
+	if !ok {
+		return errors.New("no args: data")
+	}
+	doc, err := jldProc.Compact(data, jldDoc, jldOptions)
+	if err != nil {
+		log.Println("err: json-ld parse failed. ignore.")
+		return nil
+	}
+	if len(doc) == 0 {
+		log.Println("err: json-ld parsed, but nobody attributes. ignore.")
+		return nil
+	}
+
+	apType, ok := doc["type"]
+	if !ok {
+		log.Println("err: type is not defined. ignore.")
+		return nil
+	}
+
+	switch apType {
+	case "Create":
+		log.Println("Create activity")
+	default:
+		log.Println("err: unknown activity. ignore.")
+	}
+
 	return nil
 }
 
