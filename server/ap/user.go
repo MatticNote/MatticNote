@@ -10,26 +10,33 @@ import (
 	"github.com/google/uuid"
 )
 
-func apUserController(c *fiber.Ctx) error {
+func apUserHandler(c *fiber.Ctx) error {
+	c.Query("uuid")
 	targetUuid, err := uuid.Parse(c.Params("uuid"))
 	if err != nil {
 		c.Status(fiber.StatusBadRequest)
 		return nil
 	}
-	if misc.IsAPAcceptHeader(c) {
-		return RenderUser(c, targetUuid)
-	} else {
-		targetUser, err := internal.GetLocalUser(targetUuid)
-		if err != nil {
-			switch err {
-			case internal.ErrNoSuchUser:
-				return fiber.ErrNotFound
-			case internal.ErrUserGone:
-				return fiber.ErrGone
-			default:
-				return err
-			}
+	targetUser, err := internal.GetLocalUser(targetUuid)
+	if err != nil {
+		switch err {
+		case internal.ErrNoSuchUser:
+			return fiber.ErrNotFound
+		case internal.ErrUserGone:
+			return fiber.ErrGone
+		default:
+			return err
 		}
+	}
+	c.Locals("targetUser", targetUser)
+	return c.Next()
+}
+
+func apUserController(c *fiber.Ctx) error {
+	targetUser := c.Locals("targetUser").(*internal.LocalUserStruct)
+	if misc.IsAPAcceptHeader(c) {
+		return RenderUser(c, targetUser.Uuid)
+	} else {
 		return c.Redirect(fmt.Sprintf("/@%s", targetUser.Username))
 	}
 }
