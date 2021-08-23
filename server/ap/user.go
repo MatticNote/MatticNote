@@ -44,10 +44,7 @@ func apUserController(c *fiber.Ctx) error {
 func RenderUser(c *fiber.Ctx, targetUser *internal.LocalUserStruct) error {
 	c.Set("Content-Type", "application/activity+json; charset=utf-8")
 
-	actor, err := activitypub.RenderActor(targetUser)
-	if err != nil {
-		return err
-	}
+	actor := activitypub.RenderActor(targetUser)
 
 	body, err := json.Marshal(actor)
 	if err != nil {

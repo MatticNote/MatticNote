@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func RenderActor(targetUser *internal.LocalUserStruct) (map[string]interface{}, error) {
+func RenderActor(targetUser *internal.LocalUserStruct) map[string]interface{} {
 	baseUrl := fmt.Sprintf("%s/activity/user/%s", config.Config.Server.Endpoint, targetUser.Uuid.String())
 
 	renderMap := fiber.Map{
@@ -61,5 +61,5 @@ func RenderActor(targetUser *internal.LocalUserStruct) (map[string]interface{}, 
 		"suspended": targetUser.IsSuspend,
 	}
 
-	return renderMap, nil
+	return renderMap
 }
