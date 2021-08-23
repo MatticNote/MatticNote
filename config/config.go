@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 )
 
-var Config MNConfig
+var Config *MNConfig
 
 func LoadConf() error {
 	file, err := ioutil.ReadFile("matticnote.toml")
