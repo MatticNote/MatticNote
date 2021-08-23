@@ -47,6 +47,7 @@ type (
 		Email          string
 		AcceptManually bool
 		IsSuperuser    bool
+		PrivateKey     *pem.Block
 	}
 	UserStruct struct {
 		Uuid           uuid.UUID
@@ -60,6 +61,7 @@ type (
 		AcceptManually bool
 		IsBot          bool
 		IsSuspend      bool
+		PublicKey      *pem.Block
 	}
 	UserRelationStruct struct {
 		Following     bool
@@ -243,11 +245,15 @@ func ValidateUserPassword(targetUuid uuid.UUID, password string) error {
 
 func GetUser(targetUuid uuid.UUID) (*UserStruct, error) {
 	target := new(UserStruct)
-	var isActive bool
+	var (
+		isActive     bool
+		publicKeyRaw string
+	)
 
 	err := database.DBPool.QueryRow(
 		context.Background(),
-		"select uuid, host, username, display_name, summary, created_at, updated_at, is_silence, accept_manually, is_bot, is_suspend, is_active from \"user\" where \"user\".uuid = $1",
+		"select \"user\".uuid, host, username, display_name, summary, created_at, updated_at, is_silence, accept_manually, is_bot, is_suspend, is_active, public_key "+
+			"from \"user\" left join user_signature_key usk on \"user\".uuid = usk.uuid where \"user\".uuid = $1;",
 		targetUuid.String(),
 	).Scan(
 		&target.Uuid,
@@ -262,6 +268,7 @@ func GetUser(targetUuid uuid.UUID) (*UserStruct, error) {
 		&target.IsBot,
 		&target.IsSuspend,
 		&isActive,
+		&publicKeyRaw,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -275,16 +282,23 @@ func GetUser(targetUuid uuid.UUID) (*UserStruct, error) {
 		return nil, ErrUserGone
 	}
 
+	target.PublicKey, _ = pem.Decode([]byte(publicKeyRaw))
+
 	return target, nil
 }
 
 func GetLocalUser(targetUuid uuid.UUID) (*LocalUserStruct, error) {
 	target := new(LocalUserStruct)
-	var isActive bool
+	var (
+		isActive      bool
+		publicKeyRaw  string
+		privateKeyRaw string
+	)
 
 	err := database.DBPool.QueryRow(
 		context.Background(),
-		"select \"user\".uuid, username, email, display_name, summary, created_at, updated_at, is_silence, accept_manually, is_superuser, is_bot, is_suspend, is_active from \"user\" left join user_mail um on \"user\".uuid = um.uuid where \"user\".uuid = $1 and \"user\".host is null",
+		"select \"user\".uuid, username, email, display_name, summary, created_at, updated_at, is_silence, accept_manually, is_superuser, is_bot, is_suspend, is_active, public_key, private_key "+
+			"from \"user\" left join user_mail um on \"user\".uuid = um.uuid left join user_signature_key usk on \"user\".uuid = usk.uuid where \"user\".uuid = $1 and \"user\".host is null",
 		targetUuid.String(),
 	).Scan(
 		&target.Uuid,
@@ -300,6 +314,8 @@ func GetLocalUser(targetUuid uuid.UUID) (*LocalUserStruct, error) {
 		&target.IsBot,
 		&target.IsSuspend,
 		&isActive,
+		&publicKeyRaw,
+		&privateKeyRaw,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -311,6 +327,15 @@ func GetLocalUser(targetUuid uuid.UUID) (*LocalUserStruct, error) {
 
 	if !isActive {
 		return nil, ErrUserGone
+	}
+
+	target.PublicKey, _ = pem.Decode([]byte(publicKeyRaw))
+	if target.PublicKey.Type != misc.PublicKeyType {
+		panic(fmt.Sprintf("public key type is not \"%s\"", misc.PublicKeyType))
+	}
+	target.PrivateKey, _ = pem.Decode([]byte(privateKeyRaw))
+	if target.PrivateKey.Type != misc.PrivateKeyType {
+		panic(fmt.Sprintf("private key type is not \"%s\"", misc.PublicKeyType))
 	}
 
 	return target, nil
@@ -335,27 +360,6 @@ func GetLocalUserFromUsername(username string) (*LocalUserStruct, error) {
 	}
 
 	return GetLocalUser(targetUuid)
-}
-
-func GetLocalUserUUIDFromUsername(username string) (*uuid.UUID, error) {
-	var targetUuid uuid.UUID
-
-	err := database.DBPool.QueryRow(
-		context.Background(),
-		"select uuid from \"user\" where username ilike $1 and host is null",
-		username,
-	).Scan(
-		&targetUuid,
-	)
-	if err != nil {
-		if err == pgx.ErrNoRows {
-			return nil, ErrNoSuchUser
-		} else {
-			return nil, err
-		}
-	}
-
-	return &targetUuid, nil
 }
 
 func IssueForgotPassword(targetEmail string) error {
@@ -802,43 +806,6 @@ func LookupUserRelation(fromUuid, targetUuid uuid.UUID) (*UserRelationStruct, er
 	return relationStruct, nil
 }
 
-func GetUserPublicKey(targetUuid uuid.UUID) (*pem.Block, error) {
-	var (
-		err          error
-		publicKeyRaw string
-		isActive     bool
-	)
-	err = database.DBPool.QueryRow(
-		context.Background(),
-		"select public_key, is_active from user_signature_key, \"user\" where \"user\".uuid = $1 and \"user\".uuid = user_signature_key.uuid;",
-		targetUuid.String(),
-	).Scan(
-		&publicKeyRaw,
-		&isActive,
-	)
-	if err != nil && err == pgx.ErrNoRows {
-		return nil, ErrNoSuchUser
-	} else if err != nil {
-		return nil, err
-	}
-
-	if !isActive {
-		return nil, ErrUserGone
-	}
-
-	if publicKeyRaw == "" {
-		return nil, ErrInvalidKey
-	}
-
-	pubKeyPem, _ := pem.Decode([]byte(publicKeyRaw))
-
-	if pubKeyPem.Type != "PUBLIC KEY" {
-		return nil, ErrInvalidKey
-	}
-
-	return pubKeyPem, nil
-}
-
 func GetUserPublicKeyFromKeyId(keyId string) (*pem.Block, error) {
 	var (
 		err          error
@@ -899,7 +866,7 @@ func GetUserPublicKeyFromKeyId(keyId string) (*pem.Block, error) {
 
 	pubKeyPem, _ := pem.Decode([]byte(publicKeyRaw))
 
-	if pubKeyPem.Type != "PUBLIC KEY" {
+	if pubKeyPem == nil || pubKeyPem.Type != misc.PublicKeyType {
 		return nil, ErrInvalidKey
 	}
 
@@ -914,7 +881,7 @@ func GetUserPrivateKey(targetUuid uuid.UUID) (*pem.Block, error) {
 	)
 	err := database.DBPool.QueryRow(
 		context.Background(),
-		"select private_key, is_active, is_suspend from user_signature_key, \"user\" where \"user\".uuid = $1 and \"user\".uuid = user_signature_key.uuid;",
+		"select private_key, is_active, is_suspend from user_signature_key, \"user\" where \"user\".uuid = $1 and \"user\".uuid = user_signature_key.uuid and \"user\".host is null;",
 		targetUuid.String(),
 	).Scan(
 		&privateKeyRaw,
@@ -941,7 +908,7 @@ func GetUserPrivateKey(targetUuid uuid.UUID) (*pem.Block, error) {
 
 	privateKey, _ := pem.Decode([]byte(privateKeyRaw))
 
-	if privateKey.Type != "PRIVATE KEY" {
+	if privateKey == nil || privateKey.Type != misc.PrivateKeyType {
 		return nil, ErrInvalidKey
 	}
 

@@ -12,4 +12,6 @@ func ConfigureRoute(r fiber.Router) {
 	ug.Get("/", apUserController)
 	ug.Get("/inbox", inboxGet)
 	ug.Post("/inbox", adaptor.HTTPHandlerFunc(inboxPost))
+	ng := r.Group("/note/:uuid", apNoteHandler)
+	ng.Get("/", apNoteController)
 }

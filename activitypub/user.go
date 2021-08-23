@@ -6,27 +6,10 @@ import (
 	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/internal"
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 )
 
-func RenderActor(targetUuid uuid.UUID) (map[string]interface{}, error) {
-	targetUser, err := internal.GetLocalUser(targetUuid)
-	if err != nil {
-		switch err {
-		case internal.ErrNoSuchUser:
-			return nil, fiber.ErrNotFound
-		case internal.ErrUserGone:
-			return nil, fiber.ErrGone
-		default:
-			return nil, err
-		}
-	}
-	targetUserPublicKey, err := internal.GetUserPublicKey(targetUuid)
-	if err != nil {
-		panic(err)
-	}
-
-	baseUrl := fmt.Sprintf("%s/activity/user/%s", config.Config.Server.Endpoint, targetUuid.String())
+func RenderActor(targetUser *internal.LocalUserStruct) (map[string]interface{}, error) {
+	baseUrl := fmt.Sprintf("%s/activity/user/%s", config.Config.Server.Endpoint, targetUser.Uuid.String())
 
 	renderMap := fiber.Map{
 		"@context": []interface{}{
@@ -70,7 +53,7 @@ func RenderActor(targetUuid uuid.UUID) (map[string]interface{}, error) {
 		"publicKey": map[string]interface{}{
 			"id":           fmt.Sprintf("%s#main-key", baseUrl),
 			"owner":        baseUrl,
-			"publicKeyPem": string(pem.EncodeToMemory(targetUserPublicKey)),
+			"publicKeyPem": string(pem.EncodeToMemory(targetUser.PublicKey)),
 		},
 		"name":      targetUser.DisplayName,
 		"summary":   targetUser.Summary,

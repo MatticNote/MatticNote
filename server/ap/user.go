@@ -35,16 +35,16 @@ func apUserHandler(c *fiber.Ctx) error {
 func apUserController(c *fiber.Ctx) error {
 	targetUser := c.Locals("targetUser").(*internal.LocalUserStruct)
 	if misc.IsAPAcceptHeader(c) {
-		return RenderUser(c, targetUser.Uuid)
+		return RenderUser(c, targetUser)
 	} else {
 		return c.Redirect(fmt.Sprintf("/@%s", targetUser.Username))
 	}
 }
 
-func RenderUser(c *fiber.Ctx, targetUuid uuid.UUID) error {
+func RenderUser(c *fiber.Ctx, targetUser *internal.LocalUserStruct) error {
 	c.Set("Content-Type", "application/activity+json; charset=utf-8")
 
-	actor, err := activitypub.RenderActor(targetUuid)
+	actor, err := activitypub.RenderActor(targetUser)
 	if err != nil {
 		return err
 	}
