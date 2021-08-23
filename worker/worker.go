@@ -19,6 +19,7 @@ const (
 const (
 	JobInboxProcess = "inbox_process"
 	JobDeliver      = "deliver"
+	JobExportData   = "export_data"
 )
 
 func getRedisPool() *redis.Pool {
@@ -43,6 +44,7 @@ func InitWorker() {
 	Worker.JobWithOptions(
 		JobInboxProcess,
 		work.JobOptions{
+			Priority: 50,
 			MaxFails: 10,
 		},
 		(*Context).ProcessInbox,
@@ -50,8 +52,17 @@ func InitWorker() {
 	Worker.JobWithOptions(
 		JobDeliver,
 		work.JobOptions{
+			Priority: 40,
 			MaxFails: 10,
 		},
 		(*Context).Deliver,
+	)
+	Worker.JobWithOptions(
+		JobExportData,
+		work.JobOptions{
+			Priority: 30,
+			MaxFails: 1,
+		},
+		(*Context).ExportData,
 	)
 }
