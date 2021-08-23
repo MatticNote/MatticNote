@@ -59,6 +59,7 @@ type (
 		IsSilence      bool
 		AcceptManually bool
 		IsBot          bool
+		IsSuspend      bool
 	}
 	UserRelationStruct struct {
 		Following     bool
@@ -242,10 +243,7 @@ func ValidateUserPassword(targetUuid uuid.UUID, password string) error {
 
 func GetUser(targetUuid uuid.UUID) (*UserStruct, error) {
 	target := new(UserStruct)
-	var (
-		isSuspend bool
-		isActive  bool
-	)
+	var isActive bool
 
 	err := database.DBPool.QueryRow(
 		context.Background(),
@@ -262,7 +260,7 @@ func GetUser(targetUuid uuid.UUID) (*UserStruct, error) {
 		&target.IsSilence,
 		&target.AcceptManually,
 		&target.IsBot,
-		&isSuspend,
+		&target.IsSuspend,
 		&isActive,
 	)
 	if err != nil {
@@ -277,19 +275,12 @@ func GetUser(targetUuid uuid.UUID) (*UserStruct, error) {
 		return nil, ErrUserGone
 	}
 
-	if isSuspend {
-		return nil, ErrUserSuspended
-	}
-
 	return target, nil
 }
 
 func GetLocalUser(targetUuid uuid.UUID) (*LocalUserStruct, error) {
 	target := new(LocalUserStruct)
-	var (
-		isSuspend bool
-		isActive  bool
-	)
+	var isActive bool
 
 	err := database.DBPool.QueryRow(
 		context.Background(),
@@ -307,7 +298,7 @@ func GetLocalUser(targetUuid uuid.UUID) (*LocalUserStruct, error) {
 		&target.AcceptManually,
 		&target.IsSuperuser,
 		&target.IsBot,
-		&isSuspend,
+		&target.IsSuspend,
 		&isActive,
 	)
 	if err != nil {
@@ -320,10 +311,6 @@ func GetLocalUser(targetUuid uuid.UUID) (*LocalUserStruct, error) {
 
 	if !isActive {
 		return nil, ErrUserGone
-	}
-
-	if isSuspend {
-		return nil, ErrUserSuspended
 	}
 
 	return target, nil
@@ -820,16 +807,14 @@ func GetUserPublicKey(targetUuid uuid.UUID) (*pem.Block, error) {
 		err          error
 		publicKeyRaw string
 		isActive     bool
-		isSuspend    bool
 	)
 	err = database.DBPool.QueryRow(
 		context.Background(),
-		"select public_key, is_active, is_suspend from user_signature_key, \"user\" where \"user\".uuid = $1 and \"user\".uuid = user_signature_key.uuid;",
+		"select public_key, is_active from user_signature_key, \"user\" where \"user\".uuid = $1 and \"user\".uuid = user_signature_key.uuid;",
 		targetUuid.String(),
 	).Scan(
 		&publicKeyRaw,
 		&isActive,
-		&isSuspend,
 	)
 	if err != nil && err == pgx.ErrNoRows {
 		return nil, ErrNoSuchUser
@@ -839,10 +824,6 @@ func GetUserPublicKey(targetUuid uuid.UUID) (*pem.Block, error) {
 
 	if !isActive {
 		return nil, ErrUserGone
-	}
-
-	if isSuspend {
-		return nil, ErrUserSuspended
 	}
 
 	if publicKeyRaw == "" {
@@ -910,10 +891,6 @@ func GetUserPublicKeyFromKeyId(keyId string) (*pem.Block, error) {
 
 	if !isActive {
 		return nil, ErrUserGone
-	}
-
-	if isSuspend {
-		return nil, ErrUserSuspended
 	}
 
 	if publicKeyRaw == "" {

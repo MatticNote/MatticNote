@@ -8,6 +8,8 @@ import (
 func ConfigureRoute(r fiber.Router) {
 	r.Get("/inbox", inboxGet)
 	r.Post("/inbox", adaptor.HTTPHandlerFunc(inboxPost))
-	userGroup := r.Group("/user")
-	userGroup.Get("/:uuid", apUserController)
+	ug := r.Group("/user/:uuid")
+	ug.Get("/", apUserController)
+	ug.Get("/inbox", inboxGet)
+	ug.Post("/inbox", adaptor.HTTPHandlerFunc(inboxPost))
 }

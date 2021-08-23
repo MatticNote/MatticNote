@@ -6,6 +6,7 @@ import (
 	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/internal"
 	"github.com/gofiber/fiber/v2"
+	"net/url"
 	"regexp"
 )
 
@@ -16,18 +17,30 @@ func webfinger(c *fiber.Ctx) error {
 		return nil
 	}
 
-	rRegex := regexp.MustCompile(`acct:([a-zA-Z0-9_]+)@(.+)`)
+	rRegex := regexp.MustCompile(`(acct:)?([a-zA-Z0-9_]+)@(.+)`)
 	rResult := rRegex.FindStringSubmatch(resource)
 
-	targetUser, err := internal.GetLocalUserFromUsername(rResult[1])
+	if len(rResult) != 4 {
+		c.Status(fiber.StatusBadRequest)
+		return nil
+	}
+
+	endpointUrl, err := url.Parse(config.Config.Server.Endpoint)
+	if err != nil {
+		return err
+	}
+	if endpointUrl.Host != rResult[3] {
+		c.Status(fiber.StatusBadRequest)
+		return nil
+	}
+
+	targetUser, err := internal.GetLocalUserFromUsername(rResult[2])
 	if err != nil {
 		switch err {
 		case internal.ErrNoSuchUser:
 			c.Status(fiber.StatusNotFound)
 		case internal.ErrUserGone:
 			c.Status(fiber.StatusGone)
-		case internal.ErrUserSuspended:
-			c.Status(fiber.StatusForbidden)
 		default:
 			return err
 		}
@@ -35,7 +48,7 @@ func webfinger(c *fiber.Ctx) error {
 	}
 
 	wfJsonMarshal, err := json.Marshal(fiber.Map{
-		"subject": fmt.Sprintf("acct:%s@%s", targetUser.Username, rResult[2]),
+		"subject": fmt.Sprintf("acct:%s@%s", targetUser.Username, endpointUrl.Host),
 		"links": []fiber.Map{
 			{
 				"rel":  "http://webfinger.net/rel/profile-page",
