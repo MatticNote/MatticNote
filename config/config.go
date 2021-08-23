@@ -17,10 +17,14 @@ func LoadConf() error {
 		return err
 	}
 
-	err = toml.Unmarshal(file, &Config)
+	var cfg MNConfig
+
+	err = toml.Unmarshal(file, &cfg)
 	if err != nil {
 		return err
 	}
+
+	Config = &cfg
 
 	return nil
 }
