@@ -10,6 +10,12 @@ func RenderNote(targetNote *internal.NoteStruct) map[string]interface{} {
 	noteBaseUrl := fmt.Sprintf("%s/activity/note/%s", config.Config.Server.Endpoint, targetNote.Uuid.String())
 	authorBaseUrl := fmt.Sprintf("%s/activity/user/%s", config.Config.Server.Endpoint, targetNote.Author.Uuid.String())
 
+	var inReplyUrl *string = nil
+	if targetNote.Reply != nil {
+		inReplyUrlBase := fmt.Sprintf("%s/activity/note/%s", config.Config.Server.Endpoint, targetNote.Reply.Uuid.String())
+		inReplyUrl = &inReplyUrlBase
+	}
+
 	renderMap := map[string]interface{}{
 		"@context": []interface{}{
 			"https://www.w3.org/ns/activitystreams",
@@ -18,6 +24,7 @@ func RenderNote(targetNote *internal.NoteStruct) map[string]interface{} {
 		"type":         "Note", // todo: 投票の投稿は`Question`になるので将来的に対応できる仕組みにする
 		"url":          fmt.Sprintf("%s/@%s/%s", config.Config.Server.Endpoint, targetNote.Author.Username, targetNote.Uuid.String()),
 		"attributedTo": authorBaseUrl,
+		"inReplyTo":    inReplyUrl,
 		"summary":      targetNote.Cw,
 		"content":      targetNote.Body,
 		"published":    targetNote.CreatedAt,

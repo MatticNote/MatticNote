@@ -17,7 +17,7 @@ func apNoteHandler(c *fiber.Ctx) error {
 		c.Status(fiber.StatusBadRequest)
 		return nil
 	}
-	targetNote, err := internal.GetNote(targetUuid)
+	targetNote, err := internal.GetNote(targetUuid, true)
 	if err != nil {
 		switch err {
 		case internal.ErrNoSuchUser:

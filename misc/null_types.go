@@ -45,7 +45,7 @@ func (nt NullTime) MarshalJSON() ([]byte, error) {
 	if !nt.Valid {
 		return json.Marshal(nil)
 	}
-	return json.Marshal(nt.Time.Format(time.RFC3339))
+	return json.Marshal(nt.Time.In(time.UTC).Format(time.RFC3339))
 }
 
 // NullBool

@@ -15,11 +15,13 @@ var (
 
 type NoteStruct struct {
 	Uuid      uuid.UUID
-	Author    UserStruct
+	Author    *UserStruct
 	CreatedAt misc.NullTime
 	Cw        misc.NullString
 	Body      misc.NullString
 	LocalOnly bool
+	Reply     *NoteStruct
+	ReText    *NoteStruct
 }
 
 func CreateNoteFromLocal(authorUuid uuid.UUID, cw, text string, replyUuid, reTextUuid uuid.UUID, localOnly bool) (*NoteStruct, error) {
@@ -106,19 +108,18 @@ func CreateNoteFromLocal(authorUuid uuid.UUID, cw, text string, replyUuid, reTex
 	return createdNote, err
 }
 
-func GetNote(noteUuid uuid.UUID) (*NoteStruct, error) {
+func GetNote(noteUuid uuid.UUID, recursive ...bool) (*NoteStruct, error) {
 	var (
-		noteRes       NoteStruct
-		noteAuthorRes UserStruct
-		isActive      bool
-		isSuspend     bool
+		noteRes    NoteStruct
+		authorUuid uuid.UUID
+		replyUuid  uuid.UUID
+		reTextUuid uuid.UUID
 	)
 
 	err := database.DBPool.QueryRow(
 		context.Background(),
-		"select note.uuid, note.created_at, cw, body, local_only,"+
-			" u.uuid, username, host, display_name, summary, u.created_at, updated_at, accept_manually, is_bot, is_active, is_suspend "+
-			"from note, \"user\" u where u.uuid = note.author and note.uuid = $1;",
+		"select uuid, created_at, cw, body, local_only, author, reply_uuid, retext_uuid "+
+			"from note where note.uuid = $1;",
 		noteUuid.String(),
 	).Scan(
 		&noteRes.Uuid,
@@ -126,17 +127,9 @@ func GetNote(noteUuid uuid.UUID) (*NoteStruct, error) {
 		&noteRes.Cw,
 		&noteRes.Body,
 		&noteRes.LocalOnly,
-		&noteAuthorRes.Uuid,
-		&noteAuthorRes.Username,
-		&noteAuthorRes.Host,
-		&noteAuthorRes.DisplayName,
-		&noteAuthorRes.Summary,
-		&noteAuthorRes.CreatedAt,
-		&noteAuthorRes.UpdatedAt,
-		&noteAuthorRes.AcceptManually,
-		&noteAuthorRes.IsBot,
-		&isActive,
-		&isSuspend,
+		&authorUuid,
+		&replyUuid,
+		&reTextUuid,
 	)
 	if err != nil {
 		if err == pgx.ErrNoRows {
@@ -146,15 +139,30 @@ func GetNote(noteUuid uuid.UUID) (*NoteStruct, error) {
 		}
 	}
 
-	if !isActive {
-		return nil, ErrUserGone
+	noteRes.Author, err = GetUser(authorUuid)
+	if err != nil {
+		return nil, err
 	}
 
-	if isSuspend {
+	if noteRes.Author.IsSuspend {
 		return nil, ErrUserSuspended
 	}
 
-	noteRes.Author = noteAuthorRes
+	if len(recursive) > 0 && recursive[0] {
+		if replyUuid != uuid.Nil {
+			noteRes.Reply, err = GetNote(replyUuid, false)
+			if err != nil {
+				return nil, err
+			}
+		}
+		if reTextUuid != uuid.Nil {
+			noteRes.ReText, err = GetNote(reTextUuid, false)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
 	return &noteRes, nil
 }
 
