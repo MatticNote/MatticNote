@@ -35,6 +35,11 @@ func parseSender(targetNote *internal.NoteStruct) (to, cc []interface{}) {
 		}
 	}
 
+	if targetNote.ReText != nil {
+		authorBaseUrl := fmt.Sprintf("%s/activity/user/%s", config.Config.Server.Endpoint, targetNote.ReText.Author.Uuid.String())
+		cc = append(cc, authorBaseUrl)
+	}
+
 	return
 }
 
@@ -75,26 +80,51 @@ func RenderNote(targetNote *internal.NoteStruct) map[string]interface{} {
 }
 
 func RenderNoteActivity(targetNote *internal.NoteStruct) map[string]interface{} {
-	object := RenderNote(targetNote)
-	delete(object, "@context")
-
+	var renderMap map[string]interface{}
 	activityBaseUrl := fmt.Sprintf("%s/activity/note/%s/activity", config.Config.Server.Endpoint, targetNote.Uuid.String())
 	authorBaseUrl := fmt.Sprintf("%s/activity/user/%s", config.Config.Server.Endpoint, targetNote.Author.Uuid.String())
+	to, cc := parseSender(targetNote)
 
-	renderMap := map[string]interface{}{
-		"@context": []interface{}{
-			"https://www.w3.org/ns/activitystreams",
-			map[string]interface{}{
-				"sensitive":   "as:sensitive",
-				"toot":        "http://joinmastodon.org/ns#",
-				"votersCount": "toot:votersCount",
+	if targetNote.ReText == nil {
+		object := RenderNote(targetNote)
+		delete(object, "@context")
+
+		renderMap = map[string]interface{}{
+			"@context": []interface{}{
+				"https://www.w3.org/ns/activitystreams",
+				map[string]interface{}{
+					"sensitive":   "as:sensitive",
+					"toot":        "http://joinmastodon.org/ns#",
+					"votersCount": "toot:votersCount",
+				},
 			},
-		},
-		"id":        activityBaseUrl,
-		"type":      "Create",
-		"actor":     authorBaseUrl,
-		"published": targetNote.CreatedAt,
-		"object":    object,
+			"id":        activityBaseUrl,
+			"type":      "Create",
+			"actor":     authorBaseUrl,
+			"published": targetNote.CreatedAt,
+			"to":        to,
+			"cc":        cc,
+			"object":    object,
+		}
+	} else {
+		reTextBaseUrl := fmt.Sprintf("%s/activity/note/%s", config.Config.Server.Endpoint, targetNote.ReText.Uuid)
+		renderMap = map[string]interface{}{
+			"@context": []interface{}{
+				"https://www.w3.org/ns/activitystreams",
+				map[string]interface{}{
+					"sensitive":   "as:sensitive",
+					"toot":        "http://joinmastodon.org/ns#",
+					"votersCount": "toot:votersCount",
+				},
+			},
+			"id":        activityBaseUrl,
+			"type":      "Announce",
+			"actor":     authorBaseUrl,
+			"published": targetNote.CreatedAt,
+			"to":        to,
+			"cc":        cc,
+			"object":    reTextBaseUrl,
+		}
 	}
 
 	return renderMap

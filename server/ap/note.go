@@ -48,6 +48,10 @@ func apNoteController(c *fiber.Ctx) error {
 func RenderNote(c *fiber.Ctx, targetNote *internal.NoteStruct) error {
 	c.Set("Content-Type", "application/activity+json; charset=utf-8")
 
+	if targetNote.ReText != nil {
+		return c.Redirect(fmt.Sprintf("/activity/note/%s", targetNote.ReText.Uuid.String()))
+	}
+
 	note := activitypub.RenderNote(targetNote)
 
 	body, err := json.Marshal(note)
