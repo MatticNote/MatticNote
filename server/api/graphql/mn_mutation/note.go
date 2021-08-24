@@ -38,6 +38,11 @@ var CreateNote = &graphql.Field{
 			DefaultValue: false,
 			Description:  "If it is true, don't send fediverse.",
 		},
+		"visibility": &graphql.ArgumentConfig{
+			Type:         graphql.String,
+			DefaultValue: "public",
+			Description:  "Visibility",
+		},
 	},
 	Type: graphql.NewNonNull(mn_type.NoteQLType),
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
@@ -47,20 +52,37 @@ var CreateNote = &graphql.Field{
 		}
 
 		var (
-			replyId  = uuid.Nil
-			reTextId = uuid.Nil
+			replyId  *uuid.UUID
+			reTextId *uuid.UUID
+			cw       *string
+			text     *string
 		)
 
-		replyId, _ = uuid.Parse(p.Args["replyId"].(string))
-		reTextId, _ = uuid.Parse(p.Args["reTextId"].(string))
+		replyIdRaw, err := uuid.Parse(p.Args["replyId"].(string))
+		if err == nil {
+			replyId = &replyIdRaw
+		}
+		reTextIdRaw, err := uuid.Parse(p.Args["reTextId"].(string))
+		if err == nil {
+			reTextId = &reTextIdRaw
+		}
+		cwRaw, ok := p.Args["cw"].(string)
+		if ok {
+			cw = &cwRaw
+		}
+		textRaw, ok := p.Args["text"].(string)
+		if ok {
+			text = &textRaw
+		}
 
 		newNote, err := internal.CreateNoteFromLocal(
 			currentUser,
-			p.Args["cw"].(string),
-			p.Args["text"].(string),
+			cw,
+			text,
 			replyId,
 			reTextId,
 			p.Args["localOnly"].(bool),
+			p.Args["visibility"].(string),
 		)
 		if err != nil {
 			return nil, err

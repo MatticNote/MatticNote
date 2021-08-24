@@ -6,7 +6,14 @@ import (
 	"github.com/MatticNote/MatticNote/internal"
 )
 
+const publicUrl = "https://www.w3.org/ns/activitystreams#Public"
+
 func RenderNote(targetNote *internal.NoteStruct) map[string]interface{} {
+	var (
+		to []interface{}
+		cc []interface{}
+	)
+
 	noteBaseUrl := fmt.Sprintf("%s/activity/note/%s", config.Config.Server.Endpoint, targetNote.Uuid.String())
 	authorBaseUrl := fmt.Sprintf("%s/activity/user/%s", config.Config.Server.Endpoint, targetNote.Author.Uuid.String())
 
@@ -14,6 +21,25 @@ func RenderNote(targetNote *internal.NoteStruct) map[string]interface{} {
 	if targetNote.Reply != nil {
 		inReplyUrlBase := fmt.Sprintf("%s/activity/note/%s", config.Config.Server.Endpoint, targetNote.Reply.Uuid.String())
 		inReplyUrl = &inReplyUrlBase
+	}
+
+	switch targetNote.Visibility {
+	case "UNLISTED":
+		to = []interface{}{
+			fmt.Sprintf("%s/followers", authorBaseUrl),
+		}
+		cc = []interface{}{
+			publicUrl,
+		}
+	case "PUBLIC":
+		fallthrough
+	default:
+		to = []interface{}{
+			publicUrl,
+		}
+		cc = []interface{}{
+			fmt.Sprintf("%s/followers", authorBaseUrl),
+		}
 	}
 
 	renderMap := map[string]interface{}{
@@ -28,11 +54,8 @@ func RenderNote(targetNote *internal.NoteStruct) map[string]interface{} {
 		"summary":      targetNote.Cw,
 		"content":      targetNote.Body,
 		"published":    targetNote.CreatedAt,
-		// todo: 投稿範囲に応じてtoやccを変える
-		"to": []interface{}{
-			"https://www.w3.org/ns/activitystreams#Public",
-		},
-		"cc": []interface{}{},
+		"to":           to,
+		"cc":           cc,
 	}
 
 	return renderMap

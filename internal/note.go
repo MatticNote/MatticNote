@@ -7,46 +7,59 @@ import (
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
+	"strings"
 )
 
 var (
-	ErrNoteNotFound = errors.New("specified note is not found")
+	ErrNoteNotFound      = errors.New("specified note is not found")
+	ErrInvalidVisibility = errors.New("invalid note visibility")
 )
 
 type NoteStruct struct {
-	Uuid      uuid.UUID
-	Author    *UserStruct
-	CreatedAt misc.NullTime
-	Cw        misc.NullString
-	Body      misc.NullString
-	LocalOnly bool
-	Reply     *NoteStruct
-	ReText    *NoteStruct
+	Uuid       uuid.UUID
+	Author     *UserStruct
+	CreatedAt  misc.NullTime
+	Cw         misc.NullString
+	Body       misc.NullString
+	LocalOnly  bool
+	Reply      *NoteStruct
+	ReText     *NoteStruct
+	Visibility string
 }
 
-func CreateNoteFromLocal(authorUuid uuid.UUID, cw, text string, replyUuid, reTextUuid uuid.UUID, localOnly bool) (*NoteStruct, error) {
+func CreateNoteFromLocal(authorUuid uuid.UUID, cw, text *string, replyUuid, reTextUuid *uuid.UUID, localOnly bool, visibility string) (*NoteStruct, error) {
+	switch strings.ToUpper(visibility) {
+	case "PUBLIC":
+	case "UNLISTED":
+	case "FOLLOWER":
+	case "DIRECT":
+	default:
+		return nil, ErrInvalidVisibility
+	}
+
 	newNoteUuid := uuid.Must(uuid.NewUUID())
 
 	tx, err := database.DBPool.Begin(context.Background())
 	if err != nil {
 		return nil, err
 	}
-	defer func(tx pgx.Tx) {
+	defer func() {
 		_ = tx.Rollback(context.Background())
-	}(tx)
+	}()
 
 	_, err = tx.Exec(
 		context.Background(),
-		"insert into note(uuid, author, local_only) VALUES ($1, $2, $3);",
+		"insert into note(uuid, author, local_only, visibility) VALUES ($1, $2, $3, $4);",
 		newNoteUuid,
 		authorUuid,
 		localOnly,
+		strings.ToUpper(visibility),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	if cw != "" {
+	if cw != nil {
 		_, err = tx.Exec(
 			context.Background(),
 			"update note set cw = $1 where uuid = $2;",
@@ -58,7 +71,7 @@ func CreateNoteFromLocal(authorUuid uuid.UUID, cw, text string, replyUuid, reTex
 		}
 	}
 
-	if text != "" {
+	if text != nil {
 		_, err = tx.Exec(
 			context.Background(),
 			"update note set body = $1 where uuid = $2;",
@@ -70,7 +83,7 @@ func CreateNoteFromLocal(authorUuid uuid.UUID, cw, text string, replyUuid, reTex
 		}
 	}
 
-	if replyUuid != uuid.Nil {
+	if replyUuid != nil {
 		_, err = tx.Exec(
 			context.Background(),
 			"update note set reply_uuid = $1 where uuid = $2;",
@@ -82,7 +95,7 @@ func CreateNoteFromLocal(authorUuid uuid.UUID, cw, text string, replyUuid, reTex
 		}
 	}
 
-	if reTextUuid != uuid.Nil {
+	if reTextUuid != nil {
 		_, err = tx.Exec(
 			context.Background(),
 			"update note set retext_uuid = $1 where uuid = $2;",
@@ -118,7 +131,7 @@ func GetNote(noteUuid uuid.UUID, recursive ...bool) (*NoteStruct, error) {
 
 	err := database.DBPool.QueryRow(
 		context.Background(),
-		"select uuid, created_at, cw, body, local_only, author, reply_uuid, retext_uuid "+
+		"select uuid, created_at, cw, body, local_only, visibility, author, reply_uuid, retext_uuid "+
 			"from note where note.uuid = $1;",
 		noteUuid.String(),
 	).Scan(
@@ -127,6 +140,7 @@ func GetNote(noteUuid uuid.UUID, recursive ...bool) (*NoteStruct, error) {
 		&noteRes.Cw,
 		&noteRes.Body,
 		&noteRes.LocalOnly,
+		&noteRes.Visibility,
 		&authorUuid,
 		&replyUuid,
 		&reTextUuid,

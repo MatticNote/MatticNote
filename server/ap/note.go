@@ -28,6 +28,10 @@ func apNoteHandler(c *fiber.Ctx) error {
 			return err
 		}
 	}
+	// Ignore remote user's note or local only
+	if targetNote.Author.Host.Valid || targetNote.LocalOnly {
+		return fiber.ErrNotFound
+	}
 	c.Locals("targetNote", targetNote)
 	return c.Next()
 }
