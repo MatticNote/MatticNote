@@ -8,22 +8,15 @@ import (
 
 const publicUrl = "https://www.w3.org/ns/activitystreams#Public"
 
-func RenderNote(targetNote *internal.NoteStruct) map[string]interface{} {
-	var (
-		to []interface{}
-		cc []interface{}
-	)
-
-	noteBaseUrl := fmt.Sprintf("%s/activity/note/%s", config.Config.Server.Endpoint, targetNote.Uuid.String())
+func parseSender(targetNote *internal.NoteStruct) (to, cc []interface{}) {
 	authorBaseUrl := fmt.Sprintf("%s/activity/user/%s", config.Config.Server.Endpoint, targetNote.Author.Uuid.String())
 
-	var inReplyUrl *string = nil
-	if targetNote.Reply != nil {
-		inReplyUrlBase := fmt.Sprintf("%s/activity/note/%s", config.Config.Server.Endpoint, targetNote.Reply.Uuid.String())
-		inReplyUrl = &inReplyUrlBase
-	}
-
 	switch targetNote.Visibility {
+	case "FOLLOWER":
+		to = []interface{}{
+			fmt.Sprintf("%s/followers", authorBaseUrl),
+		}
+		cc = []interface{}{}
 	case "UNLISTED":
 		to = []interface{}{
 			fmt.Sprintf("%s/followers", authorBaseUrl),
@@ -42,9 +35,29 @@ func RenderNote(targetNote *internal.NoteStruct) map[string]interface{} {
 		}
 	}
 
+	return
+}
+
+func RenderNote(targetNote *internal.NoteStruct) map[string]interface{} {
+	noteBaseUrl := fmt.Sprintf("%s/activity/note/%s", config.Config.Server.Endpoint, targetNote.Uuid.String())
+	authorBaseUrl := fmt.Sprintf("%s/activity/user/%s", config.Config.Server.Endpoint, targetNote.Author.Uuid.String())
+
+	var inReplyUrl *string = nil
+	if targetNote.Reply != nil {
+		inReplyUrlBase := fmt.Sprintf("%s/activity/note/%s", config.Config.Server.Endpoint, targetNote.Reply.Uuid.String())
+		inReplyUrl = &inReplyUrlBase
+	}
+
+	to, cc := parseSender(targetNote)
+
 	renderMap := map[string]interface{}{
 		"@context": []interface{}{
 			"https://www.w3.org/ns/activitystreams",
+			map[string]interface{}{
+				"sensitive":   "as:sensitive",
+				"toot":        "http://joinmastodon.org/ns#",
+				"votersCount": "toot:votersCount",
+			},
 		},
 		"id":           noteBaseUrl,
 		"type":         "Note", // todo: 投票の投稿は`Question`になるので将来的に対応できる仕組みにする
@@ -56,6 +69,32 @@ func RenderNote(targetNote *internal.NoteStruct) map[string]interface{} {
 		"published":    targetNote.CreatedAt,
 		"to":           to,
 		"cc":           cc,
+	}
+
+	return renderMap
+}
+
+func RenderNoteActivity(targetNote *internal.NoteStruct) map[string]interface{} {
+	object := RenderNote(targetNote)
+	delete(object, "@context")
+
+	activityBaseUrl := fmt.Sprintf("%s/activity/note/%s/activity", config.Config.Server.Endpoint, targetNote.Uuid.String())
+	authorBaseUrl := fmt.Sprintf("%s/activity/user/%s", config.Config.Server.Endpoint, targetNote.Author.Uuid.String())
+
+	renderMap := map[string]interface{}{
+		"@context": []interface{}{
+			"https://www.w3.org/ns/activitystreams",
+			map[string]interface{}{
+				"sensitive":   "as:sensitive",
+				"toot":        "http://joinmastodon.org/ns#",
+				"votersCount": "toot:votersCount",
+			},
+		},
+		"id":        activityBaseUrl,
+		"type":      "Create",
+		"actor":     authorBaseUrl,
+		"published": targetNote.CreatedAt,
+		"object":    object,
 	}
 
 	return renderMap

@@ -57,3 +57,21 @@ func RenderNote(c *fiber.Ctx, targetNote *internal.NoteStruct) error {
 
 	return c.Send(body)
 }
+
+func apNoteActivityController(c *fiber.Ctx) error {
+	targetNote := c.Locals("targetNote").(*internal.NoteStruct)
+	return renderNoteActivity(c, targetNote)
+}
+
+func renderNoteActivity(c *fiber.Ctx, targetNote *internal.NoteStruct) error {
+	c.Set("Content-Type", "application/activity+json; charset=utf-8")
+
+	activity := activitypub.RenderNoteActivity(targetNote)
+
+	body, err := json.Marshal(activity)
+	if err != nil {
+		return err
+	}
+
+	return c.Send(body)
+}
