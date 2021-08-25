@@ -8,6 +8,15 @@ import (
 
 const publicUrl = "https://www.w3.org/ns/activitystreams#Public"
 
+var noteContext = []interface{}{
+	"https://www.w3.org/ns/activitystreams",
+	map[string]interface{}{
+		"sensitive":   "as:sensitive",
+		"toot":        "http://joinmastodon.org/ns#",
+		"votersCount": "toot:votersCount",
+	},
+}
+
 func parseSender(targetNote *internal.NoteStruct) (to, cc []interface{}) {
 	authorBaseUrl := fmt.Sprintf("%s/activity/user/%s", config.Config.Server.Endpoint, targetNote.Author.Uuid.String())
 
@@ -56,14 +65,7 @@ func RenderNote(targetNote *internal.NoteStruct) map[string]interface{} {
 	to, cc := parseSender(targetNote)
 
 	renderMap := map[string]interface{}{
-		"@context": []interface{}{
-			"https://www.w3.org/ns/activitystreams",
-			map[string]interface{}{
-				"sensitive":   "as:sensitive",
-				"toot":        "http://joinmastodon.org/ns#",
-				"votersCount": "toot:votersCount",
-			},
-		},
+		"@context":     noteContext,
 		"id":           noteBaseUrl,
 		"type":         "Note", // todo: 投票の投稿は`Question`になるので将来的に対応できる仕組みにする
 		"url":          fmt.Sprintf("%s/@%s/%s", config.Config.Server.Endpoint, targetNote.Author.Username, targetNote.Uuid.String()),
@@ -90,14 +92,7 @@ func RenderNoteActivity(targetNote *internal.NoteStruct) map[string]interface{} 
 		delete(object, "@context")
 
 		renderMap = map[string]interface{}{
-			"@context": []interface{}{
-				"https://www.w3.org/ns/activitystreams",
-				map[string]interface{}{
-					"sensitive":   "as:sensitive",
-					"toot":        "http://joinmastodon.org/ns#",
-					"votersCount": "toot:votersCount",
-				},
-			},
+			"@context":  noteContext,
 			"id":        activityBaseUrl,
 			"type":      "Create",
 			"actor":     authorBaseUrl,
@@ -109,14 +104,7 @@ func RenderNoteActivity(targetNote *internal.NoteStruct) map[string]interface{} 
 	} else {
 		reTextBaseUrl := fmt.Sprintf("%s/activity/note/%s", config.Config.Server.Endpoint, targetNote.ReText.Uuid)
 		renderMap = map[string]interface{}{
-			"@context": []interface{}{
-				"https://www.w3.org/ns/activitystreams",
-				map[string]interface{}{
-					"sensitive":   "as:sensitive",
-					"toot":        "http://joinmastodon.org/ns#",
-					"votersCount": "toot:votersCount",
-				},
-			},
+			"@context":  noteContext,
 			"id":        activityBaseUrl,
 			"type":      "Announce",
 			"actor":     authorBaseUrl,
