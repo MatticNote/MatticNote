@@ -19,7 +19,7 @@ func (c *Context) Deliver(j *work.Job) error {
 	if err := j.ArgError(); err != nil {
 		return err
 	}
-	bodyRaw, ok := j.Args["bodyRaw"]
+	bodyRaw, ok := j.Args["body"]
 	if !ok {
 		return errors.New("no arg: bodyRaw")
 	}

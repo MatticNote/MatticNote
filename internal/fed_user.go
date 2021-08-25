@@ -104,7 +104,7 @@ func RegisterRemoteUser(actorUrl string) (*uuid.UUID, error) {
 	switch apType {
 	case "Person":
 		// Valid
-	case "Service":
+	case "Service", "Application":
 		// Valid
 		isBot = true
 	default:
@@ -214,6 +214,48 @@ func RegisterRemoteUser(actorUrl string) (*uuid.UUID, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	var (
+		inbox    *string = nil
+		outbox   *string = nil
+		featured *string = nil
+	)
+
+	inboxRaw, ok := apDataDoc["inbox"]
+	if ok {
+		inboxStr, ok := inboxRaw.(string)
+		if !ok {
+			return nil, ErrInvalidValueType
+		}
+		inbox = &inboxStr
+	}
+
+	outboxRaw, ok := apDataDoc["outbox"]
+	if ok {
+		outboxStr, ok := outboxRaw.(string)
+		if !ok {
+			return nil, ErrInvalidValueType
+		}
+		outbox = &outboxStr
+	}
+
+	featuredRaw, ok := apDataDoc["featured"]
+	if ok {
+		featuredStr, ok := featuredRaw.(string)
+		if !ok {
+			return nil, ErrInvalidValueType
+		}
+		featured = &featuredStr
+	}
+
+	_, err = tx.Exec(
+		context.Background(),
+		"insert into user_fedi_info(uuid, inbox, outbox, featured) values ($1, $2, $3, $4);",
+		newUuid,
+		inbox,
+		outbox,
+		featured,
+	)
 
 	publicKeyRaw, ok := apDataDoc["publicKey"]
 	if ok {

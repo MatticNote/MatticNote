@@ -3,8 +3,11 @@ package internal
 import (
 	"context"
 	"errors"
+	"github.com/MatticNote/MatticNote/activitypub"
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/misc"
+	"github.com/MatticNote/MatticNote/worker"
+	"github.com/gocraft/work"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"strings"
@@ -111,11 +114,35 @@ func CreateNoteFromLocal(authorUuid uuid.UUID, cw, text *string, replyUuid, reTe
 		return nil, err
 	}
 
-	// TODO: ActivityPubのCreateアクティビティを書く
-
 	createdNote, err := GetNote(newNoteUuid)
 	if err != nil {
 		return nil, err
+	}
+
+	if !localOnly {
+		activity := activitypub.RenderNoteActivity(createdNote)
+		switch strings.ToUpper(visibility) {
+		case "PUBLIC", "UNLISTED", "FOLLOWER":
+			followerInbox, err := GetUserFollowerInbox(authorUuid)
+			if err != nil {
+				return nil, err
+			}
+			if len(followerInbox) > 0 {
+				for _, inbox := range followerInbox {
+					_, err = worker.Enqueue.Enqueue(
+						worker.JobDeliver,
+						work.Q{
+							"to":       inbox,
+							"body":     activity,
+							"fromUuid": authorUuid,
+						},
+					)
+				}
+
+			}
+		case "DIRECT":
+			// todo: ダイレクトによるdeliver
+		}
 	}
 
 	return createdNote, err

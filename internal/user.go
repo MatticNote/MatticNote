@@ -914,3 +914,32 @@ func GetUserPrivateKey(targetUuid uuid.UUID) (*pem.Block, error) {
 
 	return privateKey, nil
 }
+
+func GetUserFollowerInbox(targetUuid uuid.UUID) ([]string, error) {
+	rows, err := database.DBPool.Query(
+		context.Background(),
+		"select shared_inbox from follow_relation, \"user\", host where follow_to = $1 "+
+			"and is_pending is false and follow_from = \"user\".uuid and \"user\".host = host.host "+
+			"union select inbox from follow_relation, \"user\", host, user_fedi_info where follow_to = $1 "+
+			"and is_pending is false and \"user\".uuid = user_fedi_info.uuid and \"user\".host = host.host and host.shared_inbox is null;",
+		targetUuid.String(),
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		} else {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+	var inboxes []string
+	for rows.Next() {
+		var data string
+		err := rows.Scan(&data)
+		if err != nil {
+			return nil, err
+		}
+		inboxes = append(inboxes, data)
+	}
+	return inboxes, nil
+}
