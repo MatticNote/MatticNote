@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/MatticNote/MatticNote/server/ap"
@@ -50,6 +51,7 @@ func userProfileView(c *fiber.Ctx, targetUser *internal.LocalUserStruct) error {
 }
 
 func userProfileNoteController(c *fiber.Ctx) error {
+	targetUser := c.Locals("targetUser").(*internal.LocalUserStruct)
 	noteUuid, err := uuid.Parse(c.Params("noteUuid"))
 	if err != nil {
 		return fiber.ErrBadRequest
@@ -65,6 +67,11 @@ func userProfileNoteController(c *fiber.Ctx) error {
 			return err
 		}
 	}
+
+	if targetUser.Uuid != targetNote.Author.Uuid {
+		return c.Redirect(fmt.Sprintf("/@%s/%s", targetNote.Author.Username, targetNote.Uuid))
+	}
+
 	if misc.IsAPAcceptHeader(c) {
 		return ap.RenderNote(c, targetNote)
 	} else {
