@@ -13,8 +13,6 @@ import (
 )
 
 func ConfigureRoute(r fiber.Router) {
-	//v1.ConfigureRoute(r.Group("/v1"))
-
 	graphqlGroup := r.Group("/graphql")
 	graphqlGroup.Use(cors.New(cors.Config{
 		AllowOrigins:     "*",
@@ -28,7 +26,7 @@ func ConfigureRoute(r fiber.Router) {
 		internal.AuthenticationUser,
 		limiter.New(limiter.Config{
 			Max:          6000,
-			KeyGenerator: internal.RateLimitKeyGen("APIv1"),
+			KeyGenerator: internal.RateLimitKeyGen("GQL"),
 			Expiration:   15 * time.Minute,
 			LimitReached: func(c *fiber.Ctx) error {
 				return c.SendStatus(fiber.StatusTooManyRequests)

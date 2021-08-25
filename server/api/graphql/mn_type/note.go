@@ -8,13 +8,14 @@ import (
 )
 
 type NoteType struct {
-	Uuid      uuid.UUID   `json:"uuid"`
-	CreatedAt interface{} `json:"created_at"`
-	Cw        interface{} `json:"cw"`
-	Text      interface{} `json:"text"`
-	ReplyId   *uuid.UUID  `json:"reply_id"`
-	ReTextId  *uuid.UUID  `json:"retext_id"`
-	LocalOnly bool        `json:"local_only"`
+	Uuid       uuid.UUID   `json:"uuid"`
+	CreatedAt  interface{} `json:"created_at"`
+	Cw         interface{} `json:"cw"`
+	Text       interface{} `json:"text"`
+	ReplyId    *uuid.UUID  `json:"reply_id"`
+	ReTextId   *uuid.UUID  `json:"retext_id"`
+	LocalOnly  bool        `json:"local_only"`
+	Visibility string      `json:"visibility"`
 }
 
 var NoteQLType = graphql.NewObject(graphql.ObjectConfig{
@@ -56,17 +57,35 @@ var NoteQLType = graphql.NewObject(graphql.ObjectConfig{
 			Description: "If it is true, don't send fediverse.",
 			Type:        graphql.NewNonNull(graphql.Boolean),
 		},
+		"visibility": &graphql.Field{
+			Name:        "Visibility",
+			Description: "Visibility",
+			Type:        graphql.NewNonNull(graphql.String),
+		},
 	},
 })
 
 func ConvNoteInternal2GQLType(ins *internal.NoteStruct) NoteType {
+	var (
+		reText *uuid.UUID
+		reply  *uuid.UUID
+	)
+
+	if ins.ReText != nil {
+		reText = &ins.ReText.Uuid
+	}
+	if ins.Reply != nil {
+		reply = &ins.Reply.Uuid
+	}
+
 	return NoteType{
-		Uuid:      ins.Uuid,
-		CreatedAt: mn_misc.Conv2Interface(ins.CreatedAt),
-		Cw:        mn_misc.Conv2Interface(ins.Cw),
-		Text:      mn_misc.Conv2Interface(ins.Body),
-		ReplyId:   nil,
-		ReTextId:  nil,
-		LocalOnly: ins.LocalOnly,
+		Uuid:       ins.Uuid,
+		CreatedAt:  mn_misc.Conv2Interface(ins.CreatedAt),
+		Cw:         mn_misc.Conv2Interface(ins.Cw),
+		Text:       mn_misc.Conv2Interface(ins.Body),
+		LocalOnly:  ins.LocalOnly,
+		Visibility: ins.Visibility,
+		ReTextId:   reText,
+		ReplyId:    reply,
 	}
 }

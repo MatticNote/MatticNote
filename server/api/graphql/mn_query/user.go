@@ -29,17 +29,17 @@ var CurrentUser = &graphql.Field{
 }
 
 var GetUser = &graphql.Field{
-	Name:        "Get the user",
+	Name:        "Get user",
 	Description: "Get the user.",
 	Args: graphql.FieldConfigArgument{
-		"targetID": &graphql.ArgumentConfig{
+		"userID": &graphql.ArgumentConfig{
 			Type:        graphql.NewNonNull(graphql.ID),
 			Description: "Target userID",
 		},
 	},
 	Type: mn_type.UserQLType,
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-		targetUserId, err := uuid.Parse(p.Args["targetID"].(string))
+		targetUserId, err := uuid.Parse(p.Args["userID"].(string))
 		if err != nil {
 			return nil, common.ErrInvalidUUID
 		}

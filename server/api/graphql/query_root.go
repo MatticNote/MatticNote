@@ -12,5 +12,6 @@ var queryRoot = graphql.ObjectConfig{
 		"meta":        mn_query.Meta,
 		"currentUser": mn_query.CurrentUser,
 		"getUser":     mn_query.GetUser,
+		"getNote":     mn_query.GetNote,
 	},
 }
