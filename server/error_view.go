@@ -24,6 +24,8 @@ func GoneView(c *fiber.Ctx) error {
 
 func ErrorView(c *fiber.Ctx, err error) error {
 	switch err {
+	case fiber.ErrBadRequest:
+		c.Status(fiber.StatusBadRequest)
 	case fiber.ErrUnauthorized:
 		c.Status(fiber.StatusUnauthorized)
 	case fiber.ErrForbidden:

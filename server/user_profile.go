@@ -5,25 +5,10 @@ import (
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/MatticNote/MatticNote/server/ap"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
-func userProfileController(c *fiber.Ctx) error {
-	if misc.IsAPAcceptHeader(c) {
-		// ActivityPub Render
-		targetUser, err := internal.GetLocalUserFromUsername(c.Params("username"))
-		if err != nil && err == internal.ErrNoSuchUser {
-			return fiber.ErrNotFound
-		} else if err != nil {
-			return err
-		}
-		return ap.RenderUser(c, targetUser)
-	} else {
-		// Normal render
-		return userProfileView(c)
-	}
-}
-
-func userProfileView(c *fiber.Ctx) error {
+func userProfileHandler(c *fiber.Ctx) error {
 	targetUser, err := internal.GetLocalUserFromUsername(c.Params("username"))
 	if err != nil {
 		switch err {
@@ -35,7 +20,20 @@ func userProfileView(c *fiber.Ctx) error {
 			return err
 		}
 	}
+	c.Locals("targetUser", targetUser)
+	return c.Next()
+}
 
+func userProfileController(c *fiber.Ctx) error {
+	targetUser := c.Locals("targetUser").(*internal.LocalUserStruct)
+	if misc.IsAPAcceptHeader(c) {
+		return ap.RenderUser(c, targetUser)
+	} else {
+		return userProfileView(c, targetUser)
+	}
+}
+
+func userProfileView(c *fiber.Ctx, targetUser *internal.LocalUserStruct) error {
 	return c.Render(
 		"user_profile",
 		fiber.Map{
@@ -47,6 +45,38 @@ func userProfileView(c *fiber.Ctx) error {
 			"isSuperUser":    targetUser.IsSuperuser,
 			"isBot":          targetUser.IsBot,
 			"acceptManually": targetUser.AcceptManually,
+		},
+	)
+}
+
+func userProfileNoteController(c *fiber.Ctx) error {
+	noteUuid, err := uuid.Parse(c.Params("noteUuid"))
+	if err != nil {
+		return fiber.ErrBadRequest
+	}
+	targetNote, err := internal.GetNote(noteUuid)
+	if err != nil {
+		switch err {
+		case internal.ErrNoteNotFound:
+			return fiber.ErrNotFound
+		case internal.ErrUserSuspended:
+			return fiber.ErrForbidden
+		default:
+			return err
+		}
+	}
+	if misc.IsAPAcceptHeader(c) {
+		return ap.RenderNote(c, targetNote)
+	} else {
+		return userProfileNoteView(c, targetNote)
+	}
+}
+
+func userProfileNoteView(c *fiber.Ctx, targetNote *internal.NoteStruct) error {
+	return c.Render(
+		"user_profile_note",
+		fiber.Map{
+			"body": targetNote.Body.String,
 		},
 	)
 }

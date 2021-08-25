@@ -36,7 +36,10 @@ func ConfigureRoute(app *fiber.App) {
 		return c.Redirect("/account/login", fiber.StatusPermanentRedirect)
 	})
 
-	app.Get("/@:username", userProfileController)
+	ud := app.Group("/@:username", userProfileHandler)
+	ud.Get("/", userProfileController)
+	ud.Get("/:noteUuid", userProfileNoteController)
+
 	app.Get("/user/:username", userProfileController) // alias path
 
 	account.ConfigureRoute(app.Group("/account"))

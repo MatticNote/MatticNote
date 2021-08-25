@@ -15,12 +15,12 @@ var CreateNote = &graphql.Field{
 	Args: graphql.FieldConfigArgument{
 		"cw": &graphql.ArgumentConfig{
 			Type:         graphql.String,
-			DefaultValue: "",
+			DefaultValue: nil,
 			Description:  "Content Warning. optional.",
 		},
 		"text": &graphql.ArgumentConfig{
 			Type:         graphql.String,
-			DefaultValue: "",
+			DefaultValue: nil,
 			Description:  "Body content.",
 		},
 		"replyId": &graphql.ArgumentConfig{
