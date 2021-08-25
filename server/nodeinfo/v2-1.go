@@ -3,7 +3,7 @@ package nodeinfo
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/version"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -14,7 +14,7 @@ func nodeinfoV21(c *fiber.Ctx) error {
 		"version": 2.1,
 		"software": fiber.Map{
 			"name":    "matticnote",
-			"version": fmt.Sprintf("%s-%s", internal.Version, internal.Revision),
+			"version": fmt.Sprintf("%s-%s", version.Version, version.Revision),
 			// TODO: repository, homepageも設定する
 		},
 		"protocols": []string{

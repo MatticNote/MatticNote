@@ -1,7 +1,7 @@
 package mn_type
 
 import (
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/ist"
 	"github.com/MatticNote/MatticNote/server/api/graphql/mn_misc"
 	"github.com/google/uuid"
 	"github.com/graphql-go/graphql"
@@ -65,7 +65,7 @@ var NoteQLType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
-func ConvNoteInternal2GQLType(ins *internal.NoteStruct) NoteType {
+func ConvNoteInternal2GQLType(ins *ist.NoteStruct) NoteType {
 	var (
 		reText *uuid.UUID
 		reply  *uuid.UUID

@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/MatticNote/MatticNote/config"
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/mail"
 	"github.com/urfave/cli/v2"
 	"log"
 )
@@ -17,7 +17,7 @@ func testSendMail(c *cli.Context) error {
 		return err
 	}
 
-	err = internal.SendMail(
+	err = mail.SendMail(
 		c.String("to"),
 		"MatticNote Test mail / MatticNote テストメール",
 		"text/plain",

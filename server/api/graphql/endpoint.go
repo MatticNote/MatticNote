@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/ist"
 	"github.com/gofiber/fiber/v2"
 	"github.com/graphql-go/graphql"
 )
@@ -22,7 +23,7 @@ func GQLEndpoint(c *fiber.Ctx) error {
 
 	usrContext := context.Background()
 
-	currentUsr, ok := c.Locals(internal.LoginUserLocal).(*internal.LocalUserStruct)
+	currentUsr, ok := c.Locals(internal.LoginUserLocal).(*ist.LocalUserStruct)
 	if ok {
 		usrContext = context.WithValue(usrContext, "currentUser", currentUsr.Uuid)
 	}

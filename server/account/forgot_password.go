@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/jackc/pgx/v4"
@@ -48,7 +49,7 @@ func forgotPasswordPost(c *fiber.Ctx) error {
 		return forgotPasswordView(c, errs...)
 	}
 
-	if err := internal.IssueForgotPassword(formData.Email); err != nil {
+	if err := user.IssueForgotPassword(formData.Email); err != nil {
 		return err
 	}
 
@@ -56,7 +57,7 @@ func forgotPasswordPost(c *fiber.Ctx) error {
 }
 
 func forgotPasswordResetGet(c *fiber.Ctx) error {
-	_, err := internal.ValidateForgotPasswordToken(c.Params("token"))
+	_, err := user.ValidateForgotPasswordToken(c.Params("token"))
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return c.Status(fiber.StatusBadRequest).Render(
@@ -84,7 +85,7 @@ func forgotPasswordResetView(c *fiber.Ctx, errors ...string) error {
 }
 
 func forgotPasswordResetPost(c *fiber.Ctx) error {
-	targetUuid, err := internal.ValidateForgotPasswordToken(c.Params("token"))
+	targetUuid, err := user.ValidateForgotPasswordToken(c.Params("token"))
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return c.Status(fiber.StatusBadRequest).Render(
@@ -107,7 +108,7 @@ func forgotPasswordResetPost(c *fiber.Ctx) error {
 		return forgotPasswordResetView(c, errs...)
 	}
 
-	if err := internal.ChangeUserPassword(targetUuid, formData.Password); err != nil {
+	if err := user.ChangeUserPassword(targetUuid, formData.Password); err != nil {
 		return err
 	}
 

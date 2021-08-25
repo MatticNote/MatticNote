@@ -2,7 +2,7 @@ package mn_mutation
 
 import (
 	"errors"
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/note"
 	"github.com/MatticNote/MatticNote/server/api/graphql/common"
 	"github.com/MatticNote/MatticNote/server/api/graphql/mn_type"
 	"github.com/google/uuid"
@@ -75,7 +75,7 @@ var CreateNote = &graphql.Field{
 			text = &textRaw
 		}
 
-		newNote, err := internal.CreateNoteFromLocal(
+		newNote, err := note.CreateNoteFromLocal(
 			currentUser,
 			cw,
 			text,
@@ -113,7 +113,7 @@ var DeleteNote = &graphql.Field{
 			return nil, common.ErrInvalidUUID
 		}
 
-		targetNote, err := internal.GetNote(targetNoteUuid)
+		targetNote, err := note.GetNote(targetNoteUuid)
 		if err != nil {
 			return nil, err
 		}
@@ -121,7 +121,7 @@ var DeleteNote = &graphql.Field{
 			return nil, errors.New("specified note is not owned")
 		}
 
-		err = internal.DeleteNote(targetNote.Uuid)
+		err = note.DeleteNote(targetNote.Uuid)
 		if err != nil {
 			return nil, err
 		}

@@ -1,7 +1,7 @@
 package mn_query
 
 import (
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/note"
 	"github.com/MatticNote/MatticNote/server/api/graphql/common"
 	"github.com/MatticNote/MatticNote/server/api/graphql/mn_type"
 	"github.com/google/uuid"
@@ -24,7 +24,7 @@ var GetNote = &graphql.Field{
 			return nil, common.ErrInvalidUUID
 		}
 
-		targetNote, err := internal.GetNote(targetNoteId)
+		targetNote, err := note.GetNote(targetNoteId)
 		if err != nil {
 			return nil, err
 		}

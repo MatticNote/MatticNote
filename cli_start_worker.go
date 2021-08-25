@@ -24,6 +24,7 @@ func startWorker(_ *cli.Context) error {
 		return err
 	}
 
+	worker.InitEnqueue()
 	worker.InitWorker()
 
 	worker.Worker.Start()

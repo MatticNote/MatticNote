@@ -19,5 +19,5 @@ fetch-meta:
 build: build-client fetch-meta
 	go build \
 	-o build/matticnote-$(MN_VERSION)-$(MN_REVISION)-$(BUILD_SUFFIX) \
-	-ldflags "-X ${PACKAGE_NAME}/internal.Version=$(MN_VERSION) \
-	-X ${PACKAGE_NAME}/internal.Revision=$(MN_REVISION)"
+	-ldflags "-X ${PACKAGE_NAME}/internal/version.Version=$(MN_VERSION) \
+	-X ${PACKAGE_NAME}/internal/version.Revision=$(MN_REVISION)"

@@ -1,4 +1,4 @@
-package internal
+package version
 
 // It is replaced in build
 var (

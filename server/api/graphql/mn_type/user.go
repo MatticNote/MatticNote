@@ -1,7 +1,7 @@
 package mn_type
 
 import (
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/ist"
 	"github.com/MatticNote/MatticNote/server/api/graphql/mn_misc"
 	"github.com/google/uuid"
 	"github.com/graphql-go/graphql"
@@ -66,7 +66,7 @@ var UserQLType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
-func ConvUsrInternal2GQLType(ius *internal.UserStruct) UserType {
+func ConvUsrInternal2GQLType(ius *ist.UserStruct) UserType {
 	return UserType{
 		Uuid:           ius.Uuid,
 		Username:       ius.Username,

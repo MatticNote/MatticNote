@@ -3,7 +3,7 @@ package activitypub
 import (
 	"fmt"
 	"github.com/MatticNote/MatticNote/config"
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/ist"
 )
 
 const publicUrl = "https://www.w3.org/ns/activitystreams#Public"
@@ -17,7 +17,7 @@ var noteContext = []interface{}{
 	},
 }
 
-func parseSender(targetNote *internal.NoteStruct) (to, cc []interface{}) {
+func parseSender(targetNote *ist.NoteStruct) (to, cc []interface{}) {
 	authorBaseUrl := fmt.Sprintf("%s/activity/user/%s", config.Config.Server.Endpoint, targetNote.Author.Uuid.String())
 
 	switch targetNote.Visibility {
@@ -52,7 +52,7 @@ func parseSender(targetNote *internal.NoteStruct) (to, cc []interface{}) {
 	return
 }
 
-func RenderNote(targetNote *internal.NoteStruct) map[string]interface{} {
+func RenderNote(targetNote *ist.NoteStruct) map[string]interface{} {
 	noteBaseUrl := fmt.Sprintf("%s/activity/note/%s", config.Config.Server.Endpoint, targetNote.Uuid.String())
 	authorBaseUrl := fmt.Sprintf("%s/activity/user/%s", config.Config.Server.Endpoint, targetNote.Author.Uuid.String())
 
@@ -81,7 +81,7 @@ func RenderNote(targetNote *internal.NoteStruct) map[string]interface{} {
 	return renderMap
 }
 
-func RenderNoteActivity(targetNote *internal.NoteStruct) map[string]interface{} {
+func RenderNoteActivity(targetNote *ist.NoteStruct) map[string]interface{} {
 	var renderMap map[string]interface{}
 	activityBaseUrl := fmt.Sprintf("%s/activity/note/%s/activity", config.Config.Server.Endpoint, targetNote.Uuid.String())
 	authorBaseUrl := fmt.Sprintf("%s/activity/user/%s", config.Config.Server.Endpoint, targetNote.Author.Uuid.String())

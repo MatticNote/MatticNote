@@ -2,6 +2,7 @@ package settings
 
 import (
 	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofiber/fiber/v2"
@@ -28,7 +29,7 @@ func editProfileView(c *fiber.Ctx, isSuccess bool, errs ...string) error {
 
 	claim := jwtCurrentUserKey.Claims.(jwt.MapClaims)
 
-	currentUser, err := internal.GetLocalUser(uuid.MustParse(claim["sub"].(string)))
+	currentUser, err := user.GetLocalUser(uuid.MustParse(claim["sub"].(string)))
 	if err != nil {
 		return err
 	}
@@ -74,7 +75,7 @@ func editProfilePost(c *fiber.Ctx) error {
 		acceptManually = false
 	}
 
-	err = internal.UpdateProfile(
+	err = user.UpdateProfile(
 		uuid.MustParse(claim["sub"].(string)),
 		formData.Name,
 		formData.Summary,

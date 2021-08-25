@@ -20,6 +20,7 @@ const (
 	JobInboxProcess = "inbox_process"
 	JobDeliver      = "deliver"
 	JobExportData   = "export_data"
+	JobNotePreJob   = "note_pre_job"
 )
 
 func getRedisPool() *redis.Pool {
@@ -64,5 +65,13 @@ func InitWorker() {
 			MaxFails: 1,
 		},
 		(*Context).ExportData,
+	)
+	Worker.JobWithOptions(
+		JobNotePreJob,
+		work.JobOptions{
+			Priority: 20,
+			MaxFails: 1,
+		},
+		(*Context).NotePreJob,
 	)
 }

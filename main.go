@@ -3,7 +3,7 @@ package main
 import (
 	"embed"
 	"fmt"
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/version"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
@@ -22,7 +22,7 @@ var webCliFS embed.FS
 var mnAppCli = &cli.App{
 	Name:                 "MatticNote",
 	Description:          "ActivityPub compatible SNS that aims to be easy for everyone to use",
-	Version:              fmt.Sprintf("%s-%s", internal.Version, internal.Revision),
+	Version:              fmt.Sprintf("%s-%s", version.Version, version.Revision),
 	EnableBashCompletion: true,
 	Commands: []*cli.Command{
 		{

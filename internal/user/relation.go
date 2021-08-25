@@ -1,9 +1,10 @@
-package internal
+package user
 
 import (
 	"context"
 	"errors"
 	"github.com/MatticNote/MatticNote/database"
+	"github.com/MatticNote/MatticNote/internal/notification"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 )
@@ -56,7 +57,7 @@ func CreateFollowRelation(fromUser, targetUser uuid.UUID, isPending bool) error 
 		return ErrAlreadyFollowing
 	}
 
-	err = MakeFollowNotification(fromUser, targetUser)
+	err = notification.MakeFollowNotification(fromUser, targetUser)
 	if err != nil {
 		return err
 	}

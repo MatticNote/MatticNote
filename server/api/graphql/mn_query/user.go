@@ -2,7 +2,7 @@ package mn_query
 
 import (
 	"errors"
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/MatticNote/MatticNote/server/api/graphql/common"
 	"github.com/MatticNote/MatticNote/server/api/graphql/mn_type"
 	"github.com/google/uuid"
@@ -19,7 +19,7 @@ var CurrentUser = &graphql.Field{
 			return nil, errors.New("authorize required")
 		}
 
-		targetUser, err := internal.GetUser(currentUser)
+		targetUser, err := user.GetUser(currentUser)
 		if err != nil {
 			return nil, err
 		}
@@ -44,7 +44,7 @@ var GetUser = &graphql.Field{
 			return nil, common.ErrInvalidUUID
 		}
 
-		targetUser, err := internal.GetUser(targetUserId)
+		targetUser, err := user.GetUser(targetUserId)
 		if err != nil {
 			return nil, err
 		}

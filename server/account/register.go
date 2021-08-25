@@ -3,6 +3,7 @@ package account
 import (
 	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/gofiber/fiber/v2"
 )
@@ -47,9 +48,9 @@ func registerPost(c *fiber.Ctx) error {
 		return registerUserView(c, errs...)
 	}
 
-	_, err := internal.RegisterLocalUser(formData.Email, formData.Username, formData.Password, false)
+	_, err := user.RegisterLocalUser(formData.Email, formData.Username, formData.Password, false)
 	if err != nil {
-		if err == internal.ErrUserExists {
+		if err == user.ErrUserExists {
 			return registerUserView(c, "Username or email is already taken")
 		} else {
 			return err

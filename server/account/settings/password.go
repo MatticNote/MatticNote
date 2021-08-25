@@ -2,6 +2,7 @@ package settings
 
 import (
 	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofiber/fiber/v2"
@@ -49,16 +50,16 @@ func editPasswordPost(c *fiber.Ctx) error {
 
 	targetUuid := uuid.MustParse(claim["sub"].(string))
 
-	err := internal.ValidateUserPassword(targetUuid, formData.CurrentPassword)
+	err := user.ValidateUserPassword(targetUuid, formData.CurrentPassword)
 	if err != nil {
-		if err == internal.ErrInvalidPassword {
+		if err == user.ErrInvalidPassword {
 			return editPasswordView(c, false, "current password does not match")
 		} else {
 			return err
 		}
 	}
 
-	err = internal.ChangeUserPassword(targetUuid, formData.NewPassword)
+	err = user.ChangeUserPassword(targetUuid, formData.NewPassword)
 	if err != nil {
 		return err
 	}

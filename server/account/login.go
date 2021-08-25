@@ -3,6 +3,7 @@ package account
 import (
 	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -55,21 +56,21 @@ func loginPost(c *fiber.Ctx) error {
 		return nil
 	}
 
-	targetUuid, err := internal.ValidateLoginUser(formData.Login, formData.Password)
+	targetUuid, err := user.ValidateLoginUser(formData.Login, formData.Password)
 	var isSuccess = false
 	var user2faRequired = false
 	defer func() {
 		if targetUuid != uuid.Nil && !user2faRequired {
-			_ = internal.InsertSigninLog(targetUuid, c.IP(), isSuccess)
+			_ = user.InsertSigninLog(targetUuid, c.IP(), isSuccess)
 		}
 	}()
 	if err != nil {
 		switch err {
-		case internal.ErrLoginFailed:
+		case user.ErrLoginFailed:
 			return loginUserView(c, "Incorrect login name or password")
-		case internal.ErrEmailAuthRequired:
+		case user.ErrEmailAuthRequired:
 			return loginUserView(c, "Email authentication required")
-		case internal.Err2faRequired:
+		case user.Err2faRequired:
 			user2faRequired = true
 			s, err := login2faSession.Get(c)
 			if err != nil {
@@ -153,15 +154,15 @@ func login2faPost(c *fiber.Ctx) error {
 
 	var isSuccess = false
 	defer func() {
-		_ = internal.InsertSigninLog(targetUuid, c.IP(), isSuccess)
+		_ = user.InsertSigninLog(targetUuid, c.IP(), isSuccess)
 	}()
 
-	err = internal.Validate2faCode(targetUuid, formData.Code)
+	err = user.Validate2faCode(targetUuid, formData.Code)
 	if err != nil {
-		if err == internal.ErrInvalid2faToken {
-			err = internal.Use2faBackupCode(targetUuid, formData.Code)
+		if err == user.ErrInvalid2faToken {
+			err = user.Use2faBackupCode(targetUuid, formData.Code)
 			if err != nil {
-				if err == internal.ErrInvalid2faToken {
+				if err == user.ErrInvalid2faToken {
 					return login2faView(c, true)
 				} else {
 					return err

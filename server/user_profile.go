@@ -2,7 +2,9 @@ package server
 
 import (
 	"fmt"
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/ist"
+	"github.com/MatticNote/MatticNote/internal/note"
+	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/MatticNote/MatticNote/server/ap"
 	"github.com/gofiber/fiber/v2"
@@ -10,12 +12,12 @@ import (
 )
 
 func userProfileHandler(c *fiber.Ctx) error {
-	targetUser, err := internal.GetLocalUserFromUsername(c.Params("username"))
+	targetUser, err := user.GetLocalUserFromUsername(c.Params("username"))
 	if err != nil {
 		switch err {
-		case internal.ErrNoSuchUser:
+		case user.ErrNoSuchUser:
 			return fiber.ErrNotFound
-		case internal.ErrUserGone:
+		case user.ErrUserGone:
 			return fiber.ErrGone
 		default:
 			return err
@@ -26,7 +28,7 @@ func userProfileHandler(c *fiber.Ctx) error {
 }
 
 func userProfileController(c *fiber.Ctx) error {
-	targetUser := c.Locals("targetUser").(*internal.LocalUserStruct)
+	targetUser := c.Locals("targetUser").(*ist.LocalUserStruct)
 	if misc.IsAPAcceptHeader(c) {
 		return ap.RenderUser(c, targetUser)
 	} else {
@@ -34,7 +36,7 @@ func userProfileController(c *fiber.Ctx) error {
 	}
 }
 
-func userProfileView(c *fiber.Ctx, targetUser *internal.LocalUserStruct) error {
+func userProfileView(c *fiber.Ctx, targetUser *ist.LocalUserStruct) error {
 	return c.Render(
 		"user_profile",
 		fiber.Map{
@@ -51,17 +53,17 @@ func userProfileView(c *fiber.Ctx, targetUser *internal.LocalUserStruct) error {
 }
 
 func userProfileNoteController(c *fiber.Ctx) error {
-	targetUser := c.Locals("targetUser").(*internal.LocalUserStruct)
+	targetUser := c.Locals("targetUser").(*ist.LocalUserStruct)
 	noteUuid, err := uuid.Parse(c.Params("noteUuid"))
 	if err != nil {
 		return fiber.ErrBadRequest
 	}
-	targetNote, err := internal.GetNote(noteUuid)
+	targetNote, err := note.GetNote(noteUuid)
 	if err != nil {
 		switch err {
-		case internal.ErrNoteNotFound:
+		case note.ErrNoteNotFound:
 			return fiber.ErrNotFound
-		case internal.ErrUserSuspended:
+		case user.ErrUserSuspended:
 			return fiber.ErrForbidden
 		default:
 			return err
@@ -79,7 +81,7 @@ func userProfileNoteController(c *fiber.Ctx) error {
 	}
 }
 
-func userProfileNoteView(c *fiber.Ctx, targetNote *internal.NoteStruct) error {
+func userProfileNoteView(c *fiber.Ctx, targetNote *ist.NoteStruct) error {
 	return c.Render(
 		"user_profile_note",
 		fiber.Map{

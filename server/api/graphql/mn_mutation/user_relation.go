@@ -1,7 +1,7 @@
 package mn_mutation
 
 import (
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/MatticNote/MatticNote/server/api/graphql/common"
 	"github.com/MatticNote/MatticNote/server/api/graphql/mn_type"
 	"github.com/google/uuid"
@@ -29,12 +29,12 @@ var FollowUser = &graphql.Field{
 			return nil, common.ErrInvalidUUID
 		}
 
-		targetUser, err := internal.GetUser(targetID)
+		targetUser, err := user.GetUser(targetID)
 		if err != nil {
 			return nil, common.ErrUserNotFound
 		}
 
-		err = internal.CreateFollowRelation(currentUser, targetUser.Uuid, targetUser.AcceptManually)
+		err = user.CreateFollowRelation(currentUser, targetUser.Uuid, targetUser.AcceptManually)
 		if err != nil {
 			return nil, err
 		}
@@ -66,12 +66,12 @@ var UnFollowUser = &graphql.Field{
 			return nil, common.ErrInvalidUUID
 		}
 
-		targetUser, err := internal.GetUser(targetID)
+		targetUser, err := user.GetUser(targetID)
 		if err != nil {
 			return nil, common.ErrUserNotFound
 		}
 
-		err = internal.DestroyFollowRelation(currentUser, targetUser.Uuid)
+		err = user.DestroyFollowRelation(currentUser, targetUser.Uuid)
 		if err != nil {
 			return nil, err
 		}
@@ -101,12 +101,12 @@ var MuteUser = &graphql.Field{
 			return nil, common.ErrInvalidUUID
 		}
 
-		targetUser, err := internal.GetUser(targetID)
+		targetUser, err := user.GetUser(targetID)
 		if err != nil {
 			return nil, common.ErrUserNotFound
 		}
 
-		err = internal.CreateMuteRelation(currentUser, targetUser.Uuid)
+		err = user.CreateMuteRelation(currentUser, targetUser.Uuid)
 		if err != nil {
 			return nil, err
 		}
@@ -136,12 +136,12 @@ var UnMuteUser = &graphql.Field{
 			return nil, common.ErrInvalidUUID
 		}
 
-		targetUser, err := internal.GetUser(targetID)
+		targetUser, err := user.GetUser(targetID)
 		if err != nil {
 			return nil, common.ErrUserNotFound
 		}
 
-		err = internal.DestroyMuteRelation(currentUser, targetUser.Uuid)
+		err = user.DestroyMuteRelation(currentUser, targetUser.Uuid)
 		if err != nil {
 			return nil, err
 		}
@@ -171,12 +171,12 @@ var BlockUser = &graphql.Field{
 			return nil, common.ErrInvalidUUID
 		}
 
-		targetUser, err := internal.GetUser(targetID)
+		targetUser, err := user.GetUser(targetID)
 		if err != nil {
 			return nil, common.ErrUserNotFound
 		}
 
-		err = internal.CreateBlockRelation(currentUser, targetUser.Uuid)
+		err = user.CreateBlockRelation(currentUser, targetUser.Uuid)
 		if err != nil {
 			return nil, err
 		}
@@ -206,12 +206,12 @@ var UnBlockUser = &graphql.Field{
 			return nil, common.ErrInvalidUUID
 		}
 
-		targetUser, err := internal.GetUser(targetID)
+		targetUser, err := user.GetUser(targetID)
 		if err != nil {
 			return nil, common.ErrUserNotFound
 		}
 
-		err = internal.DestroyMuteRelation(currentUser, targetUser.Uuid)
+		err = user.DestroyBlockRelation(currentUser, targetUser.Uuid)
 		if err != nil {
 			return nil, err
 		}

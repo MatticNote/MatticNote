@@ -2,7 +2,7 @@ package worker
 
 import (
 	"errors"
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/go-fed/httpsig"
 	"github.com/gocraft/work"
 	"github.com/piprate/json-gold/ld"
@@ -45,9 +45,9 @@ func (c *Context) ProcessInbox(j *work.Job) error {
 			// unknown actor type
 			return nil
 		}
-		_, err := internal.GetRemoteUserFromApID(actor)
-		if err == internal.ErrNoSuchUser {
-			_, err := internal.RegisterRemoteUser(actor)
+		_, err := user.GetRemoteUserFromApID(actor)
+		if err == user.ErrNoSuchUser {
+			_, err := user.RegisterRemoteUser(actor)
 			if err != nil {
 				return err
 			}
@@ -59,7 +59,7 @@ func (c *Context) ProcessInbox(j *work.Job) error {
 		if ok {
 			verifier := verifierRaw.(httpsig.Verifier)
 
-			userPK, err := internal.GetUserPublicKeyFromKeyId(verifier.KeyId())
+			userPK, err := user.GetUserPublicKeyFromKeyId(verifier.KeyId())
 			if err != nil {
 				log.Println("err: signature missing. ignore.")
 				return nil

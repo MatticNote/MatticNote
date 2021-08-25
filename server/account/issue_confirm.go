@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -68,7 +69,7 @@ func issueConfirmPost(c *fiber.Ctx) error {
 	}
 
 	if !issueData.isVerified {
-		if err := internal.IssueVerifyEmail(uuid.MustParse(issueData.uuidRaw), issueData.email); err != nil {
+		if err := user.IssueVerifyEmail(uuid.MustParse(issueData.uuidRaw), issueData.email); err != nil {
 			return err
 		}
 	}

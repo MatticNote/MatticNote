@@ -1,11 +1,11 @@
-package internal
+package note
 
 import (
 	"context"
 	"errors"
-	"github.com/MatticNote/MatticNote/activitypub"
 	"github.com/MatticNote/MatticNote/database"
-	"github.com/MatticNote/MatticNote/misc"
+	"github.com/MatticNote/MatticNote/internal/ist"
+	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/MatticNote/MatticNote/worker"
 	"github.com/gocraft/work"
 	"github.com/google/uuid"
@@ -18,19 +18,7 @@ var (
 	ErrInvalidVisibility = errors.New("invalid note visibility")
 )
 
-type NoteStruct struct {
-	Uuid       uuid.UUID
-	Author     *UserStruct
-	CreatedAt  misc.NullTime
-	Cw         misc.NullString
-	Body       misc.NullString
-	LocalOnly  bool
-	Reply      *NoteStruct
-	ReText     *NoteStruct
-	Visibility string
-}
-
-func CreateNoteFromLocal(authorUuid uuid.UUID, cw, text *string, replyUuid, reTextUuid *uuid.UUID, localOnly bool, visibility string) (*NoteStruct, error) {
+func CreateNoteFromLocal(authorUuid uuid.UUID, cw, text *string, replyUuid, reTextUuid *uuid.UUID, localOnly bool, visibility string) (*ist.NoteStruct, error) {
 	switch strings.ToUpper(visibility) {
 	case "PUBLIC":
 	case "UNLISTED":
@@ -120,37 +108,22 @@ func CreateNoteFromLocal(authorUuid uuid.UUID, cw, text *string, replyUuid, reTe
 	}
 
 	if !localOnly {
-		activity := activitypub.RenderNoteActivity(createdNote)
-		switch strings.ToUpper(visibility) {
-		case "PUBLIC", "UNLISTED", "FOLLOWER":
-			followerInbox, err := GetUserFollowerInbox(authorUuid)
-			if err != nil {
-				return nil, err
-			}
-			if len(followerInbox) > 0 {
-				for _, inbox := range followerInbox {
-					_, err = worker.Enqueue.Enqueue(
-						worker.JobDeliver,
-						work.Q{
-							"to":       inbox,
-							"body":     activity,
-							"fromUuid": authorUuid,
-						},
-					)
-				}
-
-			}
-		case "DIRECT":
-			// todo: ダイレクトによるdeliver
+		_, err := worker.Enqueue.Enqueue(worker.JobNotePreJob, work.Q{
+			"visibility":  visibility,
+			"createdNote": createdNote,
+			"authorUuid":  authorUuid,
+		})
+		if err != nil {
+			return nil, err
 		}
 	}
 
 	return createdNote, err
 }
 
-func GetNote(noteUuid uuid.UUID, recursive ...bool) (*NoteStruct, error) {
+func GetNote(noteUuid uuid.UUID, recursive ...bool) (*ist.NoteStruct, error) {
 	var (
-		noteRes    NoteStruct
+		noteRes    ist.NoteStruct
 		authorUuid uuid.UUID
 		replyUuid  uuid.UUID
 		reTextUuid uuid.UUID
@@ -180,13 +153,13 @@ func GetNote(noteUuid uuid.UUID, recursive ...bool) (*NoteStruct, error) {
 		}
 	}
 
-	noteRes.Author, err = GetUser(authorUuid)
+	noteRes.Author, err = user.GetUser(authorUuid)
 	if err != nil {
 		return nil, err
 	}
 
 	if noteRes.Author.IsSuspend {
-		return nil, ErrUserSuspended
+		return nil, user.ErrUserSuspended
 	}
 
 	if len(recursive) > 0 && recursive[0] {

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofiber/fiber/v2"
@@ -46,7 +47,7 @@ func securityPageView(c *fiber.Ctx, invalidForm bool) error {
 	claim := jwtCurrentUserKey.Claims.(jwt.MapClaims)
 
 	var currentUserUuid = uuid.MustParse(claim["sub"].(string))
-	is2faEnabled, err := internal.StatusUser2fa(currentUserUuid)
+	is2faEnabled, err := user.StatusUser2fa(currentUserUuid)
 	if err != nil {
 		return err
 	}
@@ -112,9 +113,9 @@ func setup2faView(c *fiber.Ctx, isFail bool) error {
 
 	claim := jwtCurrentUserKey.Claims.(jwt.MapClaims)
 
-	totpCode, err := internal.Setup2faCode(uuid.MustParse(claim["sub"].(string)))
+	totpCode, err := user.Setup2faCode(uuid.MustParse(claim["sub"].(string)))
 	if err != nil {
-		if err == internal.Err2faAlreadyEnabled {
+		if err == user.Err2faAlreadyEnabled {
 			return c.Redirect("/account/settings/security")
 		} else {
 			return err
@@ -164,16 +165,16 @@ func setup2faPost(c *fiber.Ctx) error {
 
 	targetUuid := uuid.MustParse(claim["sub"].(string))
 
-	err := internal.Validate2faCode(targetUuid, formData.Token)
+	err := user.Validate2faCode(targetUuid, formData.Token)
 	if err != nil {
-		if err == internal.ErrInvalid2faToken {
+		if err == user.ErrInvalid2faToken {
 			return setup2faView(c, true)
 		} else {
 			return err
 		}
 	}
 
-	if err := internal.Enable2faAuth(targetUuid); err != nil {
+	if err := user.Enable2faAuth(targetUuid); err != nil {
 		return err
 	}
 
@@ -188,7 +189,7 @@ func get2faBackup(c *fiber.Ctx) error {
 
 	claim := jwtCurrentUserKey.Claims.(jwt.MapClaims)
 
-	code, err := internal.Get2faBackupCode(uuid.MustParse(claim["sub"].(string)))
+	code, err := user.Get2faBackupCode(uuid.MustParse(claim["sub"].(string)))
 	if err != nil {
 		if err == pgx.ErrNoRows {
 			return c.Redirect("/account/settings/security/2fa/setup", fiber.StatusTemporaryRedirect)
@@ -216,7 +217,7 @@ func regenerate2faBackup(c *fiber.Ctx) error {
 
 	claim := jwtCurrentUserKey.Claims.(jwt.MapClaims)
 
-	err := internal.Regenerate2faBackupCode(uuid.MustParse(claim["sub"].(string)))
+	err := user.Regenerate2faBackupCode(uuid.MustParse(claim["sub"].(string)))
 	if err != nil {
 		return err
 	}
@@ -244,18 +245,18 @@ func disable2faPost(c *fiber.Ctx) error {
 
 	targetUuid := uuid.MustParse(claim["sub"].(string))
 
-	err := internal.ValidateUserPassword(targetUuid, formData.Password)
+	err := user.ValidateUserPassword(targetUuid, formData.Password)
 	if err != nil {
-		if err == internal.ErrInvalidPassword {
+		if err == user.ErrInvalidPassword {
 			return securityPageView(c, true)
 		} else {
 			return err
 		}
 	}
 
-	err = internal.Disable2faAuth(targetUuid)
+	err = user.Disable2faAuth(targetUuid)
 	if err != nil {
-		if err == internal.ErrCantDisable2fa {
+		if err == user.ErrCantDisable2fa {
 			return c.Redirect("/account/settings/security")
 		} else {
 			return err

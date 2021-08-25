@@ -4,11 +4,11 @@ import (
 	"encoding/pem"
 	"fmt"
 	"github.com/MatticNote/MatticNote/config"
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/ist"
 	"github.com/gofiber/fiber/v2"
 )
 
-func RenderActor(targetUser *internal.LocalUserStruct) map[string]interface{} {
+func RenderActor(targetUser *ist.LocalUserStruct) map[string]interface{} {
 	baseUrl := fmt.Sprintf("%s/activity/user/%s", config.Config.Server.Endpoint, targetUser.Uuid.String())
 
 	renderMap := fiber.Map{

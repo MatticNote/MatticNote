@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/MatticNote/MatticNote/activitypub"
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/ist"
+	iNote "github.com/MatticNote/MatticNote/internal/note"
+	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
@@ -17,12 +19,12 @@ func apNoteHandler(c *fiber.Ctx) error {
 		c.Status(fiber.StatusBadRequest)
 		return nil
 	}
-	targetNote, err := internal.GetNote(targetUuid, true)
+	targetNote, err := iNote.GetNote(targetUuid, true)
 	if err != nil {
 		switch err {
-		case internal.ErrNoSuchUser:
+		case user.ErrNoSuchUser:
 			return fiber.ErrNotFound
-		case internal.ErrUserGone:
+		case user.ErrUserGone:
 			return fiber.ErrGone
 		default:
 			return err
@@ -37,7 +39,7 @@ func apNoteHandler(c *fiber.Ctx) error {
 }
 
 func apNoteController(c *fiber.Ctx) error {
-	targetNote := c.Locals("targetNote").(*internal.NoteStruct)
+	targetNote := c.Locals("targetNote").(*ist.NoteStruct)
 	if misc.IsAPAcceptHeader(c) {
 		return RenderNote(c, targetNote)
 	} else {
@@ -45,7 +47,7 @@ func apNoteController(c *fiber.Ctx) error {
 	}
 }
 
-func RenderNote(c *fiber.Ctx, targetNote *internal.NoteStruct) error {
+func RenderNote(c *fiber.Ctx, targetNote *ist.NoteStruct) error {
 	c.Set("Content-Type", "application/activity+json; charset=utf-8")
 
 	if targetNote.ReText != nil {
@@ -63,11 +65,11 @@ func RenderNote(c *fiber.Ctx, targetNote *internal.NoteStruct) error {
 }
 
 func apNoteActivityController(c *fiber.Ctx) error {
-	targetNote := c.Locals("targetNote").(*internal.NoteStruct)
+	targetNote := c.Locals("targetNote").(*ist.NoteStruct)
 	return renderNoteActivity(c, targetNote)
 }
 
-func renderNoteActivity(c *fiber.Ctx, targetNote *internal.NoteStruct) error {
+func renderNoteActivity(c *fiber.Ctx, targetNote *ist.NoteStruct) error {
 	c.Set("Content-Type", "application/activity+json; charset=utf-8")
 
 	activity := activitypub.RenderNoteActivity(targetNote)

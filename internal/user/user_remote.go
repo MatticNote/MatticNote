@@ -1,4 +1,4 @@
-package internal
+package user
 
 import (
 	"bytes"
@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/MatticNote/MatticNote/database"
+	"github.com/MatticNote/MatticNote/internal/ist"
+	"github.com/MatticNote/MatticNote/internal/version"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/piprate/json-gold/ld"
@@ -61,7 +63,7 @@ func RegisterRemoteUser(actorUrl string) (*uuid.UUID, error) {
 		return nil, err
 	}
 	req.Header.Set("Accept", "application/activity+json")
-	req.Header.Set("User-Agent", fmt.Sprintf("MatticNote/%s", Version))
+	req.Header.Set("User-Agent", fmt.Sprintf("MatticNote/%s", version.Version))
 
 	// todo: 将来的にはHTTP Signatureとかを付ける処理をここでやる
 
@@ -309,7 +311,7 @@ func RegisterRemoteUser(actorUrl string) (*uuid.UUID, error) {
 	return &newUuid, nil
 }
 
-func GetRemoteUserFromApID(apId string) (*UserStruct, error) {
+func GetRemoteUserFromApID(apId string) (*ist.UserStruct, error) {
 	var targetUuid uuid.UUID
 	err := database.DBPool.QueryRow(
 		context.Background(),
@@ -325,4 +327,33 @@ func GetRemoteUserFromApID(apId string) (*UserStruct, error) {
 	}
 
 	return GetUser(targetUuid)
+}
+
+func GetUserFollowerInbox(targetUuid uuid.UUID) ([]string, error) {
+	rows, err := database.DBPool.Query(
+		context.Background(),
+		"select shared_inbox from follow_relation, \"user\", host where follow_to = $1 "+
+			"and is_pending is false and follow_from = \"user\".uuid and \"user\".host = host.host "+
+			"union select inbox from follow_relation, \"user\", host, user_fedi_info where follow_to = $1 "+
+			"and is_pending is false and \"user\".uuid = user_fedi_info.uuid and \"user\".host = host.host and host.shared_inbox is null;",
+		targetUuid.String(),
+	)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		} else {
+			return nil, err
+		}
+	}
+	defer rows.Close()
+	var inboxes []string
+	for rows.Next() {
+		var data string
+		err := rows.Scan(&data)
+		if err != nil {
+			return nil, err
+		}
+		inboxes = append(inboxes, data)
+	}
+	return inboxes, nil
 }

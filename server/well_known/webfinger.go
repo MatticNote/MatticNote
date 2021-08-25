@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/MatticNote/MatticNote/config"
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/gofiber/fiber/v2"
 	"net/url"
 	"regexp"
@@ -34,12 +34,12 @@ func webfinger(c *fiber.Ctx) error {
 		return nil
 	}
 
-	targetUser, err := internal.GetLocalUserFromUsername(rResult[2])
+	targetUser, err := user.GetLocalUserFromUsername(rResult[2])
 	if err != nil {
 		switch err {
-		case internal.ErrNoSuchUser:
+		case user.ErrNoSuchUser:
 			c.Status(fiber.StatusNotFound)
-		case internal.ErrUserGone:
+		case user.ErrUserGone:
 			c.Status(fiber.StatusGone)
 		default:
 			return err
@@ -49,6 +49,10 @@ func webfinger(c *fiber.Ctx) error {
 
 	wfJsonMarshal, err := json.Marshal(fiber.Map{
 		"subject": fmt.Sprintf("acct:%s@%s", targetUser.Username, endpointUrl.Host),
+		"aliases": []interface{}{
+			fmt.Sprintf("%s/@%s", config.Config.Server.Endpoint, targetUser.Username),
+			fmt.Sprintf("%s/user/%s", config.Config.Server.Endpoint, targetUser.Username),
+		},
 		"links": []fiber.Map{
 			{
 				"rel":  "http://webfinger.net/rel/profile-page",
