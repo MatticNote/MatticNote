@@ -37,7 +37,7 @@ func authorize(c *fiber.Ctx) error {
 			Username: sub,
 		}
 
-		if r.Method != "POST" {
+		if r.Method != http.MethodPost {
 			var requestedScopes string
 			for _, this := range ar.GetRequestedScopes() {
 				requestedScopes += fmt.Sprintf(`<li>%s</li>`, this)
@@ -47,10 +47,8 @@ func authorize(c *fiber.Ctx) error {
 			_, _ = w.Write([]byte(fmt.Sprintf(`
 			<p>Howdy! This is the log in page. For this example, it is enough to supply the username.</p>
 			<form method="post">
-				<p>
-					By logging in, you consent to grant these scopes:
-					<ul>%s</ul>
-				</p>
+				By logging in, you consent to grant these scopes:
+				<ul>%s</ul>
 				<input type="hidden" name="%s" value="%s">
 				<input type="submit">
 			</form>
