@@ -14,6 +14,9 @@ func ConfigureRoute(r fiber.Router) {
 	r.All("/token",
 		authorizeToken,
 	)
+	r.All("/introspect",
+		adaptor.HTTPHandlerFunc(introspect),
+	)
 	r.All("/revoke",
 		adaptor.HTTPHandlerFunc(revoke),
 	)
