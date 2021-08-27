@@ -1,7 +1,7 @@
 package account
 
 import (
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/signature"
 	"github.com/gofiber/fiber/v2"
 	"time"
 )
@@ -13,7 +13,7 @@ func destroySession(c *fiber.Ctx) error {
 
 func DestroySessionCookie(c *fiber.Ctx) {
 	c.Cookie(&fiber.Cookie{
-		Name:    internal.JWTAuthCookieName,
+		Name:    signature.JWTAuthCookieName,
 		Value:   "",
 		MaxAge:  -1,
 		Expires: time.Now().Add(-100 * time.Hour),
