@@ -11,7 +11,10 @@ import (
 )
 
 var fositeCfg = &compose.Config{
-	AccessTokenLifespan: 3 * time.Hour,
+	AccessTokenLifespan:  3 * time.Hour,
+	RefreshTokenLifespan: -1,
+	HashCost:             12,
+	RefreshTokenScopes:   []string{},
 }
 
 var Server fosite.OAuth2Provider
@@ -35,10 +38,10 @@ func InitOAuth() {
 
 		compose.OAuth2AuthorizeExplicitFactory,
 		compose.OAuth2RefreshTokenGrantFactory,
-		compose.RFC7523AssertionGrantFactory,
+		//compose.RFC7523AssertionGrantFactory,
 
 		compose.OAuth2TokenIntrospectionFactory,
 		compose.OAuth2TokenRevocationFactory,
-		compose.OAuth2PKCEFactory,
+		//compose.OAuth2PKCEFactory,
 	)
 }

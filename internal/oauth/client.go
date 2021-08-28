@@ -20,7 +20,7 @@ func (c *mnOAuthClient) GetID() string {
 }
 
 func (c *mnOAuthClient) GetHashedSecret() []byte {
-	hashed, err := bcrypt.GenerateFromPassword(c.Secret, 10)
+	hashed, err := bcrypt.GenerateFromPassword(c.Secret, 12)
 	if err != nil {
 		panic(err)
 	}

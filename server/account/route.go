@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/csrf"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/session"
+	"strings"
 	"time"
 )
 
@@ -24,7 +25,13 @@ func csrfErrorView(c *fiber.Ctx, _ error) error {
 
 func ConfigureRoute(r fiber.Router) {
 	r.Use(csrf.New(csrf.Config{
-		Next:           nil,
+		Next: func(c *fiber.Ctx) bool {
+			if strings.HasPrefix(c.Path(), "/account/oauth/") {
+				return c.Path() != "/account/oauth/authorize"
+			} else {
+				return false
+			}
+		},
 		KeyLookup:      fmt.Sprintf("form:%s", misc.CSRFFormName),
 		CookieName:     "_csrf",
 		CookiePath:     "/account",

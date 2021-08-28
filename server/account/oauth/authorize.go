@@ -1,14 +1,15 @@
 package oauth
 
 import (
-	"fmt"
 	"github.com/MatticNote/MatticNote/internal/oauth"
 	"github.com/MatticNote/MatticNote/internal/signature"
 	"github.com/MatticNote/MatticNote/misc"
+	"github.com/MatticNote/MatticNote/mn_template"
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/gofiber/adaptor/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/ory/fosite"
+	"log"
 	"net/http"
 )
 
@@ -38,24 +39,32 @@ func authorize(c *fiber.Ctx) error {
 		}
 
 		if r.Method != http.MethodPost {
-			var requestedScopes string
-			for _, this := range ar.GetRequestedScopes() {
-				requestedScopes += fmt.Sprintf(`<li>%s</li>`, this)
+			tmpl, err := mn_template.LoadOAuthTemplate()
+			if err != nil {
+				log.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
 			}
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			_, _ = w.Write([]byte(`<h1>Login page</h1>`))
-			_, _ = w.Write([]byte(fmt.Sprintf(`
-			<p>Howdy! This is the log in page. For this example, it is enough to supply the username.</p>
-			<form method="post">
-				By logging in, you consent to grant these scopes:
-				<ul>%s</ul>
-				<input type="hidden" name="%s" value="%s">
-				<input type="submit">
-			</form>
-		`, requestedScopes,
-				misc.CSRFFormName,
-				csrfToken,
-			)))
+			err = tmpl.ExecuteTemplate(w, "authorize.html", fiber.Map{
+				"name":            ar.GetClient().GetID(),
+				"scopes":          ar.GetRequestedScopes(),
+				"csrf_form_name":  misc.CSRFFormName,
+				"csrf_form_token": csrfToken,
+			})
+			if err != nil {
+				log.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			return
+		}
+
+		if r.Form.Get("authorize") != "grant" {
+			oauth.Server.WriteAuthorizeError(w, ar, &fosite.RFC6749Error{
+				DescriptionField: "Declined by user.",
+				ErrorField:       "access_denied",
+				CodeField:        http.StatusForbidden,
+			})
 			return
 		}
 
