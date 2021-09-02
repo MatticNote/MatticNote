@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/auth"
 	"github.com/MatticNote/MatticNote/internal/signature"
 	"github.com/MatticNote/MatticNote/server/api/graphql"
 	"github.com/friendsofgo/graphiql"
@@ -24,13 +25,14 @@ func ConfigureRoute(r fiber.Router) {
 	}))
 	graphqlGroup.Use(
 		signature.RegisterFiberJWT("header", false),
-		internal.AuthenticationUser,
+		auth.AuthenticationUser,
 		limiter.New(limiter.Config{
 			Max:          6000,
 			KeyGenerator: internal.RateLimitKeyGen("GQL"),
 			Expiration:   15 * time.Minute,
 			LimitReached: func(c *fiber.Ctx) error {
-				return c.SendStatus(fiber.StatusTooManyRequests)
+				c.Status(fiber.StatusTooManyRequests)
+				return nil
 			},
 			Storage: config.GetFiberRedisMemory(),
 		}),

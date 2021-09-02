@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"log"
 )
 
 func NotFoundView(c *fiber.Ctx) error {
@@ -37,6 +38,7 @@ func ErrorView(c *fiber.Ctx, err error) error {
 	case fiber.ErrBadGateway:
 		return BadGatewayView(c)
 	default:
+		log.Println(err)
 		if c.Accepts("html") != "" {
 			return c.Status(fiber.StatusInternalServerError).Render(
 				"5xx",
