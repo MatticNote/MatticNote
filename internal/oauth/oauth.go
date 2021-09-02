@@ -5,7 +5,6 @@ import (
 	"github.com/MatticNote/MatticNote/internal/signature"
 	"github.com/ory/fosite"
 	"github.com/ory/fosite/compose"
-	"github.com/ory/fosite/storage"
 	"github.com/ory/fosite/token/jwt"
 	"time"
 )
@@ -20,7 +19,7 @@ var fositeCfg = &compose.Config{
 var Server fosite.OAuth2Provider
 
 func InitOAuth() {
-	store = storage.NewExampleStore()
+	//store = storage.NewExampleStore()
 	Server = compose.Compose(
 		fositeCfg,
 		store,

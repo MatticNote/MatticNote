@@ -38,6 +38,10 @@ func authorize(c *fiber.Ctx) error {
 			Username: sub,
 		}
 
+		if len(ar.GetRequestedScopes()) == 0 {
+			ar.AppendRequestedScope("read")
+		}
+
 		if r.Method != http.MethodPost {
 			tmpl, err := mn_template.LoadOAuthTemplate()
 			if err != nil {
@@ -45,8 +49,15 @@ func authorize(c *fiber.Ctx) error {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
+
+			var name = ar.GetClient().GetID()
+
+			if oauthCli, ok := ar.GetClient().(*oauth.MNOAuthClient); ok {
+				name = oauthCli.Name
+			}
+
 			err = tmpl.ExecuteTemplate(w, "authorize.html", fiber.Map{
-				"name":            ar.GetClient().GetID(),
+				"name":            name,
 				"scopes":          ar.GetRequestedScopes(),
 				"csrf_form_name":  misc.CSRFFormName,
 				"csrf_form_token": csrfToken,
