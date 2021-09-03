@@ -11,7 +11,7 @@ import (
 
 var CurrentUser = &graphql.Field{
 	Name:        "Current User",
-	Description: "Get current User ID. Require authentication.",
+	Description: "Get current User id. Require authentication.",
 	Type:        graphql.NewNonNull(mn_type.UserQLType),
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 		currentUser, ok := p.Context.Value("currentUser").(uuid.UUID)

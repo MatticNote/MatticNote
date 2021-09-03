@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"errors"
 	"github.com/MatticNote/MatticNote/internal/oauth"
 	"github.com/MatticNote/MatticNote/internal/signature"
 	"github.com/MatticNote/MatticNote/internal/user"
@@ -42,7 +43,15 @@ func AuthenticationUser(c *fiber.Ctx) error {
 	} else if len(headerSplit) == 2 && strings.TrimSpace(headerSplit[0]) == fosite.BearerAccessToken {
 		authorizedUser, clientId, err := oauth.APIIntrospect(strings.TrimSpace(headerSplit[1]))
 		if err != nil {
-			return err
+			switch {
+			case errors.Is(err, fosite.ErrTokenExpired),
+				errors.Is(err, fosite.ErrLoginRequired),
+				errors.Is(err, fosite.ErrInactiveToken):
+				c.Status(fiber.StatusUnauthorized)
+				return nil
+			default:
+				return err
+			}
 		}
 		c.Locals(LoginUserLocal, authorizedUser)
 		c.Locals(AuthorizeMethodLocal, OAuth)
