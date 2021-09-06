@@ -11,10 +11,10 @@ import (
 
 var CurrentUser = &graphql.Field{
 	Name:        "Current User",
-	Description: "Get current User ID. Require authentication.",
+	Description: "Get current User id. Require authentication.",
 	Type:        graphql.NewNonNull(mn_type.UserQLType),
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-		currentUser, ok := p.Context.Value("currentUser").(uuid.UUID)
+		currentUser, ok := p.Context.Value(common.ContextCurrentUser).(uuid.UUID)
 		if !ok {
 			return nil, errors.New("authorize required")
 		}
@@ -39,6 +39,12 @@ var GetUser = &graphql.Field{
 	},
 	Type: mn_type.UserQLType,
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+		if _, ok := p.Context.Value(common.ContextCurrentUser).(uuid.UUID); ok {
+			if err := common.ScopeCheck(p, "read.user"); err != nil {
+				return nil, err
+			}
+		}
+
 		targetUserId, err := uuid.Parse(p.Args["userID"].(string))
 		if err != nil {
 			return nil, common.ErrInvalidUUID

@@ -2,7 +2,7 @@ package account
 
 import (
 	"github.com/MatticNote/MatticNote/config"
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/signature"
 	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/gofiber/fiber/v2"
@@ -17,7 +17,7 @@ type registerUserStruct struct {
 }
 
 func registerUserGet(c *fiber.Ctx) error {
-	if c.Cookies(internal.JWTAuthCookieName, "") != "" {
+	if c.Cookies(signature.JWTAuthCookieName, "") != "" {
 		return c.Redirect(c.Query("next", "/web/"))
 	}
 

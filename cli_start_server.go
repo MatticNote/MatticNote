@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/database"
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/oauth"
+	"github.com/MatticNote/MatticNote/internal/signature"
 	"github.com/MatticNote/MatticNote/mn_template"
 	"github.com/MatticNote/MatticNote/server"
 	"github.com/MatticNote/MatticNote/worker"
@@ -44,7 +45,7 @@ func startServer(c *cli.Context) error {
 			}
 		}
 
-		err = internal.GenerateJWTSignKey(false)
+		err = signature.GenerateJWTSignKey(false)
 		if err != nil {
 			return err
 		}
@@ -54,13 +55,13 @@ func startServer(c *cli.Context) error {
 		return err
 	}
 
-	err = internal.LoadJWTSignKey()
+	err = signature.LoadJWTSignKey()
 	if err != nil {
 		return err
 	}
 
 	if !fiber.IsChild() {
-		if err := internal.VerifyRSASign(); err != nil {
+		if err := signature.VerifyRSASign(); err != nil {
 			return err
 		}
 	}
@@ -91,7 +92,7 @@ func startServer(c *cli.Context) error {
 		Browse: false,
 	}))
 
-	app.Use("/web", internal.RegisterFiberJWT("cookie", true), filesystem.New(filesystem.Config{
+	app.Use("/web", signature.RegisterFiberJWT("cookie", true), filesystem.New(filesystem.Config{
 		Root: func() http.FileSystem {
 			webCliFSDist, err := fs.Sub(webCliFS, "client/dist/cli")
 			if err != nil {
@@ -118,6 +119,8 @@ func startServer(c *cli.Context) error {
 	if !c.Bool("no-worker") {
 		worker.InitWorker()
 	}
+
+	oauth.InitOAuth()
 
 	if !fiber.IsChild() {
 		listenAddr := addr

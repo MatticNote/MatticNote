@@ -46,9 +46,12 @@ var CreateNote = &graphql.Field{
 	},
 	Type: graphql.NewNonNull(mn_type.NoteQLType),
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-		currentUser, ok := p.Context.Value("currentUser").(uuid.UUID)
+		currentUser, ok := p.Context.Value(common.ContextCurrentUser).(uuid.UUID)
 		if !ok {
 			return nil, common.ErrAuthorizeRequired
+		}
+		if err := common.ScopeCheck(p, "write.note"); err != nil {
+			return nil, err
 		}
 
 		var (
@@ -103,9 +106,12 @@ var DeleteNote = &graphql.Field{
 	},
 	Type: graphql.NewNonNull(graphql.Boolean),
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-		currentUser, ok := p.Context.Value("currentUser").(uuid.UUID)
+		currentUser, ok := p.Context.Value(common.ContextCurrentUser).(uuid.UUID)
 		if !ok {
 			return nil, common.ErrAuthorizeRequired
+		}
+		if err := common.ScopeCheck(p, "write.note"); err != nil {
+			return nil, err
 		}
 
 		targetNoteUuid, err := uuid.Parse(p.Args["noteId"].(string))

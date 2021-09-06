@@ -7,7 +7,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/MatticNote/MatticNote/database"
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/signature"
 	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/form3tech-oss/jwt-go"
@@ -39,7 +39,7 @@ func securityPageGet(c *fiber.Ctx) error {
 }
 
 func securityPageView(c *fiber.Ctx, invalidForm bool) error {
-	jwtCurrentUserKey := c.Locals(internal.JWTContextKey).(*jwt.Token)
+	jwtCurrentUserKey := c.Locals(signature.JWTContextKey).(*jwt.Token)
 	if !jwtCurrentUserKey.Valid {
 		return fiber.ErrForbidden
 	}
@@ -106,7 +106,7 @@ func setup2faGet(c *fiber.Ctx) error {
 }
 
 func setup2faView(c *fiber.Ctx, isFail bool) error {
-	jwtCurrentUserKey := c.Locals(internal.JWTContextKey).(*jwt.Token)
+	jwtCurrentUserKey := c.Locals(signature.JWTContextKey).(*jwt.Token)
 	if !jwtCurrentUserKey.Valid {
 		return fiber.ErrForbidden
 	}
@@ -146,7 +146,7 @@ func setup2faView(c *fiber.Ctx, isFail bool) error {
 }
 
 func setup2faPost(c *fiber.Ctx) error {
-	jwtCurrentUserKey := c.Locals(internal.JWTContextKey).(*jwt.Token)
+	jwtCurrentUserKey := c.Locals(signature.JWTContextKey).(*jwt.Token)
 	if !jwtCurrentUserKey.Valid {
 		return fiber.ErrForbidden
 	}
@@ -182,7 +182,7 @@ func setup2faPost(c *fiber.Ctx) error {
 }
 
 func get2faBackup(c *fiber.Ctx) error {
-	jwtCurrentUserKey := c.Locals(internal.JWTContextKey).(*jwt.Token)
+	jwtCurrentUserKey := c.Locals(signature.JWTContextKey).(*jwt.Token)
 	if !jwtCurrentUserKey.Valid {
 		return fiber.ErrForbidden
 	}
@@ -210,7 +210,7 @@ func get2faBackup(c *fiber.Ctx) error {
 }
 
 func regenerate2faBackup(c *fiber.Ctx) error {
-	jwtCurrentUserKey := c.Locals(internal.JWTContextKey).(*jwt.Token)
+	jwtCurrentUserKey := c.Locals(signature.JWTContextKey).(*jwt.Token)
 	if !jwtCurrentUserKey.Valid {
 		return fiber.ErrForbidden
 	}
@@ -226,7 +226,7 @@ func regenerate2faBackup(c *fiber.Ctx) error {
 }
 
 func disable2faPost(c *fiber.Ctx) error {
-	jwtCurrentUserKey := c.Locals(internal.JWTContextKey).(*jwt.Token)
+	jwtCurrentUserKey := c.Locals(signature.JWTContextKey).(*jwt.Token)
 	if !jwtCurrentUserKey.Valid {
 		return fiber.ErrForbidden
 	}

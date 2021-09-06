@@ -1,7 +1,7 @@
 package server
 
 import (
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/signature"
 	"github.com/MatticNote/MatticNote/server/account"
 	"github.com/MatticNote/MatticNote/server/ap"
 	"github.com/MatticNote/MatticNote/server/api"
@@ -18,8 +18,8 @@ func ConfigureRoute(app *fiber.App) {
 		c.Set("X-Content-Type-Options", "nosniff")
 		return c.Next()
 	})
-	app.Get("/", internal.RegisterFiberJWT("cookie", false), func(c *fiber.Ctx) error {
-		_, isLogin := c.Locals(internal.JWTContextKey).(*jwt.Token)
+	app.Get("/", signature.RegisterFiberJWT("cookie", false), func(c *fiber.Ctx) error {
+		_, isLogin := c.Locals(signature.JWTContextKey).(*jwt.Token)
 
 		field := fiber.Map{
 			"isLogin": isLogin,

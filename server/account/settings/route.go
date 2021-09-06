@@ -1,12 +1,12 @@
 package settings
 
 import (
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/signature"
 	"github.com/gofiber/fiber/v2"
 )
 
 func ConfigureRoute(r fiber.Router) {
-	r.Use(internal.RegisterFiberJWT("cookie", true))
+	r.Use(signature.RegisterFiberJWT("cookie", true))
 
 	r.Get("/profile", editProfileGet)
 	r.Post("/profile", editProfilePost)

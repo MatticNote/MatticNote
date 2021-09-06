@@ -3,7 +3,7 @@ package account
 import (
 	"context"
 	"github.com/MatticNote/MatticNote/database"
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/signature"
 	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/gofiber/fiber/v2"
@@ -19,7 +19,7 @@ type forgotPasswordFormStruct struct {
 }
 
 func forgotPasswordGet(c *fiber.Ctx) error {
-	if c.Cookies(internal.JWTAuthCookieName, "") != "" {
+	if c.Cookies(signature.JWTAuthCookieName, "") != "" {
 		return c.Redirect("/web/", 307)
 	}
 

@@ -1,7 +1,7 @@
 package settings
 
 import (
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/signature"
 	"github.com/MatticNote/MatticNote/internal/user"
 	"github.com/MatticNote/MatticNote/misc"
 	"github.com/form3tech-oss/jwt-go"
@@ -22,7 +22,7 @@ func editProfileGet(c *fiber.Ctx) error {
 }
 
 func editProfileView(c *fiber.Ctx, isSuccess bool, errs ...string) error {
-	jwtCurrentUserKey := c.Locals(internal.JWTContextKey).(*jwt.Token)
+	jwtCurrentUserKey := c.Locals(signature.JWTContextKey).(*jwt.Token)
 	if !jwtCurrentUserKey.Valid {
 		return fiber.ErrForbidden
 	}
@@ -58,7 +58,7 @@ func editProfilePost(c *fiber.Ctx) error {
 		return err
 	}
 
-	jwtCurrentUserKey := c.Locals(internal.JWTContextKey).(*jwt.Token)
+	jwtCurrentUserKey := c.Locals(signature.JWTContextKey).(*jwt.Token)
 	if !jwtCurrentUserKey.Valid {
 		return fiber.ErrForbidden
 	}

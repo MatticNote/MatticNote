@@ -2,8 +2,9 @@ package graphql
 
 import (
 	"context"
-	"github.com/MatticNote/MatticNote/internal"
+	"github.com/MatticNote/MatticNote/internal/auth"
 	"github.com/MatticNote/MatticNote/internal/ist"
+	"github.com/MatticNote/MatticNote/server/api/graphql/common"
 	"github.com/gofiber/fiber/v2"
 	"github.com/graphql-go/graphql"
 )
@@ -23,9 +24,14 @@ func GQLEndpoint(c *fiber.Ctx) error {
 
 	usrContext := context.Background()
 
-	currentUsr, ok := c.Locals(internal.LoginUserLocal).(*ist.LocalUserStruct)
-	if ok {
-		usrContext = context.WithValue(usrContext, "currentUser", currentUsr.Uuid)
+	if currentUsr, ok := c.Locals(auth.LoginUserLocal).(*ist.LocalUserStruct); ok {
+		usrContext = context.WithValue(usrContext, common.ContextCurrentUser, currentUsr.Uuid)
+	}
+	if method, ok := c.Locals(auth.AuthorizeMethodLocal).(auth.AuthorizeMethod); ok {
+		usrContext = context.WithValue(usrContext, common.ContextAuthorizeMethod, method)
+	}
+	if oauthToken, ok := c.Locals(auth.OAuthTokenLocal).(string); ok {
+		usrContext = context.WithValue(usrContext, common.ContextOAuthToken, oauthToken)
 	}
 	c.SetUserContext(usrContext)
 
