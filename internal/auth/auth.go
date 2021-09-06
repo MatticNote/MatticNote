@@ -16,6 +16,7 @@ const (
 	LoginUserLocal       = "loginUser"
 	AuthorizeMethodLocal = "authorizeMethod"
 	OAuthClientIDLocal   = "oauthClientID"
+	OAuthTokenLocal      = "oauthToken"
 )
 
 type AuthorizeMethod string
@@ -41,7 +42,8 @@ func AuthenticationUser(c *fiber.Ctx) error {
 			return fiber.ErrUnauthorized
 		}
 	} else if len(headerSplit) == 2 && strings.TrimSpace(headerSplit[0]) == fosite.BearerAccessToken {
-		authorizedUser, clientId, err := oauth.APIIntrospect(strings.TrimSpace(headerSplit[1]))
+		token := strings.TrimSpace(headerSplit[1])
+		authorizedUser, clientId, err := oauth.APIIntrospect(token)
 		if err != nil {
 			switch {
 			case errors.Is(err, fosite.ErrTokenExpired),
@@ -56,6 +58,7 @@ func AuthenticationUser(c *fiber.Ctx) error {
 		c.Locals(LoginUserLocal, authorizedUser)
 		c.Locals(AuthorizeMethodLocal, OAuth)
 		c.Locals(OAuthClientIDLocal, clientId)
+		c.Locals(OAuthTokenLocal, token)
 	}
 
 	return c.Next()

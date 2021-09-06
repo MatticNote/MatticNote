@@ -19,6 +19,11 @@ var GetNote = &graphql.Field{
 	},
 	Type: graphql.NewNonNull(mn_type.NoteQLType),
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+		if _, ok := p.Context.Value(common.ContextCurrentUser).(uuid.UUID); ok {
+			if err := common.ScopeCheck(p, "read.note"); err != nil {
+				return nil, err
+			}
+		}
 		targetNoteId, err := uuid.Parse(p.Args["noteID"].(string))
 		if err != nil {
 			return nil, common.ErrInvalidUUID

@@ -21,5 +21,11 @@ func APIIntrospect(token string) (*ist.LocalUserStruct, string, error) {
 	if err != nil {
 		return nil, "", err
 	}
+
 	return localUser, ar.GetClient().GetID(), err
+}
+
+func ScopeIntrospect(token string, requiredScopes ...string) error {
+	_, _, err := Server.IntrospectToken(context.Background(), token, fosite.AccessToken, &fosite.DefaultSession{}, requiredScopes...)
+	return err
 }

@@ -2,6 +2,7 @@ package mn_mutation
 
 import (
 	"github.com/MatticNote/MatticNote/internal/oauth"
+	"github.com/MatticNote/MatticNote/server/api/graphql/common"
 	"github.com/MatticNote/MatticNote/server/api/graphql/mn_type"
 	"github.com/google/uuid"
 	"github.com/graphql-go/graphql"
@@ -27,7 +28,7 @@ var CreateApp = &graphql.Field{
 	Type: graphql.NewNonNull(mn_type.NewAppQLType),
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 		var ownerUuid *uuid.UUID
-		if currentUser, ok := p.Context.Value("currentUser").(uuid.UUID); ok {
+		if currentUser, ok := p.Context.Value(common.ContextCurrentUser).(uuid.UUID); ok {
 			ownerUuid = &currentUser
 		}
 

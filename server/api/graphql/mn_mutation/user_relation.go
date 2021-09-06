@@ -19,9 +19,12 @@ var FollowUser = &graphql.Field{
 	},
 	Type: graphql.NewNonNull(mn_type.UserCreateFollowRelationQLType),
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-		currentUser, ok := p.Context.Value("currentUser").(uuid.UUID)
+		currentUser, ok := p.Context.Value(common.ContextCurrentUser).(uuid.UUID)
 		if !ok {
 			return nil, common.ErrAuthorizeRequired
+		}
+		if err := common.ScopeCheck(p, "write.user.relation.follow"); err != nil {
+			return nil, err
 		}
 
 		targetID, err := uuid.Parse(p.Args["targetID"].(string))
@@ -56,9 +59,12 @@ var UnFollowUser = &graphql.Field{
 	},
 	Type: graphql.NewNonNull(graphql.Boolean),
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-		currentUser, ok := p.Context.Value("currentUser").(uuid.UUID)
+		currentUser, ok := p.Context.Value(common.ContextCurrentUser).(uuid.UUID)
 		if !ok {
 			return nil, common.ErrAuthorizeRequired
+		}
+		if err := common.ScopeCheck(p, "write.user.relation.follow"); err != nil {
+			return nil, err
 		}
 
 		targetID, err := uuid.Parse(p.Args["targetID"].(string))
@@ -91,9 +97,12 @@ var MuteUser = &graphql.Field{
 	},
 	Type: graphql.NewNonNull(graphql.Boolean),
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-		currentUser, ok := p.Context.Value("currentUser").(uuid.UUID)
+		currentUser, ok := p.Context.Value(common.ContextCurrentUser).(uuid.UUID)
 		if !ok {
 			return nil, common.ErrAuthorizeRequired
+		}
+		if err := common.ScopeCheck(p, "write.user.relation.mute"); err != nil {
+			return nil, err
 		}
 
 		targetID, err := uuid.Parse(p.Args["targetID"].(string))
@@ -126,9 +135,12 @@ var UnMuteUser = &graphql.Field{
 	},
 	Type: graphql.NewNonNull(graphql.Boolean),
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-		currentUser, ok := p.Context.Value("currentUser").(uuid.UUID)
+		currentUser, ok := p.Context.Value(common.ContextCurrentUser).(uuid.UUID)
 		if !ok {
 			return nil, common.ErrAuthorizeRequired
+		}
+		if err := common.ScopeCheck(p, "write.user.relation.mute"); err != nil {
+			return nil, err
 		}
 
 		targetID, err := uuid.Parse(p.Args["targetID"].(string))
@@ -161,9 +173,12 @@ var BlockUser = &graphql.Field{
 	},
 	Type: graphql.NewNonNull(graphql.Boolean),
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-		currentUser, ok := p.Context.Value("currentUser").(uuid.UUID)
+		currentUser, ok := p.Context.Value(common.ContextCurrentUser).(uuid.UUID)
 		if !ok {
 			return nil, common.ErrAuthorizeRequired
+		}
+		if err := common.ScopeCheck(p, "write.user.relation.block"); err != nil {
+			return nil, err
 		}
 
 		targetID, err := uuid.Parse(p.Args["targetID"].(string))
@@ -196,9 +211,12 @@ var UnBlockUser = &graphql.Field{
 	},
 	Type: graphql.NewNonNull(graphql.Boolean),
 	Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-		currentUser, ok := p.Context.Value("currentUser").(uuid.UUID)
+		currentUser, ok := p.Context.Value(common.ContextCurrentUser).(uuid.UUID)
 		if !ok {
 			return nil, common.ErrAuthorizeRequired
+		}
+		if err := common.ScopeCheck(p, "write.user.relation.block"); err != nil {
+			return nil, err
 		}
 
 		targetID, err := uuid.Parse(p.Args["targetID"].(string))

@@ -14,12 +14,12 @@ var fositeCfg = &compose.Config{
 	RefreshTokenLifespan: -1,
 	HashCost:             12,
 	RefreshTokenScopes:   []string{},
+	ScopeStrategy:        fosite.WildcardScopeStrategy,
 }
 
 var Server fosite.OAuth2Provider
 
 func InitOAuth() {
-	//store = storage.NewExampleStore()
 	Server = compose.Compose(
 		fositeCfg,
 		store,

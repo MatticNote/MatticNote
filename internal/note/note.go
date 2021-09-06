@@ -6,8 +6,6 @@ import (
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/internal/ist"
 	"github.com/MatticNote/MatticNote/internal/user"
-	"github.com/MatticNote/MatticNote/worker"
-	"github.com/gocraft/work"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"strings"
@@ -107,16 +105,16 @@ func CreateNoteFromLocal(authorUuid uuid.UUID, cw, text *string, replyUuid, reTe
 		return nil, err
 	}
 
-	if !localOnly {
-		_, err := worker.Enqueue.Enqueue(worker.JobNotePreJob, work.Q{
-			"visibility":  visibility,
-			"createdNote": createdNote,
-			"authorUuid":  authorUuid,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
+	//if !localOnly {
+	//	_, err := worker.Enqueue.Enqueue(worker.JobNotePreJob, work.Q{
+	//		"visibility":  visibility,
+	//		"createdNote": createdNote,
+	//		"authorUuid":  authorUuid,
+	//	})
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//}
 
 	return createdNote, err
 }
