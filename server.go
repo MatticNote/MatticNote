@@ -7,8 +7,11 @@ import (
 	"github.com/MatticNote/MatticNote/server"
 	"github.com/gofiber/fiber/v2"
 	recover2 "github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/template/ace"
 	"github.com/urfave/cli/v2"
+	"io/fs"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -36,6 +39,13 @@ func cliServer(c *cli.Context) error {
 		CaseSensitive:         true,
 		DisableStartupMessage: true,
 		ErrorHandler:          server.ErrorView,
+		Views: ace.NewFileSystem(func() http.FileSystem {
+			dist, err := fs.Sub(template, "template")
+			if err != nil {
+				return nil
+			}
+			return http.FS(dist)
+		}(), ".ace"),
 	})
 
 	app.Use(recover2.New(recover2.Config{
