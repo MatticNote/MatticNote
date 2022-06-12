@@ -12,6 +12,8 @@ import (
 //go:embed migrations/*.sql
 var migrations embed.FS
 
+var Database *sql.DB
+
 func DBMigrate(
 	host string,
 	port uint16,
@@ -57,4 +59,43 @@ func DBMigrate(
 	}
 
 	return applied, err
+}
+
+func ConnectDB(
+	host string,
+	port uint16,
+	user string,
+	password string,
+	dbname string,
+	sslmode string,
+) error {
+	var err error
+	Database, err = sql.Open(
+		"postgres",
+		fmt.Sprintf(
+			"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
+			host,
+			port,
+			user,
+			password,
+			dbname,
+			sslmode,
+		),
+	)
+	if err != nil {
+		return err
+	}
+	if err = Database.Ping(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func CloseDB() error {
+	if Database != nil {
+		return Database.Close()
+	} else {
+		return nil
+	}
 }

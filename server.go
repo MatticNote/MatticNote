@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/MatticNote/MatticNote/config"
+	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/server"
 	"github.com/gofiber/fiber/v2"
 	recover2 "github.com/gofiber/fiber/v2/middleware/recover"
@@ -15,6 +16,17 @@ import (
 
 func cliServer(c *cli.Context) error {
 	if err := config.LoadConfig(); err != nil {
+		return err
+	}
+
+	if err := database.ConnectDB(
+		config.Config.Database.Host,
+		config.Config.Database.Port,
+		config.Config.Database.User,
+		config.Config.Database.Password,
+		config.Config.Database.Name,
+		config.Config.Database.SSLMode,
+	); err != nil {
 		return err
 	}
 
@@ -51,6 +63,7 @@ func cliServer(c *cli.Context) error {
 	}
 
 	_ = app.Shutdown()
+	_ = database.CloseDB()
 
 	return nil
 }
