@@ -1,12 +1,1 @@
-/build/
-dbconfig.yml
-.vscode/
 .idea/
-*.exe
-matticnote.toml
-/static/
-!/static/.gitkeep
-node_modules/
-.matticnote_private.pem
-.matticnote_public.pem
-/cli-ui/devDist
