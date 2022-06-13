@@ -17,7 +17,7 @@ import (
 	"syscall"
 )
 
-func cliServer(c *cli.Context) error {
+func cliServer(_ *cli.Context) error {
 	if err := config.LoadConfig(); err != nil {
 		return err
 	}
@@ -52,6 +52,10 @@ func cliServer(c *cli.Context) error {
 		EnableStackTrace: true,
 	}))
 
+	server.ConfigureRoute(app)
+
+	app.Use(server.NotFoundView)
+
 	database.InitFiberRedisMemory(
 		config.Config.Redis.Host,
 		config.Config.Redis.Port,
@@ -65,7 +69,6 @@ func cliServer(c *cli.Context) error {
 		log.Println(fmt.Sprintf("MatticNote is running at http://%s", listen))
 	}
 
-	server.ConfigureRoute(app)
 	go func() {
 		if err := app.Listen(listen); err != nil {
 			panic(err)

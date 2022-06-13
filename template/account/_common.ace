@@ -1,0 +1,10 @@
+= doctype html
+html
+  head
+    {{ if .title }}
+    title {{ .title }} | MatticNote
+    {{ else }}
+    title MatticNote
+    {{ end }}
+  body
+    {{embed}}
