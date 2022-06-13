@@ -17,6 +17,8 @@ create table "user"
     is_silence   boolean                  default false not null,
     is_suspend   boolean                  default false not null,
     is_active    boolean                  default true  not null,
+    is_moderator boolean                  default false not null,
+    is_admin     boolean                  default false not null,
     constraint acct_key
         unique (username, host)
 );
@@ -25,3 +27,4 @@ create unique index user_id_uindex
     on "user" (id);
 
 -- +migrate Down
+drop table "user";
