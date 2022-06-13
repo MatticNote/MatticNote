@@ -52,6 +52,14 @@ func cliServer(c *cli.Context) error {
 		EnableStackTrace: true,
 	}))
 
+	database.InitFiberRedisMemory(
+		config.Config.Redis.Host,
+		config.Config.Redis.Port,
+		config.Config.Redis.User,
+		config.Config.Redis.Password,
+		config.Config.Redis.Database,
+	)
+
 	listen := fmt.Sprintf("%s:%d", config.Config.Server.Host, config.Config.Server.Port)
 	if !fiber.IsChild() {
 		log.Println(fmt.Sprintf("MatticNote is running at http://%s", listen))

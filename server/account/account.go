@@ -1,6 +1,7 @@
 package account
 
 import (
+	"github.com/MatticNote/MatticNote/database"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
 	"github.com/segmentio/ksuid"
@@ -20,6 +21,7 @@ func ConfigureRoute(r fiber.Router) {
 		CookieHTTPOnly:    true,
 		CookieSessionOnly: true,
 		CookieSameSite:    fiber.CookieSameSiteStrictMode,
+		Storage:           database.FiberStorage,
 	}))
 
 	r.Get("/login", func(c *fiber.Ctx) error {
