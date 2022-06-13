@@ -41,6 +41,7 @@ func registerPost(c *fiber.Ctx) error {
 	account, err := ia.RegisterLocalAccount(
 		form.Email,
 		form.Password,
+		false,
 	)
 	if err != nil {
 		if dbErr, ok := err.(*pq.Error); ok {
@@ -56,4 +57,19 @@ func registerPost(c *fiber.Ctx) error {
 		}
 	}
 	return c.SendString(account.ID.String())
+}
+
+func verifyEmailToken(c *fiber.Ctx) error {
+	token := c.Params("token")
+
+	err := ia.VerifyEmailToken(token)
+	if err != nil {
+		if err == ia.ErrInvalidToken {
+			return c.Status(fiber.StatusBadRequest).SendString("Invalid or expired token")
+		} else {
+			return err
+		}
+	}
+
+	return c.SendString("OK")
 }

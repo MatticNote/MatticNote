@@ -42,4 +42,6 @@ func ConfigureRoute(r fiber.Router) {
 
 	r.Get("/register", registerGet)
 	r.Post("/register", registerPost)
+
+	r.Get("/verify/:token", verifyEmailToken)
 }

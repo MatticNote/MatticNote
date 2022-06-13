@@ -63,6 +63,13 @@ func cliServer(_ *cli.Context) error {
 		config.Config.Redis.Password,
 		config.Config.Redis.Database,
 	)
+	database.InitRedis(
+		config.Config.Redis.Host,
+		config.Config.Redis.Port,
+		config.Config.Redis.User,
+		config.Config.Redis.Password,
+		config.Config.Redis.Database,
+	)
 
 	listen := fmt.Sprintf("%s:%d", config.Config.Server.Host, config.Config.Server.Port)
 	if !fiber.IsChild() {
