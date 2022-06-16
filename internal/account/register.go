@@ -12,10 +12,15 @@ import (
 	"time"
 )
 
-var registerLock sync.Mutex
+var (
+	registerLock       sync.Mutex
+	chooseUsernameLock sync.Mutex
+)
 
 var (
-	ErrInvalidToken = errors.New("token is not valid")
+	ErrInvalidToken          = errors.New("token is not valid")
+	ErrUsernameAlreadyTaken  = errors.New("username is already taken")
+	ErrUsernameAlreadyChosen = errors.New("username is already chosen")
 )
 
 func RegisterLocalAccount(
@@ -74,6 +79,7 @@ func RegisterLocalAccount(
 		if err != nil {
 			return nil, err
 		}
+		// TODO: Send verification mail
 	}
 
 	var (
@@ -129,6 +135,40 @@ func VerifyEmailToken(
 	err = rsCon.Send("DEL", tokenKey)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func ChooseUsername(
+	userId ksuid.KSUID,
+	username string,
+) error {
+	chooseUsernameLock.Lock()
+	defer chooseUsernameLock.Unlock()
+
+	var exists int
+	err := database.Database.QueryRow("SELECT count(*) AS exists FROM \"user\" WHERE username = $1 AND host IS NULL", username).Scan(&exists)
+	if err != nil {
+		return err
+	}
+
+	if exists > 0 {
+		return ErrUsernameAlreadyTaken
+	}
+
+	exec, err := database.Database.Exec("UPDATE \"user\" SET username=$1 WHERE username IS NULL AND host IS NULL AND id=$2", userId.String(), username)
+	if err != nil {
+		return err
+	}
+
+	ra, err := exec.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if ra <= 0 {
+		return ErrUsernameAlreadyChosen
 	}
 
 	return nil
