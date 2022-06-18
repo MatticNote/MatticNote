@@ -80,6 +80,10 @@
               "browserTarget": "matticnote:build:development"
             }
           },
+          "options": {
+            "browserTarget": "matticnote:build",
+            "proxyConfig": "src/proxy.config.json"
+          },
           "defaultConfiguration": "development"
         },
         "extract-i18n": {
