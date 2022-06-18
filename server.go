@@ -53,6 +53,17 @@ func cliServer(_ *cli.Context) error {
 		EnableStackTrace: true,
 	}))
 
+	app.Use("/static/ui", filesystem.New(filesystem.Config{
+		Root: func() http.FileSystem {
+			webUiDist, err := fs.Sub(webUi, "client/dist/ui")
+			if err != nil {
+				panic(err)
+			}
+			return http.FS(webUiDist)
+		}(),
+		Browse: false,
+	}))
+
 	app.Use("/web", filesystem.New(filesystem.Config{
 		Root: func() http.FileSystem {
 			webCliDist, err := fs.Sub(webCli, "client/dist/client")
