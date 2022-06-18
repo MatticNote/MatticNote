@@ -6,6 +6,7 @@ import (
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/server"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	recover2 "github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/template/ace"
 	"github.com/urfave/cli/v2"
@@ -50,6 +51,19 @@ func cliServer(_ *cli.Context) error {
 
 	app.Use(recover2.New(recover2.Config{
 		EnableStackTrace: true,
+	}))
+
+	app.Use("/web", filesystem.New(filesystem.Config{
+		Root: func() http.FileSystem {
+			webCliDist, err := fs.Sub(webCli, "client/dist/client")
+			if err != nil {
+				panic(err)
+			}
+			return http.FS(webCliDist)
+		}(),
+		Browse:       false,
+		Index:        "index.html",
+		NotFoundFile: "index.html",
 	}))
 
 	server.ConfigureRoute(app)

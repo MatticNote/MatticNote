@@ -13,6 +13,10 @@ type loginForm struct {
 }
 
 func loginGet(c *fiber.Ctx) error {
+	if c.Cookies(account.TokenCookieName) != "" {
+		return c.Redirect("/web/")
+	}
+
 	return c.Render("account/login", fiber.Map{
 		"csrf_name":  csrfFormName,
 		"csrf_token": c.Locals(csrfContextKey),
@@ -50,7 +54,7 @@ func loginPost(c *fiber.Ctx) error {
 	if !user.Username.Valid && (user.EmailVerified.Valid && user.EmailVerified.Bool) {
 		return c.Redirect("/account/register-username")
 	} else {
-		return c.Redirect("/")
+		return c.Redirect("/web/")
 	}
 }
 
