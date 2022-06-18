@@ -23,6 +23,10 @@ func registerGet(c *fiber.Ctx) error {
 		invalid = false
 	}
 
+	if c.Cookies(ia.TokenCookieName) != "" {
+		return c.Redirect("/web/")
+	}
+
 	return c.Render("account/register", fiber.Map{
 		"invalid":    invalid,
 		"title":      "Register",
@@ -86,7 +90,7 @@ func registerUsernameGet(c *fiber.Ctx) error {
 	}
 
 	if currentUser.Username.Valid {
-		return c.Redirect("/")
+		return c.Redirect("/web/")
 	}
 
 	if !currentUser.EmailVerified.Valid || !currentUser.EmailVerified.Bool {
@@ -138,5 +142,5 @@ func registerUsernamePost(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.Redirect("/")
+	return c.Redirect("/web/")
 }
