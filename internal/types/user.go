@@ -1,17 +1,23 @@
 package types
 
 import (
+	"database/sql"
 	"github.com/segmentio/ksuid"
-	"time"
 )
 
 type User struct {
-	ID          ksuid.KSUID
-	Email       *string
-	Password    *string
-	Username    *string
-	Host        *string
-	DisplayName *string
-	Description *string
-	CreatedAt   time.Time
+	ID            ksuid.KSUID
+	Email         sql.NullString
+	Username      sql.NullString
+	Host          sql.NullString
+	DisplayName   sql.NullString
+	Headline      sql.NullString
+	Description   sql.NullString
+	CreatedAt     sql.NullTime
+	EmailVerified sql.NullBool
+	IsSilence     bool
+	IsSuspend     bool
+	IsActive      bool
+	IsModerator   bool
+	IsAdmin       bool
 }

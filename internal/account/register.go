@@ -1,6 +1,7 @@
 package account
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/MatticNote/MatticNote/database"
@@ -57,7 +58,7 @@ func RegisterLocalAccount(
 		return nil, err
 	}
 
-	_, err = tx.Exec("INSERT INTO user_auth(id, password) VALUES ($1, $2)", id.String(), hashedPassword)
+	_, err = tx.Exec("INSERT INTO user_auth(id, password) VALUES ($1, $2)", id.String(), string(hashedPassword))
 	if err != nil {
 		return nil, err
 	}
@@ -82,14 +83,16 @@ func RegisterLocalAccount(
 		// TODO: Send verification mail
 	}
 
-	var (
-		hashedPasswordString = string(hashedPassword)
-	)
 	createdUser := types.User{
-		ID:        id,
-		Email:     &email,
-		Password:  &hashedPasswordString,
-		CreatedAt: createdAt,
+		ID: id,
+		Email: sql.NullString{
+			String: email,
+			Valid:  true,
+		},
+		CreatedAt: sql.NullTime{
+			Time:  createdAt,
+			Valid: true,
+		},
 	}
 	err = tx.Commit()
 	if err != nil {
@@ -157,7 +160,7 @@ func ChooseUsername(
 		return ErrUsernameAlreadyTaken
 	}
 
-	exec, err := database.Database.Exec("UPDATE \"user\" SET username=$1 WHERE username IS NULL AND host IS NULL AND id=$2", userId.String(), username)
+	exec, err := database.Database.Exec("UPDATE \"user\" SET username=$1 WHERE username IS NULL AND host IS NULL AND id=$2", username, userId.String())
 	if err != nil {
 		return err
 	}

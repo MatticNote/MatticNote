@@ -3,6 +3,7 @@ package account
 import (
 	"fmt"
 	"github.com/MatticNote/MatticNote/database"
+	ia "github.com/MatticNote/MatticNote/internal/account"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
 	"github.com/segmentio/ksuid"
@@ -16,6 +17,28 @@ const (
 
 func csrfErrorHandler(c *fiber.Ctx, err error) error {
 	return c.Status(fiber.StatusForbidden).SendString(fmt.Sprintf("CSRF Error: %s", err.Error()))
+}
+
+func validateCookie(c *fiber.Ctx) error {
+	token := c.Cookies(ia.TokenCookieName)
+	if token == "" {
+		return c.Redirect("/account/login")
+	}
+
+	user, err := ia.GetUserFromToken(token)
+	if err != nil {
+		switch err {
+		case ia.ErrUserNotFound, ia.ErrInvalidUserToken:
+			c.ClearCookie(ia.TokenCookieName)
+			return c.Redirect("/account/login")
+		default:
+			return err
+		}
+	}
+
+	c.Locals("currentUser", user)
+
+	return c.Next()
 }
 
 func ConfigureRoute(r fiber.Router) {
@@ -33,15 +56,16 @@ func ConfigureRoute(r fiber.Router) {
 		ErrorHandler:      csrfErrorHandler,
 	}))
 
-	r.Get("/login", func(c *fiber.Ctx) error {
-		return c.Render("account/login", fiber.Map{
-			"csrf_name":  csrfFormName,
-			"csrf_token": c.Locals(csrfContextKey),
-		})
-	})
+	r.Get("/login", loginGet)
+	r.Post("/login", loginPost)
+
+	r.Get("/logout", logout)
 
 	r.Get("/register", registerGet)
 	r.Post("/register", registerPost)
 
 	r.Get("/verify/:token", verifyEmailToken)
+
+	r.Get("/register-username", validateCookie, registerUsernameGet)
+	r.Post("/register-username", validateCookie, registerUsernamePost)
 }
