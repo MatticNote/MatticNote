@@ -151,7 +151,7 @@ func ChooseUsername(
 	defer chooseUsernameLock.Unlock()
 
 	var exists int
-	err := database.Database.QueryRow("SELECT count(*) AS exists FROM \"user\" WHERE username = $1 AND host IS NULL", username).Scan(&exists)
+	err := database.Database.QueryRow("SELECT count(*) AS exists FROM \"user\" WHERE username ILIKE $1 AND host IS NULL", username).Scan(&exists)
 	if err != nil {
 		return err
 	}
