@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {IndexComponent} from "./index.component";
+import {RouterModule} from "@angular/router";
 
 
 
@@ -9,7 +10,11 @@ import {IndexComponent} from "./index.component";
     IndexComponent,
   ],
   imports: [
-    CommonModule
+    CommonModule,
+    RouterModule.forChild([{
+      path: '',
+      component: IndexComponent,
+    }])
   ]
 })
 export class IndexModule { }
