@@ -1,6 +1,7 @@
 {{ if .invalid }}
 p Incorrect email or password
 {{ end }}
+h1 Login
 form method="post"
   input type="email" name="email" placeholder="example@example.com" required=
   input type="password" name="password" placeholder="password" required=
