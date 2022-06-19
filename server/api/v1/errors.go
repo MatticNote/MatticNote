@@ -9,6 +9,13 @@ type (
 	}
 )
 
+func apiUnauthorized(c *fiber.Ctx) error {
+	return c.Status(fiber.StatusUnauthorized).JSON(apiErrorJson{
+		Code:   "UNAUTHORIZED",
+		Detail: "Invalid credentials.",
+	})
+}
+
 func apiNotFound(c *fiber.Ctx, detail string) error {
 	return c.Status(fiber.StatusNotFound).JSON(apiErrorJson{
 		Code:   "NOT_FOUND",

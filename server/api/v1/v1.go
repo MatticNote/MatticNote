@@ -1,10 +1,33 @@
 package v1
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"github.com/MatticNote/MatticNote/internal/account"
+	"github.com/gofiber/fiber/v2"
+	"strings"
+)
 
 func ConfigureRoute(r fiber.Router) {
 	r.Use(func(c *fiber.Ctx) error {
-		// TODO: User information
+		authHeader := strings.SplitN(c.Get("Authorization"), " ", 2)
+		if len(authHeader) == 2 {
+			switch strings.ToLower(authHeader[0]) {
+			case "bearer":
+			case "token":
+				if authHeader[1] != "" {
+					user, err := account.GetUserFromToken(authHeader[1])
+					if err != nil {
+						if err == account.ErrInvalidUserToken {
+							return apiUnauthorized(c)
+						} else {
+							return err
+						}
+					}
+					if user != nil {
+						c.Locals("currentUser", user)
+					}
+				}
+			}
+		}
 		return c.Next()
 	})
 
