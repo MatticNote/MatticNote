@@ -59,6 +59,7 @@ func newApiV1UserStructFromInternal(it *types.User) *apiV1UserStruct {
 
 func userApiRoute(r fiber.Router) {
 	r.Get("/by/username/:acct", userGetUsername)
+	r.Get("/me", loginRequired, userGetMe)
 	r.Get("/:id", userGet)
 }
 
@@ -106,6 +107,12 @@ func userGet(c *fiber.Ctx) error {
 	if !user.IsActive {
 		return apiGone(c, "User is gone")
 	}
+
+	return c.JSON(newApiV1UserStructFromInternal(user))
+}
+
+func userGetMe(c *fiber.Ctx) error {
+	user := c.Locals("currentUser").(*types.User)
 
 	return c.JSON(newApiV1UserStructFromInternal(user))
 }
