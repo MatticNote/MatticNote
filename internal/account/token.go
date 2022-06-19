@@ -50,7 +50,7 @@ func GetUserFromToken(
 	token string,
 ) (*types.User, error) {
 	var userId ksuid.KSUID
-	if err := database.Database.QueryRow("SELECT user_id FROM user_session WHERE token = $1 AND expired_at >= now();", token).Scan(&userId); err != nil {
+	if err := database.Database.QueryRow("SELECT user_id FROM user_session WHERE token = $1 AND (expired_at IS NULL OR expired_at >= now());", token).Scan(&userId); err != nil {
 		if err == sql.ErrNoRows {
 			return nil, ErrInvalidUserToken
 		} else {

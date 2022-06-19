@@ -9,6 +9,13 @@ type (
 	}
 )
 
+func apiBadRequest(c *fiber.Ctx, detail string) error {
+	return c.Status(fiber.StatusBadRequest).JSON(apiErrorJson{
+		Code:   "BAD_REQUEST",
+		Detail: detail,
+	})
+}
+
 func apiUnauthorized(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusUnauthorized).JSON(apiErrorJson{
 		Code:   "UNAUTHORIZED",
