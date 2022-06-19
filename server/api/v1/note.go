@@ -46,7 +46,7 @@ func newApiV1NoteStructFromInternal(itn *types.Note, itu *types.User) *apiV1Note
 }
 
 func noteApiRoute(r fiber.Router) {
-	r.Post("/", loginRequired, noteCreate)
+	r.Post("/", loginRequired, usernameRequired, noteCreate)
 	r.Get("/:id", noteGet)
 }
 

@@ -13,3 +13,16 @@ func loginRequired(c *fiber.Ctx) error {
 
 	return c.Next()
 }
+
+func usernameRequired(c *fiber.Ctx) error {
+	user, ok := c.Locals("currentUser").(*types.User)
+	if !ok {
+		return apiUnauthorized(c)
+	}
+
+	if !user.Username.Valid {
+		return apiError(c, fiber.StatusBadRequest, "USERNAME_REQUIRED", "Please pick a username first.")
+	}
+
+	return c.Next()
+}
