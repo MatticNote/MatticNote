@@ -5,6 +5,7 @@ import (
 	"github.com/MatticNote/MatticNote/internal/types"
 	"github.com/gofiber/fiber/v2"
 	"github.com/segmentio/ksuid"
+	"strings"
 	"time"
 )
 
@@ -57,7 +58,34 @@ func newApiV1UserStructFromInternal(it *types.User) *apiV1UserStruct {
 }
 
 func userApiRoute(r fiber.Router) {
+	r.Get("/by/username/:acct", userGetUsername)
 	r.Get("/:id", userGet)
+}
+
+func userGetUsername(c *fiber.Ctx) error {
+	acct := strings.SplitN(c.Params("acct"), "@", 2)
+	var (
+		user *types.User
+		err  error
+	)
+	if len(acct) > 1 {
+		user, err = account.GetUserByUsername(acct[0], acct[1])
+	} else {
+		user, err = account.GetUserByUsername(acct[0])
+	}
+	if err != nil {
+		if err == account.ErrUserNotFound {
+			return apiNotFound(c, "User not found")
+		} else {
+			return err
+		}
+	}
+
+	if !user.IsActive {
+		return apiGone(c, "User is gone")
+	}
+
+	return c.JSON(newApiV1UserStructFromInternal(user))
 }
 
 func userGet(c *fiber.Ctx) error {

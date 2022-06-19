@@ -32,6 +32,7 @@ func AuthenticateUser(
 		"SELECT "+
 			"\"user\".id, "+
 			"username, "+
+			"host, "+
 			"display_name, "+
 			"headline, "+
 			"description, "+
@@ -55,6 +56,7 @@ func AuthenticateUser(
 	).Scan(
 		&user.ID,
 		&user.Username,
+		&user.Host,
 		&user.DisplayName,
 		&user.Headline,
 		&user.Description,
@@ -110,6 +112,7 @@ func GetUser(userId ksuid.KSUID) (*types.User, error) {
 		"SELECT "+
 			"\"user\".id, "+
 			"username, "+
+			"host, "+
 			"display_name, "+
 			"headline, "+
 			"description, "+
@@ -129,6 +132,7 @@ func GetUser(userId ksuid.KSUID) (*types.User, error) {
 	).Scan(
 		&user.ID,
 		&user.Username,
+		&user.Host,
 		&user.DisplayName,
 		&user.Headline,
 		&user.Description,
@@ -150,4 +154,37 @@ func GetUser(userId ksuid.KSUID) (*types.User, error) {
 	}
 
 	return &user, nil
+}
+
+func GetUserByUsername(username string, host ...string) (*types.User, error) {
+	var (
+		id  ksuid.KSUID
+		err error
+	)
+	if len(host) > 0 {
+		err = database.Database.QueryRow(
+			"SELECT id FROM \"user\" WHERE username ILIKE $1 AND host ILIKE $2",
+			username,
+			host[0],
+		).Scan(
+			&id,
+		)
+	} else {
+		err = database.Database.QueryRow(
+			"SELECT id FROM \"user\" WHERE username ILIKE $1 AND host IS NULL",
+			username,
+		).Scan(
+			&id,
+		)
+	}
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrUserNotFound
+		} else {
+			return nil, err
+		}
+	}
+
+	return GetUser(id)
 }
