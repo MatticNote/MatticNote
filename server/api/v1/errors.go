@@ -24,6 +24,10 @@ func apiUnauthorized(c *fiber.Ctx) error {
 	return apiError(c, fiber.StatusUnauthorized, "UNAUTHORIZED", "Invalid credentials.")
 }
 
+func apiForbidden(c *fiber.Ctx, detail string) error {
+	return apiError(c, fiber.StatusForbidden, "FORBIDDEN", detail)
+}
+
 func apiNotFound(c *fiber.Ctx, detail string) error {
 	return apiError(c, fiber.StatusNotFound, "NOT_FOUND", detail)
 }

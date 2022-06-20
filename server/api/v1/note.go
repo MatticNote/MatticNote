@@ -48,6 +48,7 @@ func newApiV1NoteStructFromInternal(itn *types.Note, itu *types.User) *apiV1Note
 func noteApiRoute(r fiber.Router) {
 	r.Post("/", loginRequired, usernameRequired, noteCreate)
 	r.Get("/:id", noteGet)
+	r.Delete("/:id", loginRequired, usernameRequired, noteDelete)
 }
 
 func noteCreate(c *fiber.Ctx) error {
@@ -98,4 +99,33 @@ func noteGet(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(newApiV1NoteStructFromInternal(noteDetail, owner))
+}
+
+func noteDelete(c *fiber.Ctx) error {
+	noteId, err := ksuid.Parse(c.Params("id"))
+	if err != nil {
+		return apiNotFound(c, "Note not found")
+	}
+
+	noteDetail, err := note.GetNote(noteId)
+	if err != nil {
+		if err == note.ErrNoteNotFound {
+			return apiNotFound(c, "Note not found")
+		} else {
+			return err
+		}
+	}
+
+	user := c.Locals("currentUser").(*types.User)
+
+	if noteDetail.Owner != user.ID && !(user.IsModerator || user.IsAdmin) {
+		return apiForbidden(c, "You don't have permission to delete this note")
+	}
+
+	err = note.DeleteNote(noteDetail.ID)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusNoContent).Send([]byte(""))
 }
