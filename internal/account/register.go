@@ -16,6 +16,8 @@ import (
 var (
 	registerLock       sync.Mutex
 	chooseUsernameLock sync.Mutex
+	issueTokenLock     sync.Mutex
+	verifyTokenLock    sync.Mutex
 )
 
 var (
@@ -35,10 +37,8 @@ func RegisterLocalAccount(
 	if err != nil {
 		return nil, err
 	}
-	rsCon := database.RedisPool.Get()
 	defer func() {
 		_ = tx.Rollback()
-		_ = rsCon.Close()
 	}()
 
 	var createdAt time.Time
@@ -64,23 +64,10 @@ func RegisterLocalAccount(
 	}
 
 	if !skipEmailVerify {
-		verifyKey := fmt.Sprintf("emailVerify:%s", ksuid.New().String())
-		_, err = rsCon.Do(
-			"HSET",
-			verifyKey,
-			"id",
-			id.String(),
-			"email",
-			email,
-		)
+		err := IssueEmailToken(id, email)
 		if err != nil {
 			return nil, err
 		}
-		err := rsCon.Send("EXPIRE", verifyKey, "3600")
-		if err != nil {
-			return nil, err
-		}
-		// TODO: Send verification mail
 	}
 
 	createdUser := types.User{
@@ -102,9 +89,44 @@ func RegisterLocalAccount(
 	return &createdUser, nil
 }
 
+func IssueEmailToken(
+	userId ksuid.KSUID,
+	email string,
+) error {
+	issueTokenLock.Lock()
+	defer issueTokenLock.Unlock()
+
+	rsCon := database.RedisPool.Get()
+	defer func() {
+		_ = rsCon.Close()
+	}()
+
+	verifyKey := fmt.Sprintf("emailVerify:%s", ksuid.New().String())
+	_, err := rsCon.Do(
+		"HSET",
+		verifyKey,
+		"id",
+		userId.String(),
+		"email",
+		email,
+	)
+	if err != nil {
+		return err
+	}
+	err = rsCon.Send("EXPIRE", verifyKey, "3600")
+	if err != nil {
+		return err
+	}
+	// TODO: Send verification mail
+
+	return nil
+}
+
 func VerifyEmailToken(
 	token string,
 ) error {
+	verifyTokenLock.Lock()
+	defer verifyTokenLock.Unlock()
 	rsCon := database.RedisPool.Get()
 	defer func() {
 		_ = rsCon.Close()
