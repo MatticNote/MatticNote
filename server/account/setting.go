@@ -6,10 +6,10 @@ import (
 )
 
 func settingRoute(r fiber.Router) {
-	r.Get("/core", settingAccountGet)
+	r.Get("/core", settingCoreGet)
 }
 
-func settingAccountGet(c *fiber.Ctx) error {
+func settingCoreGet(c *fiber.Ctx) error {
 	user := c.Locals("currentUser").(*types.User)
 
 	return c.Render(
