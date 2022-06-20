@@ -43,7 +43,7 @@ func cliServer(_ *cli.Context) error {
 		Views: ace.NewFileSystem(func() http.FileSystem {
 			dist, err := fs.Sub(template, "template")
 			if err != nil {
-				return nil
+				panic(err)
 			}
 			return http.FS(dist)
 		}(), ".ace"),
