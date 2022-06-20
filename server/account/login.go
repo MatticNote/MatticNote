@@ -53,6 +53,8 @@ func loginPost(c *fiber.Ctx) error {
 
 	if !user.Username.Valid && (user.EmailVerified.Valid && user.EmailVerified.Bool) {
 		return c.Redirect("/account/register-username")
+	} else if !user.EmailVerified.Bool {
+		return c.Redirect("/account/settings/core")
 	} else {
 		return c.Redirect("/web/")
 	}

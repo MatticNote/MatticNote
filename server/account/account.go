@@ -67,4 +67,6 @@ func ConfigureRoute(r fiber.Router) {
 
 	r.Get("/register-username", validateCookie, registerUsernameGet)
 	r.Post("/register-username", validateCookie, registerUsernamePost)
+
+	settingRoute(r.Group("/settings", validateCookie))
 }
