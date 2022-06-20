@@ -13,6 +13,7 @@ import (
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrUserNotFound       = errors.New("user not found")
+	ErrUserGone           = errors.New("user is gone")
 )
 
 const (

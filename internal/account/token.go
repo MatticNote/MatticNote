@@ -58,7 +58,16 @@ func GetUserFromToken(
 		}
 	}
 
-	return GetUser(userId)
+	user, err := GetUser(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	if !user.IsActive {
+		return nil, ErrUserGone
+	}
+
+	return user, nil
 }
 
 func DestroyUserToken(

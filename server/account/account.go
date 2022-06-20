@@ -28,9 +28,8 @@ func validateCookie(c *fiber.Ctx) error {
 	user, err := ia.GetUserFromToken(token)
 	if err != nil {
 		switch err {
-		case ia.ErrUserNotFound, ia.ErrInvalidUserToken:
-			c.ClearCookie(ia.TokenCookieName)
-			return c.Redirect("/account/login")
+		case ia.ErrUserNotFound, ia.ErrInvalidUserToken, ia.ErrUserGone:
+			return c.Redirect("/account/logout")
 		default:
 			return err
 		}
