@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/MatticNote/MatticNote/database"
-	"github.com/MatticNote/MatticNote/internal/types"
+	"github.com/MatticNote/MatticNote/database/schemas"
 	"github.com/segmentio/ksuid"
 	"time"
 )
@@ -20,38 +20,43 @@ func GenerateUserToken(
 	issuedFromIP string,
 	expiredAt ...time.Time,
 ) (string, error) {
-	sessionId := sha512.Sum512([]byte(fmt.Sprintf("%s.%s", userId.String(), ksuid.New().String())))
+	tokenRaw := sha512.Sum512([]byte(fmt.Sprintf("%s.%s", userId.String(), ksuid.New())))
+	token := fmt.Sprintf("%x", tokenRaw)
 
-	var expiredAtSQLNT sql.NullTime
+	var err error
+
 	if len(expiredAt) > 0 {
-		expiredAtSQLNT = sql.NullTime{
-			Time:  expiredAt[0],
-			Valid: true,
-		}
+		_, err = database.Database.Exec(
+			"INSERT INTO users_token(token, user_id, expired_at, ip) VALUES ($1, $2, $3, $4)",
+			token,
+			userId.String(),
+			expiredAt[0],
+			issuedFromIP,
+		)
+	} else {
+		_, err = database.Database.Exec(
+			"INSERT INTO users_token(token, user_id, ip) VALUES ($1, $2, $3)",
+			token,
+			userId.String(),
+			issuedFromIP,
+		)
 	}
 
-	sessionIdStr := fmt.Sprintf("%x", sessionId)
-
-	_, err := database.Database.Exec(
-		"INSERT INTO user_session(token, user_id, expired_at, issued_from) VALUES ($1, $2, $3, $4)",
-		sessionIdStr,
-		userId.String(),
-		expiredAtSQLNT,
-		issuedFromIP,
-	)
 	if err != nil {
 		return "", err
 	}
 
-	return sessionIdStr, nil
+	return token, nil
 }
 
 func GetUserFromToken(
 	token string,
-) (*types.User, error) {
+) (*schemas.User, error) {
 	var userId ksuid.KSUID
-	if err := database.Database.QueryRow("SELECT user_id FROM user_session WHERE token = $1 AND (expired_at IS NULL OR expired_at >= now());", token).Scan(&userId); err != nil {
-		if err == sql.ErrNoRows {
+
+	err := database.Database.QueryRow("SELECT user_id FROM users_token WHERE token = $1", token).Scan(&userId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrInvalidUserToken
 		} else {
 			return nil, err
@@ -63,7 +68,7 @@ func GetUserFromToken(
 		return nil, err
 	}
 
-	if !user.IsActive {
+	if user.DeletedAt.Valid && user.DeletedAt.Time.Before(time.Now()) {
 		return nil, ErrUserGone
 	}
 
@@ -73,7 +78,7 @@ func GetUserFromToken(
 func DestroyUserToken(
 	token string,
 ) error {
-	_, err := database.Database.Exec("DELETE FROM user_session WHERE token = $1 OR expired_at < now();", token)
+	_, err := database.Database.Exec("DELETE FROM users_token WHERE token = $1 OR expired_at < now();", token)
 	if err != nil {
 		return err
 	}

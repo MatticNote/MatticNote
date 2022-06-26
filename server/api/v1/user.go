@@ -1,8 +1,8 @@
 package v1
 
 import (
+	"github.com/MatticNote/MatticNote/database/schemas"
 	"github.com/MatticNote/MatticNote/internal/account"
-	"github.com/MatticNote/MatticNote/internal/types"
 	"github.com/gofiber/fiber/v2"
 	"github.com/segmentio/ksuid"
 	"strings"
@@ -23,38 +23,8 @@ type (
 	}
 )
 
-func newApiV1UserStructFromInternal(it *types.User) *apiV1UserStruct {
-	s := new(apiV1UserStruct)
-
-	s.ID = it.ID.String()
-	s.IsModerator = it.IsModerator
-	s.IsAdmin = it.IsAdmin
-
-	if it.Username.Valid {
-		s.Username = &it.Username.String
-	}
-
-	if it.Host.Valid {
-		s.Host = &it.Host.String
-	}
-
-	if it.DisplayName.Valid {
-		s.DisplayName = &it.DisplayName.String
-	}
-
-	if it.Headline.Valid {
-		s.Headline = &it.Headline.String
-	}
-
-	if it.Description.Valid {
-		s.Description = &it.Description.String
-	}
-
-	if it.CreatedAt.Valid {
-		s.CreatedAt = &it.CreatedAt.Time
-	}
-
-	return s
+func newApiV1UserStructFromSchema(it *schemas.User) *apiV1UserStruct {
+	return nil
 }
 
 func userApiRoute(r fiber.Router) {
@@ -66,7 +36,7 @@ func userApiRoute(r fiber.Router) {
 func userGetUsername(c *fiber.Ctx) error {
 	acct := strings.SplitN(c.Params("acct"), "@", 2)
 	var (
-		user *types.User
+		user *schemas.User
 		err  error
 	)
 	if len(acct) > 1 {
@@ -82,11 +52,9 @@ func userGetUsername(c *fiber.Ctx) error {
 		}
 	}
 
-	if !user.IsActive {
-		return apiGone(c, "User is gone")
-	}
+	// TODO: Deleted validation
 
-	return c.JSON(newApiV1UserStructFromInternal(user))
+	return c.JSON(newApiV1UserStructFromSchema(user))
 }
 
 func userGet(c *fiber.Ctx) error {
@@ -104,15 +72,15 @@ func userGet(c *fiber.Ctx) error {
 		}
 	}
 
-	if !user.IsActive {
-		return apiGone(c, "User is gone")
-	}
+	//if !user.IsActive {
+	//	return apiGone(c, "User is gone")
+	//}
 
-	return c.JSON(newApiV1UserStructFromInternal(user))
+	return c.JSON(newApiV1UserStructFromSchema(user))
 }
 
 func userGetMe(c *fiber.Ctx) error {
-	user := c.Locals("currentUser").(*types.User)
+	user := c.Locals("currentUser").(*schemas.User)
 
-	return c.JSON(newApiV1UserStructFromInternal(user))
+	return c.JSON(newApiV1UserStructFromSchema(user))
 }

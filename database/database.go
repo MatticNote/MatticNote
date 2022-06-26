@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	_ "github.com/lib/pq"
 	migrate "github.com/rubenv/sql-migrate"
 	"io/fs"
 	"net/http"

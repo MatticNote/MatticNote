@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"errors"
 	"github.com/MatticNote/MatticNote/internal/account"
 	"github.com/gofiber/fiber/v2"
 	"strings"
@@ -16,7 +17,7 @@ func ConfigureRoute(r fiber.Router) {
 				if authHeader[1] != "" {
 					user, err := account.GetUserFromToken(authHeader[1])
 					if err != nil {
-						if err == account.ErrInvalidUserToken {
+						if errors.Is(err, account.ErrInvalidUserToken) {
 							return apiUnauthorized(c)
 						} else {
 							return err
@@ -32,5 +33,5 @@ func ConfigureRoute(r fiber.Router) {
 	})
 
 	userApiRoute(r.Group("/users"))
-	noteApiRoute(r.Group("/notes"))
+	//noteApiRoute(r.Group("/notes"))
 }

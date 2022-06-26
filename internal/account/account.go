@@ -4,10 +4,11 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/MatticNote/MatticNote/database"
-	"github.com/MatticNote/MatticNote/internal/types"
+	"github.com/MatticNote/MatticNote/database/schemas"
 	"github.com/gofiber/fiber/v2"
 	"github.com/segmentio/ksuid"
 	"golang.org/x/crypto/bcrypt"
+	"time"
 )
 
 var (
@@ -23,76 +24,45 @@ const (
 func AuthenticateUser(
 	email,
 	password string,
-) (*types.User, error) {
+) (*schemas.User, error) {
 	var (
-		user         types.User
-		userPassword sql.NullString
+		userId       ksuid.KSUID
+		userPassword []byte
 	)
 
 	err := database.Database.QueryRow(
-		"SELECT "+
-			"\"user\".id, "+
-			"username, "+
-			"host, "+
-			"display_name, "+
-			"headline, "+
-			"description, "+
-			"created_at, "+
-			"is_silence, "+
-			"is_suspend, "+
-			"is_active, "+
-			"is_moderator, "+
-			"is_admin, "+
-			"email, "+
-			"verified, "+
-			"password "+
-			"FROM \"user\" "+
-			"LEFT JOIN user_email ue "+
-			"ON \"user\".id = ue.id "+
-			"LEFT JOIN user_auth ua ON "+
-			"\"user\".id = ua.id "+
-			"WHERE email ILIKE $1 AND "+
-			"host IS NULL;",
+		"SELECT u.id, ua.password FROM users_email "+
+			"LEFT OUTER JOIN users u on u.id = users_email.id "+
+			"LEFT JOIN users_auth ua on u.id = ua.id "+
+			"WHERE email = $1 AND (deleted_at IS NULL OR deleted_at > now());",
 		email,
-	).Scan(
-		&user.ID,
-		&user.Username,
-		&user.Host,
-		&user.DisplayName,
-		&user.Headline,
-		&user.Description,
-		&user.CreatedAt,
-		&user.IsSilence,
-		&user.IsSuspend,
-		&user.IsActive,
-		&user.IsModerator,
-		&user.IsAdmin,
-		&user.Email,
-		&user.EmailVerified,
-		&userPassword,
-	)
+	).
+		Scan(&userId, &userPassword)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrInvalidCredentials
+		}
+	}
+
+	err = bcrypt.CompareHashAndPassword(userPassword, []byte(password))
+	if err != nil {
+		if errors.Is(err, bcrypt.ErrMismatchedHashAndPassword) {
 			return nil, ErrInvalidCredentials
 		} else {
 			return nil, err
 		}
 	}
 
-	if !userPassword.Valid {
-		return nil, ErrInvalidCredentials
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(userPassword.String), []byte(password))
+	user, err := GetUser(userId)
 	if err != nil {
-		if err == bcrypt.ErrMismatchedHashAndPassword {
-			return nil, ErrInvalidCredentials
-		} else {
-			return nil, err
-		}
+		return nil, err
 	}
 
-	return &user, nil
+	if user.DeletedAt.Valid && user.DeletedAt.Time.Before(time.Now()) {
+		return nil, ErrUserGone
+	}
+
+	return user, nil
 }
 
 func InsertTokenCookie(c *fiber.Ctx, token string) {
@@ -102,90 +72,60 @@ func InsertTokenCookie(c *fiber.Ctx, token string) {
 		Path:     "/",
 		Secure:   false,
 		HTTPOnly: true,
-		SameSite: "Strict",
+		SameSite: fiber.CookieSameSiteStrictMode,
 	})
 }
 
-func GetUser(userId ksuid.KSUID) (*types.User, error) {
-	var user types.User
+func GetUser(userId ksuid.KSUID) (*schemas.User, error) {
+	user := new(schemas.User)
 
 	err := database.Database.QueryRow(
-		"SELECT "+
-			"\"user\".id, "+
-			"username, "+
-			"host, "+
-			"display_name, "+
-			"headline, "+
-			"description, "+
-			"created_at, "+
-			"is_silence, "+
-			"is_suspend, "+
-			"is_active, "+
-			"is_moderator, "+
-			"is_admin, "+
-			"email, "+
-			"verified "+
-			"FROM \"user\" "+
-			"LEFT JOIN user_email ue "+
-			"ON \"user\".id = ue.id "+
-			"WHERE \"user\".id = $1",
-		userId.String(),
-	).Scan(
-		&user.ID,
-		&user.Username,
-		&user.Host,
-		&user.DisplayName,
-		&user.Headline,
-		&user.Description,
-		&user.CreatedAt,
-		&user.IsSilence,
-		&user.IsSuspend,
-		&user.IsActive,
-		&user.IsModerator,
-		&user.IsAdmin,
-		&user.Email,
-		&user.EmailVerified,
-	)
+		"SELECT id, username, host, display_name, headline, description, created_at, is_silence, is_suspend, is_moderator, is_admin, deleted_at FROM users WHERE id = $1;", userId.String()).
+		Scan(&user.ID, &user.Username, &user.Host, &user.DisplayName, &user.Headline, &user.Description, &user.CreatedAt, &user.IsSilence, &user.IsSuspend, &user.IsModerator, &user.IsAdmin, &user.DeletedAt)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound
 		} else {
 			return nil, err
 		}
 	}
 
-	return &user, nil
+	return user, nil
 }
 
-func GetUserByUsername(username string, host ...string) (*types.User, error) {
+func GetUserByUsername(username string, host ...string) (*schemas.User, error) {
 	var (
-		id  ksuid.KSUID
-		err error
+		userId ksuid.KSUID
+		err    error
 	)
+
 	if len(host) > 0 {
-		err = database.Database.QueryRow(
-			"SELECT id FROM \"user\" WHERE username ILIKE $1 AND host ILIKE $2",
-			username,
-			host[0],
-		).Scan(
-			&id,
-		)
+		err = database.Database.QueryRow("SELECT id FROM users WHERE username ILIKE $1 AND host ILIKE $2", username, host[0]).Scan(&userId)
 	} else {
-		err = database.Database.QueryRow(
-			"SELECT id FROM \"user\" WHERE username ILIKE $1 AND host IS NULL",
-			username,
-		).Scan(
-			&id,
-		)
+		err = database.Database.QueryRow("SELECT id FROM users WHERE username ILIKE $1 AND host IS NULL", username).Scan(&userId)
 	}
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound
 		} else {
 			return nil, err
 		}
 	}
 
-	return GetUser(id)
+	return GetUser(userId)
+}
+
+func GetUserEmail(userId ksuid.KSUID) (string, error) {
+	var email string
+	err := database.Database.QueryRow("SELECT email FROM	users_email WHERE id = $1", userId.String()).Scan(&email)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", ErrUserNotFound
+		} else {
+			return "", err
+		}
+	}
+
+	return email, nil
 }

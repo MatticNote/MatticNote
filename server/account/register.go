@@ -1,11 +1,11 @@
 package account
 
 import (
+	"errors"
+	"github.com/MatticNote/MatticNote/database/schemas"
 	ia "github.com/MatticNote/MatticNote/internal/account"
-	"github.com/MatticNote/MatticNote/internal/types"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/lib/pq"
 )
 
 type registerForm struct {
@@ -53,14 +53,9 @@ func registerPost(c *fiber.Ctx) error {
 		false,
 	)
 	if err != nil {
-		if dbErr, ok := err.(*pq.Error); ok {
-			switch dbErr.Code.Name() {
-			case "unique_violation":
-				c.Locals("invalid", true)
-				return registerGet(c)
-			default:
-				return err
-			}
+		if errors.Is(err, ia.ErrEmailExists) {
+			c.Locals("invalid", true)
+			return registerGet(c)
 		} else {
 			return err
 		}
@@ -84,7 +79,7 @@ func verifyEmailToken(c *fiber.Ctx) error {
 }
 
 func registerUsernameGet(c *fiber.Ctx) error {
-	currentUser, ok := c.Locals("currentUser").(*types.User)
+	currentUser, ok := c.Locals("currentUser").(*schemas.User)
 	if !ok {
 		return c.Redirect("/account/logout")
 	}
@@ -93,9 +88,9 @@ func registerUsernameGet(c *fiber.Ctx) error {
 		return c.Redirect("/web/")
 	}
 
-	if !currentUser.EmailVerified.Valid || !currentUser.EmailVerified.Bool {
-		return c.SendStatus(fiber.StatusForbidden)
-	}
+	//if !currentUser.EmailVerified.Valid || !currentUser.EmailVerified.Bool {
+	//	return c.SendStatus(fiber.StatusForbidden)
+	//}
 
 	invalid, ok := c.Locals("invalid").(bool)
 	if !ok {
@@ -122,14 +117,14 @@ func registerUsernamePost(c *fiber.Ctx) error {
 		return registerUsernameGet(c)
 	}
 
-	currentUser, ok := c.Locals("currentUser").(*types.User)
+	currentUser, ok := c.Locals("currentUser").(*schemas.User)
 	if !ok {
 		return c.Redirect("/account/logout")
 	}
 
-	if !currentUser.EmailVerified.Valid || !currentUser.EmailVerified.Bool {
-		return c.SendStatus(fiber.StatusForbidden)
-	}
+	//if !currentUser.EmailVerified.Valid || !currentUser.EmailVerified.Bool {
+	//	return c.SendStatus(fiber.StatusForbidden)
+	//}
 
 	if currentUser.Username.Valid {
 		return c.SendStatus(fiber.StatusForbidden)

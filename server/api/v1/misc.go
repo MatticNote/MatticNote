@@ -1,12 +1,12 @@
 package v1
 
 import (
-	"github.com/MatticNote/MatticNote/internal/types"
+	"github.com/MatticNote/MatticNote/database/schemas"
 	"github.com/gofiber/fiber/v2"
 )
 
 func loginRequired(c *fiber.Ctx) error {
-	_, ok := c.Locals("currentUser").(*types.User)
+	_, ok := c.Locals("currentUser").(*schemas.User)
 	if !ok {
 		return apiUnauthorized(c)
 	}
@@ -15,7 +15,7 @@ func loginRequired(c *fiber.Ctx) error {
 }
 
 func usernameRequired(c *fiber.Ctx) error {
-	user, ok := c.Locals("currentUser").(*types.User)
+	user, ok := c.Locals("currentUser").(*schemas.User)
 	if !ok {
 		return apiUnauthorized(c)
 	}

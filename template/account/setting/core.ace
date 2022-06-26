@@ -1,11 +1,12 @@
 h1 Account core settings
-{{ if not .user.EmailVerified.Bool }}
-p Email verification is not completed
+
+{{ if not .isUserEmailVerified }}
+p Please verify email first!
 {{ end }}
 
-{{ if and .user.EmailVerified.Bool (not .user.Username.Valid) }}
-p Username not chosen. Please pick a username first!
+{{ if and .isUserEmailVerified (not .user.Username.Valid) }}
+p Please choose a username first!
 {{ end }}
 
 p Internal ID: {{ .user.ID.String }}
-p {{ .user.Email.String }}
+p Email: {{ .userEmail }}

@@ -1,6 +1,7 @@
 package account
 
 import (
+	"errors"
 	"fmt"
 	"github.com/MatticNote/MatticNote/database"
 	ia "github.com/MatticNote/MatticNote/internal/account"
@@ -27,8 +28,10 @@ func validateCookie(c *fiber.Ctx) error {
 
 	user, err := ia.GetUserFromToken(token)
 	if err != nil {
-		switch err {
-		case ia.ErrUserNotFound, ia.ErrInvalidUserToken, ia.ErrUserGone:
+		switch {
+		case errors.Is(err, ia.ErrUserNotFound),
+			errors.Is(err, ia.ErrUserGone),
+			errors.Is(err, ia.ErrInvalidUserToken):
 			return c.Redirect("/account/logout")
 		default:
 			return err

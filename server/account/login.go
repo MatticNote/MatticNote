@@ -1,6 +1,7 @@
 package account
 
 import (
+	"errors"
 	"github.com/MatticNote/MatticNote/internal/account"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -37,10 +38,10 @@ func loginPost(c *fiber.Ctx) error {
 
 	user, err := account.AuthenticateUser(form.Email, form.Password)
 	if err != nil {
-		if err == account.ErrInvalidCredentials {
-			return c.SendStatus(fiber.StatusBadRequest)
-		} else {
-			return err
+		switch {
+		case errors.Is(err, account.ErrInvalidCredentials), errors.Is(err, account.ErrUserGone):
+			c.Locals("invalid", true)
+			return loginGet(c)
 		}
 	}
 
@@ -51,12 +52,19 @@ func loginPost(c *fiber.Ctx) error {
 
 	account.InsertTokenCookie(c, session)
 
-	if !user.Username.Valid && (user.EmailVerified.Valid && user.EmailVerified.Bool) {
-		return c.Redirect("/account/register-username")
-	} else if !user.EmailVerified.Bool {
-		return c.Redirect("/account/settings/core")
+	isEmailVerified, err := account.IsEmailVerified(user.ID)
+	if err != nil {
+		return err
+	}
+
+	if isEmailVerified {
+		if !user.Username.Valid {
+			return c.Redirect("/account/register-username")
+		} else {
+			return c.Redirect("/web")
+		}
 	} else {
-		return c.Redirect("/web/")
+		return c.Redirect("/account/settings/core")
 	}
 }
 
