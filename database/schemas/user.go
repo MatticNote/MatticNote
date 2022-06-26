@@ -9,7 +9,7 @@ import (
 type User struct {
 	ID          ksuid.KSUID
 	Username    sql.NullString
-	Host        *ksuid.KSUID
+	Host        sql.NullString
 	DisplayName sql.NullString
 	Headline    sql.NullString
 	Description sql.NullString

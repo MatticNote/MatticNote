@@ -57,6 +57,10 @@ func loginPost(c *fiber.Ctx) error {
 		return err
 	}
 
+	if user.DeletedAt.Valid {
+		return c.Redirect("/account/settings/core")
+	}
+
 	if isEmailVerified {
 		if !user.Username.Valid {
 			return c.Redirect("/account/register-username")

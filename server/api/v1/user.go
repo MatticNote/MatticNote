@@ -11,20 +11,39 @@ import (
 
 type (
 	apiV1UserStruct struct {
-		ID          string     `json:"id"`
-		Username    *string    `json:"username"`
-		Host        *string    `json:"host"`
-		DisplayName *string    `json:"display_name"`
-		Headline    *string    `json:"headline"`
-		Description *string    `json:"description"`
-		CreatedAt   *time.Time `json:"created_at"`
-		IsModerator bool       `json:"is_moderator"`
-		IsAdmin     bool       `json:"is_admin"`
+		ID          string    `json:"id"`
+		Username    *string   `json:"username"`
+		Host        *string   `json:"host"`
+		DisplayName *string   `json:"display_name"`
+		Headline    *string   `json:"headline"`
+		Description *string   `json:"description"`
+		CreatedAt   time.Time `json:"created_at"`
+		IsModerator bool      `json:"is_moderator"`
+		IsAdmin     bool      `json:"is_admin"`
 	}
 )
 
 func newApiV1UserStructFromSchema(it *schemas.User) *apiV1UserStruct {
-	return nil
+	u := new(apiV1UserStruct)
+
+	u.ID = it.ID.String()
+	u.CreatedAt = it.CreatedAt
+	u.IsModerator = it.IsModerator
+	u.IsAdmin = it.IsAdmin
+
+	if it.Username.Valid {
+		u.Username = &it.Username.String
+	}
+
+	if it.Host.Valid {
+		u.Host = &it.Host.String
+	}
+
+	if it.DisplayName.Valid {
+		u.DisplayName = &it.DisplayName.String
+	}
+
+	return u
 }
 
 func userApiRoute(r fiber.Router) {
@@ -52,7 +71,9 @@ func userGetUsername(c *fiber.Ctx) error {
 		}
 	}
 
-	// TODO: Deleted validation
+	if user.DeletedAt.Valid && user.DeletedAt.Time.Before(time.Now()) {
+		return apiGone(c, "User is gone")
+	}
 
 	return c.JSON(newApiV1UserStructFromSchema(user))
 }
@@ -72,9 +93,9 @@ func userGet(c *fiber.Ctx) error {
 		}
 	}
 
-	//if !user.IsActive {
-	//	return apiGone(c, "User is gone")
-	//}
+	if user.DeletedAt.Valid && user.DeletedAt.Time.Before(time.Now()) {
+		return apiGone(c, "User is gone")
+	}
 
 	return c.JSON(newApiV1UserStructFromSchema(user))
 }

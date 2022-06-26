@@ -88,9 +88,13 @@ func registerUsernameGet(c *fiber.Ctx) error {
 		return c.Redirect("/web/")
 	}
 
-	//if !currentUser.EmailVerified.Valid || !currentUser.EmailVerified.Bool {
-	//	return c.SendStatus(fiber.StatusForbidden)
-	//}
+	verified, err := ia.IsEmailVerified(currentUser.ID)
+	if err != nil {
+		return err
+	}
+	if !verified || currentUser.DeletedAt.Valid {
+		return c.SendStatus(fiber.StatusForbidden)
+	}
 
 	invalid, ok := c.Locals("invalid").(bool)
 	if !ok {
@@ -122,9 +126,13 @@ func registerUsernamePost(c *fiber.Ctx) error {
 		return c.Redirect("/account/logout")
 	}
 
-	//if !currentUser.EmailVerified.Valid || !currentUser.EmailVerified.Bool {
-	//	return c.SendStatus(fiber.StatusForbidden)
-	//}
+	verified, err := ia.IsEmailVerified(currentUser.ID)
+	if err != nil {
+		return err
+	}
+	if !verified || currentUser.DeletedAt.Valid {
+		return c.SendStatus(fiber.StatusForbidden)
+	}
 
 	if currentUser.Username.Valid {
 		return c.SendStatus(fiber.StatusForbidden)

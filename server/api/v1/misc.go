@@ -14,10 +14,14 @@ func loginRequired(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-func usernameRequired(c *fiber.Ctx) error {
+func activeAccountRequired(c *fiber.Ctx) error {
 	user, ok := c.Locals("currentUser").(*schemas.User)
 	if !ok {
 		return apiUnauthorized(c)
+	}
+
+	if user.DeletedAt.Valid {
+		return apiError(c, fiber.StatusForbidden, "ACCOUNT_DELETION_RESERVED", "You are reserving account deletion. If to continue use this account, please cancel account deletion reservation.")
 	}
 
 	if !user.Username.Valid {

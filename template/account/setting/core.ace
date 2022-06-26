@@ -1,11 +1,15 @@
 h1 Account core settings
 
+{{ if not .user.DeletedAt.Valid }}
 {{ if not .isUserEmailVerified }}
 p Please verify email first!
 {{ end }}
 
 {{ if and .isUserEmailVerified (not .user.Username.Valid) }}
 p Please choose a username first!
+{{ end }}
+{{ else }}
+p Account deletion is reserved. {{ .user.DeletedAt.Time }}
 {{ end }}
 
 p Internal ID: {{ .user.ID.String }}
