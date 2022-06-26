@@ -3,6 +3,7 @@ package v1
 import (
 	"github.com/MatticNote/MatticNote/database/schemas"
 	"github.com/MatticNote/MatticNote/internal/account"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/segmentio/ksuid"
 	"strings"
@@ -20,6 +21,12 @@ type (
 		CreatedAt   time.Time `json:"created_at"`
 		IsModerator bool      `json:"is_moderator"`
 		IsAdmin     bool      `json:"is_admin"`
+	}
+
+	apiV1UserUpdateStruct struct {
+		DisplayName *string `json:"display_name"`
+		Headline    *string `json:"headline"`
+		Description *string `json:"description"`
 	}
 )
 
@@ -43,12 +50,21 @@ func newApiV1UserStructFromSchema(it *schemas.User) *apiV1UserStruct {
 		u.DisplayName = &it.DisplayName.String
 	}
 
+	if it.Headline.Valid {
+		u.Headline = &it.Headline.String
+	}
+
+	if it.Description.Valid {
+		u.Description = &it.Description.String
+	}
+
 	return u
 }
 
 func userApiRoute(r fiber.Router) {
 	r.Get("/by/username/:acct", userGetUsername)
 	r.Get("/me", loginRequired, userGetMe)
+	r.Put("/me", loginRequired, userUpdateMe)
 	r.Get("/:id", userGet)
 }
 
@@ -102,6 +118,65 @@ func userGet(c *fiber.Ctx) error {
 
 func userGetMe(c *fiber.Ctx) error {
 	user := c.Locals("currentUser").(*schemas.User)
+
+	return c.JSON(newApiV1UserStructFromSchema(user))
+}
+
+func userUpdateMe(c *fiber.Ctx) error {
+	body := new(apiV1UserUpdateStruct)
+
+	err := c.BodyParser(body)
+	if err != nil {
+		return apiBadRequest(c, "Invalid form.")
+	}
+
+	validate := validator.New()
+	if err := validate.Struct(body); err != nil {
+		return apiBadRequest(c, "Invalid form.")
+	}
+
+	user := c.Locals("currentUser").(*schemas.User)
+
+	if body.DisplayName != nil {
+		err := user.DisplayName.Scan(*body.DisplayName)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := user.DisplayName.Scan(nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	if body.Headline != nil {
+		err := user.Headline.Scan(*body.Headline)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := user.Headline.Scan(nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	if body.Description != nil {
+		err := user.Description.Scan(*body.Description)
+		if err != nil {
+			return err
+		}
+	} else {
+		err := user.Description.Scan(nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = account.UpdateUser(user)
+	if err != nil {
+		return err
+	}
 
 	return c.JSON(newApiV1UserStructFromSchema(user))
 }
