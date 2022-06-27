@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"errors"
 	"github.com/MatticNote/MatticNote/database/schemas"
 	"github.com/MatticNote/MatticNote/internal/account"
 	"github.com/go-playground/validator/v10"
@@ -27,6 +28,10 @@ type (
 		DisplayName *string `json:"display_name"`
 		Headline    *string `json:"headline"`
 		Description *string `json:"description"`
+	}
+
+	apiV1UserFollowPendingStruct struct {
+		IsPending bool `json:"is_pending"`
 	}
 )
 
@@ -66,6 +71,8 @@ func userApiRoute(r fiber.Router) {
 	r.Get("/me", loginRequired, userGetMe)
 	r.Put("/me", loginRequired, userUpdateMe)
 	r.Get("/:id", userGet)
+	r.Post("/:id/follow", loginRequired, activeAccountRequired, userFollow)
+	r.Delete("/:id/follow", loginRequired, activeAccountRequired, userUnfollow)
 }
 
 func userGetUsername(c *fiber.Ctx) error {
@@ -179,4 +186,52 @@ func userUpdateMe(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(newApiV1UserStructFromSchema(user))
+}
+
+func userFollow(c *fiber.Ctx) error {
+	targetId, err := ksuid.Parse(c.Params("id"))
+	if err != nil {
+		return apiNotFound(c, "User not found")
+	}
+
+	user := c.Locals("currentUser").(*schemas.User)
+
+	isActive, err := account.CreateFollowRelation(user.ID, targetId)
+	if err != nil {
+		switch {
+		case errors.Is(err, account.ErrUserNotFound):
+			return apiNotFound(c, "User not found")
+		case errors.Is(err, account.ErrCannotRelationYourself):
+			return apiForbidden(c, "You can't follow yourself")
+		case errors.Is(err, account.ErrAlreadyFollowing):
+			return apiBadRequest(c, "You are already following this user")
+		default:
+			return err
+		}
+	}
+
+	return c.JSON(apiV1UserFollowPendingStruct{IsPending: !isActive})
+}
+
+func userUnfollow(c *fiber.Ctx) error {
+	targetId, err := ksuid.Parse(c.Params("id"))
+	if err != nil {
+		return apiNotFound(c, "User not found")
+	}
+
+	user := c.Locals("currentUser").(*schemas.User)
+
+	err = account.DeleteFollowRelation(user.ID, targetId)
+	if err != nil {
+		switch {
+		case errors.Is(err, account.ErrCannotRelationYourself):
+			return apiForbidden(c, "You can't unfollow yourself")
+		case errors.Is(err, account.ErrNotFollowing):
+			return apiBadRequest(c, "You are not following this user")
+		default:
+			return err
+		}
+	}
+
+	return c.Status(fiber.StatusNoContent).Send([]byte(""))
 }
