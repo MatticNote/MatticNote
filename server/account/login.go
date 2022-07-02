@@ -73,7 +73,7 @@ func loginPost(c *fiber.Ctx) error {
 }
 
 func logout(c *fiber.Ctx) error {
-	err := account.DestroyUserToken(c.Cookies(account.TokenCookieName))
+	err := account.DeleteUserTokenFromToken(c.Cookies(account.TokenCookieName))
 	if err != nil {
 		return err
 	}

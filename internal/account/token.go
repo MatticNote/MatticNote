@@ -27,7 +27,8 @@ func GenerateUserToken(
 
 	if len(expiredAt) > 0 {
 		_, err = database.Database.Exec(
-			"INSERT INTO users_token(token, user_id, expired_at, ip) VALUES ($1, $2, $3, $4)",
+			"INSERT INTO users_token(id, token, user_id, expired_at, ip) VALUES ($1, $2, $3, $4, $5)",
+			ksuid.New().String(),
 			token,
 			userId.String(),
 			expiredAt[0],
@@ -35,7 +36,8 @@ func GenerateUserToken(
 		)
 	} else {
 		_, err = database.Database.Exec(
-			"INSERT INTO users_token(token, user_id, ip) VALUES ($1, $2, $3)",
+			"INSERT INTO users_token(id, token, user_id, ip) VALUES ($1, $2, $3, $4)",
+			ksuid.New().String(),
 			token,
 			userId.String(),
 			issuedFromIP,
@@ -75,7 +77,46 @@ func GetUserFromToken(
 	return user, nil
 }
 
-func DestroyUserToken(
+func ListUserToken(
+	userId ksuid.KSUID,
+) ([]*schemas.UserToken, error) {
+	var tokenList []*schemas.UserToken
+
+	row, err := database.Database.Query("SELECT id, token, user_id, expired_at, ip FROM users_token WHERE user_id = $1", userId)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return tokenList, nil
+		} else {
+			return nil, err
+		}
+	}
+	defer func() {
+		_ = row.Close()
+	}()
+
+	for row.Next() {
+		token := new(schemas.UserToken)
+		if err := row.Scan(&token.ID, &token.Token, &token.UserId, &token.ExpiredAt, &token.IP); err != nil {
+			return nil, err
+		}
+		tokenList = append(tokenList, token)
+	}
+
+	return tokenList, err
+}
+
+func DeleteUserToken(
+	id ksuid.KSUID,
+) error {
+	_, err := database.Database.Exec("DELETE FROM users_token WHERE id = $1 OR expired_at < now();", id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func DeleteUserTokenFromToken(
 	token string,
 ) error {
 	_, err := database.Database.Exec("DELETE FROM users_token WHERE token = $1 OR expired_at < now();", token)

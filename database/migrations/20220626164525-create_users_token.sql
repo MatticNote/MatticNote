@@ -2,9 +2,10 @@
 -- +migrate Up
 create table users_token
 (
-    token      varchar not null
+    id         char(27) not null
         constraint users_token_pk
             primary key,
+    token      varchar  not null,
     user_id    char(27)
         constraint users_token_users_id_fk
             references users
