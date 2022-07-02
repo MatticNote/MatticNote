@@ -18,6 +18,6 @@ type User struct {
 	IsSuspend   bool
 	IsModerator bool
 	IsAdmin     bool
-	PublicKey   *[]byte
+	PublicKey   sql.NullByte
 	DeletedAt   sql.NullTime
 }
