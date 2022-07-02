@@ -113,16 +113,9 @@ func RegisterLocalAccount(
 		}
 	}
 
-	var sqlPublicKey sql.NullByte
-	err = sqlPublicKey.Scan(publicKey)
-	if err != nil {
-		return nil, err
-	}
-
 	createdUser := schemas.User{
 		ID:        id,
 		CreatedAt: createdAt,
-		PublicKey: sqlPublicKey,
 	}
 	err = tx.Commit()
 	if err != nil {
