@@ -82,7 +82,7 @@ func ListUserToken(
 ) ([]*schemas.UserToken, error) {
 	var tokenList []*schemas.UserToken
 
-	row, err := database.Database.Query("SELECT id, token, user_id, expired_at, ip FROM users_token WHERE user_id = $1", userId)
+	row, err := database.Database.Query("SELECT id, token, user_id, expired_at, ip, created_at FROM users_token WHERE user_id = $1", userId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return tokenList, nil
@@ -96,7 +96,7 @@ func ListUserToken(
 
 	for row.Next() {
 		token := new(schemas.UserToken)
-		if err := row.Scan(&token.ID, &token.Token, &token.UserId, &token.ExpiredAt, &token.IP); err != nil {
+		if err := row.Scan(&token.ID, &token.Token, &token.UserId, &token.ExpiredAt, &token.IP, &token.CreatedAt); err != nil {
 			return nil, err
 		}
 		tokenList = append(tokenList, token)

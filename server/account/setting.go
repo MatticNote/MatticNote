@@ -8,6 +8,7 @@ import (
 
 func settingRoute(r fiber.Router) {
 	r.Get("/core", settingCoreGet)
+	r.Get("/security", settingSecurityGet)
 }
 
 func settingCoreGet(c *fiber.Ctx) error {
@@ -28,6 +29,23 @@ func settingCoreGet(c *fiber.Ctx) error {
 			"user":                user,
 			"isUserEmailVerified": isEmailVerified,
 			"userEmail":           email,
+		},
+	)
+}
+
+func settingSecurityGet(c *fiber.Ctx) error {
+	user := c.Locals("currentUser").(*schemas.User)
+
+	tokenList, err := account.ListUserToken(user.ID)
+	if err != nil {
+		return err
+	}
+
+	return c.Render(
+		"account/setting/security",
+		fiber.Map{
+			"user":      user,
+			"tokenList": tokenList,
 		},
 	)
 }

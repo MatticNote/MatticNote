@@ -1,0 +1,20 @@
+h1 Security
+
+h2 Session list
+table
+  tr
+    th Time
+    th IP
+    th Action
+  {{ range $index, $element := .tokenList }}
+  tr
+    td {{ $element.CreatedAt }}
+    td
+      {{ if $element.IP.Valid }}
+      pre {{ $element.IP.String }}
+      {{ else }}
+      pre Unknown
+      {{ end }}
+    td
+      button End Session
+  {{ end }}
