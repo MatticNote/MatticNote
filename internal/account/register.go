@@ -13,6 +13,7 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/segmentio/ksuid"
 	"golang.org/x/crypto/bcrypt"
+	"regexp"
 	"sync"
 	"time"
 )
@@ -22,6 +23,9 @@ var (
 	chooseUsernameLock sync.Mutex
 	issueTokenLock     sync.Mutex
 	verifyTokenLock    sync.Mutex
+
+	LocalUsernameRegexp = regexp.MustCompile(`^\w$`)
+	UsernameRegexp      = regexp.MustCompile(`\w+([a-zA-Z\d_.-]+\w+)?`)
 )
 
 var (
@@ -29,6 +33,7 @@ var (
 	ErrEmailExists           = errors.New("email is already exists")
 	ErrUsernameAlreadyTaken  = errors.New("username is already taken")
 	ErrUsernameAlreadyChosen = errors.New("username is already chosen")
+	ErrInvalidUsernameFormat = errors.New("invalid username format")
 )
 
 func RegisterLocalAccount(
@@ -204,7 +209,9 @@ func ChooseUsername(
 	chooseUsernameLock.Lock()
 	defer chooseUsernameLock.Unlock()
 
-	// TODO: Username validator
+	if !LocalUsernameRegexp.MatchString(username) {
+		return ErrInvalidUsernameFormat
+	}
 
 	var exists int
 	err := database.Database.QueryRow("SELECT count(*) FROM users WHERE username ILIKE $1 AND host IS NULL", username).Scan(&exists)

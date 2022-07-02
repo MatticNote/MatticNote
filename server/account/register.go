@@ -2,6 +2,7 @@ package account
 
 import (
 	"errors"
+	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/database/schemas"
 	ia "github.com/MatticNote/MatticNote/internal/account"
 	"github.com/go-playground/validator/v10"
@@ -9,8 +10,9 @@ import (
 )
 
 type registerForm struct {
-	Email    string `validate:"required,email"`
-	Password string `validate:"required,min=6"`
+	Email      string `validate:"required,email"`
+	Password   string `validate:"required,min=6"`
+	InviteCode string `json:"invite_code"`
 }
 
 type registerUsernameForm struct {
@@ -18,6 +20,15 @@ type registerUsernameForm struct {
 }
 
 func registerGet(c *fiber.Ctx) error {
+	if config.Config.System.RegistrationMode == 0 {
+		return fiber.ErrForbidden
+	}
+
+	var requiredInviteCode = false
+	if config.Config.System.RegistrationMode == 1 {
+		requiredInviteCode = true
+	}
+
 	invalid, ok := c.Locals("invalid").(bool)
 	if !ok {
 		invalid = false
@@ -28,14 +39,19 @@ func registerGet(c *fiber.Ctx) error {
 	}
 
 	return c.Render("account/register", fiber.Map{
-		"invalid":    invalid,
-		"title":      "Register",
-		"csrf_name":  csrfFormName,
-		"csrf_token": c.Locals(csrfContextKey),
+		"invalid":              invalid,
+		"title":                "Register",
+		"csrf_name":            csrfFormName,
+		"csrf_token":           c.Locals(csrfContextKey),
+		"required_invite_code": requiredInviteCode,
 	}, "account/_common")
 }
 
 func registerPost(c *fiber.Ctx) error {
+	if config.Config.System.RegistrationMode == 0 {
+		return fiber.ErrForbidden
+	}
+
 	form := new(registerForm)
 	if err := c.BodyParser(form); err != nil {
 		return err
@@ -45,6 +61,10 @@ func registerPost(c *fiber.Ctx) error {
 	if err != nil {
 		c.Locals("invalid", true)
 		return registerGet(c)
+	}
+
+	if config.Config.System.RegistrationMode == 1 {
+		// TODO: Invite token use method
 	}
 
 	account, err := ia.RegisterLocalAccount(
@@ -68,14 +88,14 @@ func verifyEmailToken(c *fiber.Ctx) error {
 
 	err := ia.VerifyEmailToken(token)
 	if err != nil {
-		if err == ia.ErrInvalidToken {
+		if errors.Is(err, ia.ErrInvalidToken) {
 			return c.Status(fiber.StatusBadRequest).SendString("Invalid or expired token")
 		} else {
 			return err
 		}
 	}
 
-	return c.Redirect("/account/register-username")
+	return c.Redirect("/account/settings/core")
 }
 
 func registerUsernameGet(c *fiber.Ctx) error {

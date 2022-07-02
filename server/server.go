@@ -11,6 +11,8 @@ func ConfigureRoute(app *fiber.App) {
 		return ctx.Render("hello", fiber.Map{}, "_common")
 	})
 
+	app.Get("/@:username", getUserProfile)
+
 	account.ConfigureRoute(app.Group("/account"))
 	api.ConfigureRoute(app.Group("/api"))
 }
