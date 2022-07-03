@@ -95,7 +95,16 @@ func verifyEmailToken(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.Redirect("/account/settings/core")
+	currentUser, ok := c.Locals("currentUser").(*schemas.User)
+	if !ok {
+		return c.Redirect("/account/login")
+	}
+
+	if !currentUser.Username.Valid {
+		return c.Redirect("/account/register-username")
+	} else {
+		return c.Redirect("/web")
+	}
 }
 
 func registerUsernameGet(c *fiber.Ctx) error {
