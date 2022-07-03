@@ -67,7 +67,7 @@ func registerPost(c *fiber.Ctx) error {
 		// TODO: Invite token use method
 	}
 
-	account, err := ia.RegisterLocalAccount(
+	_, err = ia.RegisterLocalAccount(
 		form.Email,
 		form.Password,
 		false,
@@ -80,7 +80,8 @@ func registerPost(c *fiber.Ctx) error {
 			return err
 		}
 	}
-	return c.SendString(account.ID.String())
+
+	return c.Redirect("/account/login")
 }
 
 func verifyEmailToken(c *fiber.Ctx) error {
@@ -169,8 +170,8 @@ func registerUsernamePost(c *fiber.Ctx) error {
 
 	err = ia.ChooseUsername(currentUser.ID, form.Username)
 	if err != nil {
-		switch err {
-		case ia.ErrUsernameAlreadyTaken:
+		switch {
+		case errors.Is(err, ia.ErrUsernameAlreadyTaken):
 			c.Locals("invalid", true)
 			return registerUsernameGet(c)
 		default:
