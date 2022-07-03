@@ -1,0 +1,14 @@
+<h1>Register username</h1>
+<p>Once you have decided on a username, you cannot change it. Please choose carefully.</p>
+
+{{- if .invalid -}}
+<p>Invalid form.</p>
+{{- end -}}
+
+<form method="post">
+    <input type="text" name="username" pattern="[a-zA-Z0-9_]{,32}" required>
+
+    <input type="hidden" name="{{ .csrfName }}" value="{{ .csrfToken }}">
+
+    <input type="submit">
+</form>

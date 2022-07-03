@@ -1,202 +1,88 @@
 package account
 
 import (
-	"github.com/MatticNote/MatticNote/config"
-	"github.com/MatticNote/MatticNote/internal/signature"
-	"github.com/MatticNote/MatticNote/internal/user"
-	"github.com/MatticNote/MatticNote/misc"
+	"errors"
+	"github.com/MatticNote/MatticNote/internal/account"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
-	"regexp"
+	"time"
 )
 
-type loginUserStruct struct {
-	Login    string `validate:"required"`
-	Password string `validate:"required"`
+type loginForm struct {
+	Email    string `validate:"required,email"`
+	Password string `validate:"required,min=6"`
 }
 
-type user2faStruct struct {
-	Code string `validate:"required"`
-}
-
-func loginUserGet(c *fiber.Ctx) error {
-	if c.Cookies(signature.JWTAuthCookieName, "") != "" {
-		return c.Redirect(c.Query("next", "/web/"), 307)
+func loginGet(c *fiber.Ctx) error {
+	if c.Cookies(account.TokenCookieName) != "" {
+		return c.Redirect("/web/")
 	}
 
-	return loginUserView(c)
-}
-
-func loginUserView(c *fiber.Ctx, errors ...string) error {
-	return c.Status(fiber.StatusOK).Render(
-		"account/login",
-		fiber.Map{
-			"CSRFFormName": misc.CSRFFormName,
-			"CSRFToken":    c.Context().UserValue(misc.CSRFContextKey).(string),
-			"errors":       errors,
-		},
-		"_layout/account",
-	)
+	return c.Render("account/login", fiber.Map{
+		"csrfName":  csrfFormName,
+		"csrfToken": c.Locals(csrfContextKey),
+	}, "account/_layout")
 }
 
 func loginPost(c *fiber.Ctx) error {
-	formData := new(loginUserStruct)
-
-	if err := c.BodyParser(formData); err != nil {
+	form := new(loginForm)
+	if err := c.BodyParser(form); err != nil {
 		return err
 	}
 
-	if errs := misc.ValidateForm(*formData); errs != nil {
-		return loginUserView(c, errs...)
-	}
-
-	nextQuery := c.Query("next", "/web/")
-	if !regexp.MustCompile(`^/[a-zA-Z0-9\-_@].*$`).Match([]byte(nextQuery)) {
-		c.Status(fiber.StatusForbidden)
-		return nil
-	}
-
-	targetUuid, err := user.ValidateLoginUser(formData.Login, formData.Password)
-	var isSuccess = false
-	var user2faRequired = false
-	defer func() {
-		if targetUuid != uuid.Nil && !user2faRequired {
-			_ = user.InsertSigninLog(targetUuid, c.IP(), isSuccess)
-		}
-	}()
+	err := validator.New().Struct(*form)
 	if err != nil {
-		switch err {
-		case user.ErrLoginFailed:
-			return loginUserView(c, "Incorrect login name or password")
-		case user.ErrEmailAuthRequired:
-			return loginUserView(c, "Email authentication required")
-		case user.Err2faRequired:
-			user2faRequired = true
-			s, err := login2faSession.Get(c)
-			if err != nil {
-				return err
-			}
-			s.Set("targetUuid", targetUuid.String())
-			s.Set("next", c.Query("next", "/web/"))
-			if err := s.Save(); err != nil {
-				return err
-			}
-			return c.Redirect("/account/login/2fa", fiber.StatusFound)
-		default:
-			return err
+		c.Locals("invalid", true)
+		return loginGet(c)
+	}
+
+	user, err := account.AuthenticateUser(form.Email, form.Password)
+	if err != nil {
+		switch {
+		case errors.Is(err, account.ErrInvalidCredentials), errors.Is(err, account.ErrUserGone):
+			c.Locals("invalid", true)
+			return loginGet(c)
 		}
 	}
 
-	jwtSignedString, err := signature.SignJWT(targetUuid)
+	session, err := account.GenerateUserToken(user.ID, c.IP())
 	if err != nil {
 		return err
 	}
 
-	isSuccess = true
-	c.Cookie(&fiber.Cookie{
-		Name:     signature.JWTAuthCookieName,
-		Value:    jwtSignedString,
-		Path:     "/",
-		Secure:   config.Config.Server.CookieSecure,
-		HTTPOnly: false,
-		SameSite: "Strict",
-		MaxAge:   int(signature.JWTSignExpiredDuration),
-	})
+	account.InsertTokenCookie(c, session)
 
-	return c.Redirect(c.Query("next", "/web/"))
-}
-
-func login2faGet(c *fiber.Ctx) error {
-	return login2faView(c, false)
-}
-
-func login2faView(c *fiber.Ctx, isFail bool) error {
-	s, err := login2faSession.Get(c)
+	isEmailVerified, err := account.IsEmailVerified(user.ID)
 	if err != nil {
 		return err
 	}
-	_, ok := s.Get("targetUuid").(string)
-	if !ok {
-		return c.Redirect("/account/login", fiber.StatusFound)
+
+	if user.DeletedAt.Valid {
+		return c.Redirect("/account/settings/core")
 	}
 
-	return c.Render(
-		"account/2fa",
-		fiber.Map{
-			"isFail":       isFail,
-			"CSRFFormName": misc.CSRFFormName,
-			"CSRFToken":    c.Context().UserValue(misc.CSRFContextKey).(string),
-		},
-		"_layout/account",
-	)
-}
-
-func login2faPost(c *fiber.Ctx) error {
-	s, err := login2faSession.Get(c)
-	if err != nil {
-		return err
-	}
-	targetUuidStr, ok := s.Get("targetUuid").(string)
-	if !ok {
-		return c.Redirect("/account/login", fiber.StatusFound)
-	}
-	targetUuid := uuid.MustParse(targetUuidStr)
-
-	formData := new(user2faStruct)
-
-	if err := c.BodyParser(formData); err != nil {
-		return err
-	}
-
-	if errs := misc.ValidateForm(*formData); errs != nil {
-		return login2faView(c, true)
-	}
-
-	var isSuccess = false
-	defer func() {
-		_ = user.InsertSigninLog(targetUuid, c.IP(), isSuccess)
-	}()
-
-	err = user.Validate2faCode(targetUuid, formData.Code)
-	if err != nil {
-		if err == user.ErrInvalid2faToken {
-			err = user.Use2faBackupCode(targetUuid, formData.Code)
-			if err != nil {
-				if err == user.ErrInvalid2faToken {
-					return login2faView(c, true)
-				} else {
-					return err
-				}
-			}
+	if isEmailVerified {
+		if !user.Username.Valid {
+			return c.Redirect("/account/register-username")
 		} else {
-			return err
+			return c.Redirect("/web")
 		}
+	} else {
+		return c.Redirect("/account/settings/core")
 	}
+}
 
-	next, ok := s.Get("next").(string)
-	if !ok {
-		next = "/web/"
-	}
-
-	jwtSignedString, err := signature.SignJWT(targetUuid)
+func logout(c *fiber.Ctx) error {
+	err := account.DeleteUserTokenFromToken(c.Cookies(account.TokenCookieName))
 	if err != nil {
 		return err
 	}
 
-	isSuccess = true
 	c.Cookie(&fiber.Cookie{
-		Name:     signature.JWTAuthCookieName,
-		Value:    jwtSignedString,
-		Path:     "/",
-		Secure:   config.Config.Server.CookieSecure,
-		HTTPOnly: false,
-		SameSite: "Strict",
-		MaxAge:   int(signature.JWTSignExpiredDuration),
+		Name:    account.TokenCookieName,
+		Value:   "",
+		MaxAge:  -1,
+		Expires: time.Now().Add(-100 * time.Hour),
 	})
-
-	if err := s.Destroy(); err != nil {
-		return err
-	}
-
-	return c.Redirect(next)
+	return c.Redirect("/account/login", fiber.StatusTemporaryRedirect)
 }

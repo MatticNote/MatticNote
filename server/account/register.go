@@ -1,61 +1,186 @@
 package account
 
 import (
+	"errors"
 	"github.com/MatticNote/MatticNote/config"
-	"github.com/MatticNote/MatticNote/internal/signature"
-	"github.com/MatticNote/MatticNote/internal/user"
-	"github.com/MatticNote/MatticNote/misc"
+	"github.com/MatticNote/MatticNote/database/schemas"
+	ia "github.com/MatticNote/MatticNote/internal/account"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
 
-type registerUserStruct struct {
-	Username          string `validate:"required,username"`
-	Email             string `validate:"required,email"`
-	Password          string `validate:"required,min=8"`
-	ReCaptchaResponse string `form:"g-recaptcha-response"`
-	// TODO: CAPTCHAなどの対策用のフォーム内容も含める
+type registerForm struct {
+	Email      string `validate:"required,email"`
+	Password   string `validate:"required,min=6"`
+	InviteCode string `json:"invite_code"`
 }
 
-func registerUserGet(c *fiber.Ctx) error {
-	if c.Cookies(signature.JWTAuthCookieName, "") != "" {
-		return c.Redirect(c.Query("next", "/web/"))
+type registerUsernameForm struct {
+	Username string `validate:"required"`
+}
+
+func registerGet(c *fiber.Ctx) error {
+	if config.Config.System.RegistrationMode == 0 {
+		return fiber.ErrForbidden
 	}
 
-	return registerUserView(c)
-}
+	var requiredInviteCode = false
+	if config.Config.System.RegistrationMode == 1 {
+		requiredInviteCode = true
+	}
 
-func registerUserView(c *fiber.Ctx, errors ...string) error {
-	return c.Status(fiber.StatusOK).Render(
-		"account/register",
-		fiber.Map{
-			"CSRFFormName": misc.CSRFFormName,
-			"CSRFToken":    c.Context().UserValue(misc.CSRFContextKey).(string),
-			"errors":       errors,
-			"reCaptchaKey": config.Config.Server.RecaptchaSiteKey,
-		},
-		"_layout/account",
-	)
+	invalid, ok := c.Locals("invalid").(bool)
+	if !ok {
+		invalid = false
+	}
+
+	if c.Cookies(ia.TokenCookieName) != "" {
+		return c.Redirect("/web/")
+	}
+
+	return c.Render("account/register", fiber.Map{
+		"invalid":            invalid,
+		"title":              "Register",
+		"csrfName":           csrfFormName,
+		"csrfToken":          c.Locals(csrfContextKey),
+		"requiredInviteCode": requiredInviteCode,
+	}, "account/_layout")
 }
 
 func registerPost(c *fiber.Ctx) error {
-	formData := new(registerUserStruct)
+	if config.Config.System.RegistrationMode == 0 {
+		return fiber.ErrForbidden
+	}
 
-	if err := c.BodyParser(formData); err != nil {
+	form := new(registerForm)
+	if err := c.BodyParser(form); err != nil {
 		return err
 	}
 
-	if errs := misc.ValidateForm(*formData); errs != nil {
-		return registerUserView(c, errs...)
+	err := validator.New().Struct(*form)
+	if err != nil {
+		c.Locals("invalid", true)
+		return registerGet(c)
 	}
 
-	_, err := user.RegisterLocalUser(formData.Email, formData.Username, formData.Password, false)
+	if config.Config.System.RegistrationMode == 1 {
+		// TODO: Invite token use method
+	}
+
+	_, err = ia.RegisterLocalAccount(
+		form.Email,
+		form.Password,
+		false,
+	)
 	if err != nil {
-		if err == user.ErrUserExists {
-			return registerUserView(c, "Username or email is already taken")
+		if errors.Is(err, ia.ErrEmailExists) {
+			c.Locals("invalid", true)
+			return registerGet(c)
 		} else {
 			return err
 		}
 	}
 
-	return c.Redirect("/account/login?created=true")
+	return c.Render("account/register_post", fiber.Map{}, "account/_layout")
+}
+
+func verifyEmailToken(c *fiber.Ctx) error {
+	token := c.Params("token")
+
+	err := ia.VerifyEmailToken(token)
+	if err != nil {
+		if errors.Is(err, ia.ErrInvalidToken) {
+			return c.Status(fiber.StatusBadRequest).SendString("Invalid or expired token")
+		} else {
+			return err
+		}
+	}
+
+	currentUser, ok := c.Locals("currentUser").(*schemas.User)
+	if !ok {
+		return c.Redirect("/account/login")
+	}
+
+	if !currentUser.Username.Valid {
+		return c.Redirect("/account/register-username")
+	} else {
+		return c.Redirect("/web")
+	}
+}
+
+func registerUsernameGet(c *fiber.Ctx) error {
+	currentUser, ok := c.Locals("currentUser").(*schemas.User)
+	if !ok {
+		return c.Redirect("/account/logout")
+	}
+
+	if currentUser.Username.Valid {
+		return c.Redirect("/web/")
+	}
+
+	verified, err := ia.IsEmailVerified(currentUser.ID)
+	if err != nil {
+		return err
+	}
+	if !verified || currentUser.DeletedAt.Valid {
+		return c.SendStatus(fiber.StatusForbidden)
+	}
+
+	invalid, ok := c.Locals("invalid").(bool)
+	if !ok {
+		invalid = false
+	}
+
+	return c.Render("account/register-username", fiber.Map{
+		"invalid":   invalid,
+		"title":     "Register username",
+		"csrfName":  csrfFormName,
+		"csrfToken": c.Locals(csrfContextKey),
+	}, "account/_layout")
+}
+
+func registerUsernamePost(c *fiber.Ctx) error {
+	form := new(registerUsernameForm)
+	if err := c.BodyParser(form); err != nil {
+		return err
+	}
+
+	err := validator.New().Struct(*form)
+	if err != nil {
+		c.Locals("invalid", true)
+		return registerUsernameGet(c)
+	}
+
+	currentUser, ok := c.Locals("currentUser").(*schemas.User)
+	if !ok {
+		return c.Redirect("/account/logout")
+	}
+
+	verified, err := ia.IsEmailVerified(currentUser.ID)
+	if err != nil {
+		return err
+	}
+	if !verified || currentUser.DeletedAt.Valid {
+		return c.SendStatus(fiber.StatusForbidden)
+	}
+
+	if currentUser.Username.Valid {
+		return c.SendStatus(fiber.StatusForbidden)
+	}
+
+	err = ia.ChooseUsername(currentUser.ID, form.Username)
+	if err != nil {
+		switch {
+		case errors.Is(err, ia.ErrUsernameAlreadyTaken):
+			c.Locals("invalid", true)
+			return registerUsernameGet(c)
+		case errors.Is(err, ia.ErrInvalidUsernameFormat):
+			c.Locals("invalid", true)
+			return registerUsernameGet(c)
+		default:
+			return err
+		}
+	}
+
+	return c.Redirect("/web/")
 }

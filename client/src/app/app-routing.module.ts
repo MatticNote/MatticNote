@@ -4,11 +4,11 @@ import { RouterModule, Routes } from '@angular/router';
 const routes: Routes = [
   {
     path: '',
-    loadChildren: () => import('./page/index/index.module').then(m => m.IndexModule),
+    loadChildren: () => import('./pages/index/index.module').then(m => m.IndexModule),
   },
   {
     path: '**',
-    loadChildren: () => import('./page/not-found/not-found.module').then(m => m.NotFoundModule),
+    loadChildren: () => import('./pages/not-found/not-found.module').then(m => m.NotFoundModule),
   }
 ];
 

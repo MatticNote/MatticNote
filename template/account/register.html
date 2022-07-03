@@ -1,0 +1,8 @@
+<h1>Register</h1>
+<form method="post">
+    <input type="email" name="email" placeholder="example@example.com" required>
+    <input type="password" name="password" placeholder="Password" required>
+    <input type="hidden" name="{{ .csrfName }}" value="{{ .csrfToken }}">
+
+    <input type="submit" value="Register">
+</form>
