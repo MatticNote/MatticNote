@@ -17,5 +17,10 @@ func getUserProfile(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.SendString(user.ID.String())
+	return c.Render(
+		"user-profile",
+		fiber.Map{
+			"user": user,
+		},
+	)
 }

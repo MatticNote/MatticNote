@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>User info</title>
+    </head>
+    <body>
+        <h1>
+            {{- if .user.DisplayName.Valid -}}
+            {{- .user.DisplayName.String -}}
+            {{- else -}}
+            {{- .user.Username.String -}}
+            {{- end -}}
+        </h1>
+        <h2>
+            {{- if .user.Headline.Valid -}}
+            {{- .user.Headline.String -}}
+            {{- end -}}
+        </h2>
+        <p>@{{ .user.Username.String }}</p>
+    </body>
+</html>
