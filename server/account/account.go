@@ -16,8 +16,11 @@ const (
 	csrfContextKey = "csrf_token"
 )
 
-func csrfErrorHandler(c *fiber.Ctx, err error) error {
-	return c.Status(fiber.StatusForbidden).SendString(fmt.Sprintf("CSRF Error: %s", err.Error()))
+func csrfErrorHandler(c *fiber.Ctx, _ error) error {
+	return c.Status(fiber.StatusForbidden).Render(
+		"_csrf_error",
+		fiber.Map{},
+	)
 }
 
 func validateCookie(c *fiber.Ctx) error {
