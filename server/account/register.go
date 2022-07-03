@@ -90,7 +90,11 @@ func verifyEmailToken(c *fiber.Ctx) error {
 	err := ia.VerifyEmailToken(token)
 	if err != nil {
 		if errors.Is(err, ia.ErrInvalidToken) {
-			return c.Status(fiber.StatusBadRequest).SendString("Invalid or expired token")
+			return c.Status(fiber.StatusBadRequest).Render(
+				"account/invalid-email-token",
+				fiber.Map{},
+				"account/_layout",
+			)
 		} else {
 			return err
 		}
