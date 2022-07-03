@@ -33,5 +33,5 @@ func ConfigureRoute(r fiber.Router) {
 	})
 
 	userApiRoute(r.Group("/users"))
-	//noteApiRoute(r.Group("/notes"))
+	noteApiRoute(r.Group("/notes"))
 }

@@ -109,7 +109,7 @@ func userGet(c *fiber.Ctx) error {
 
 	user, err := account.GetUser(id)
 	if err != nil {
-		if err == account.ErrUserNotFound {
+		if errors.Is(err, account.ErrUserNotFound) {
 			return apiNotFound(c, "User not found")
 		} else {
 			return err
