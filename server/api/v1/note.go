@@ -50,6 +50,7 @@ func newApiV1NoteStructFromSchema(it *schemas.Note) *apiV1NoteStruct {
 func noteApiRoute(r fiber.Router) {
 	r.Post("/", loginRequired, activeAccountRequired, createNote)
 	r.Get("/:id", getNote)
+	r.Delete("/:id", loginRequired, activeAccountRequired, deleteNote)
 }
 
 func createNote(c *fiber.Ctx) error {
@@ -176,4 +177,34 @@ func getNote(c *fiber.Ctx) error {
 	}
 
 	return c.JSON(noteResponse)
+}
+
+func deleteNote(c *fiber.Ctx) error {
+	id, err := ksuid.Parse(c.Params("id"))
+	if err != nil {
+		return apiNotFound(c, "Note not found")
+	}
+
+	user := c.Locals("currentUser").(*schemas.User)
+
+	noteDetail, err := note.GetNote(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, note.ErrNoteNotFound):
+			return apiNotFound(c, "Note not found")
+		default:
+			return err
+		}
+	}
+
+	if (noteDetail.Owner != nil && user.ID != *noteDetail.Owner) && !(user.IsModerator || user.IsAdmin) {
+		return apiForbidden(c, "You are not own this Note")
+	}
+
+	err = note.DeleteNote(id)
+	if err != nil {
+		return err
+	}
+
+	return c.Status(fiber.StatusNoContent).Send([]byte(""))
 }

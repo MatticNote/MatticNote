@@ -103,3 +103,26 @@ func GetNote(
 
 	return note, nil
 }
+
+func DeleteNote(
+	id ksuid.KSUID,
+) error {
+	exec, err := database.Database.Exec(
+		"DELETE FROM notes WHERE id = $1",
+		id.String(),
+	)
+	if err != nil {
+		return err
+	}
+
+	ra, err := exec.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if ra <= 0 {
+		return ErrNoteNotFound
+	}
+
+	return nil
+}
