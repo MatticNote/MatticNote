@@ -3,6 +3,7 @@ package v1
 import (
 	"errors"
 	"github.com/MatticNote/MatticNote/database/schemas"
+	"github.com/MatticNote/MatticNote/internal/account"
 	"github.com/MatticNote/MatticNote/internal/note"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -13,6 +14,7 @@ import (
 type (
 	apiV1NoteStruct struct {
 		ID        ksuid.KSUID      `json:"id"`
+		Owner     *apiV1UserStruct `json:"owner"`
 		CW        *string          `json:"cw"`
 		Body      *string          `json:"body"`
 		Reply     *apiV1NoteStruct `json:"reply,omitempty"`
@@ -22,7 +24,7 @@ type (
 
 	apiV1NoteCreateStruct struct {
 		CW       *string `json:"cw"`
-		Body     *string `json:"body" validate:"required"`
+		Body     *string `json:"body"`
 		ReplyID  *string `json:"reply_id"`
 		RetextID *string `json:"retext_id"`
 	}
@@ -41,8 +43,6 @@ func newApiV1NoteStructFromSchema(it *schemas.Note) *apiV1NoteStruct {
 	if it.Body.Valid {
 		n.Body = &it.Body.String
 	}
-
-	// TODO: reply note and retext note recursive
 
 	return n
 }
@@ -73,7 +73,7 @@ func createNote(c *fiber.Ctx) error {
 	if form.ReplyID != nil {
 		parse, err := ksuid.Parse(*form.ReplyID)
 		if err != nil {
-			return err
+			return apiBadRequest(c, "Invalid reply_id")
 		}
 		replyId = &parse
 	}
@@ -81,7 +81,7 @@ func createNote(c *fiber.Ctx) error {
 	if form.RetextID != nil {
 		parse, err := ksuid.Parse(*form.RetextID)
 		if err != nil {
-			return err
+			return apiBadRequest(c, "Invalid retext_id")
 		}
 		retextId = &parse
 	}
@@ -97,12 +97,40 @@ func createNote(c *fiber.Ctx) error {
 		switch {
 		case errors.Is(err, note.ErrNoteNotFound):
 			return apiBadRequest(c, "Note not found for reply_id or retext_id")
+		case errors.Is(err, note.ErrNoteInvalidParam):
+			return apiBadRequest(c, "Incorrect Note form")
 		default:
 			return err
 		}
 	}
 
-	return c.JSON(newApiV1NoteStructFromSchema(newNote))
+	newNoteResponse := newApiV1NoteStructFromSchema(newNote)
+
+	if newNote.Owner != nil {
+		noteOwner, err := account.GetUser(*newNote.Owner)
+		if err != nil {
+			return err
+		}
+		newNoteResponse.Owner = newApiV1UserStructFromSchema(noteOwner)
+	}
+
+	if newNote.ReplyID != nil {
+		noteDetailReply, err := note.GetNote(*newNote.ReplyID)
+		if err != nil {
+			return err
+		}
+		newNoteResponse.Reply = newApiV1NoteStructFromSchema(noteDetailReply)
+	}
+
+	if newNote.RetextID != nil {
+		noteDetailRetext, err := note.GetNote(*newNote.RetextID)
+		if err != nil {
+			return err
+		}
+		newNoteResponse.Retext = newApiV1NoteStructFromSchema(noteDetailRetext)
+	}
+
+	return c.JSON(newNoteResponse)
 }
 
 func getNote(c *fiber.Ctx) error {
@@ -113,8 +141,39 @@ func getNote(c *fiber.Ctx) error {
 
 	noteDetail, err := note.GetNote(id)
 	if err != nil {
-		return err
+		switch {
+		case errors.Is(err, note.ErrNoteNotFound):
+			return apiNotFound(c, "Note not found")
+		default:
+			return err
+		}
 	}
 
-	return c.JSON(newApiV1NoteStructFromSchema(noteDetail))
+	noteResponse := newApiV1NoteStructFromSchema(noteDetail)
+
+	if noteDetail.Owner != nil {
+		noteOwner, err := account.GetUser(*noteDetail.Owner)
+		if err != nil {
+			return err
+		}
+		noteResponse.Owner = newApiV1UserStructFromSchema(noteOwner)
+	}
+
+	if noteDetail.ReplyID != nil {
+		noteDetailReply, err := note.GetNote(*noteDetail.ReplyID)
+		if err != nil {
+			return err
+		}
+		noteResponse.Reply = newApiV1NoteStructFromSchema(noteDetailReply)
+	}
+
+	if noteDetail.RetextID != nil {
+		noteDetailRetext, err := note.GetNote(*noteDetail.ReplyID)
+		if err != nil {
+			return err
+		}
+		noteResponse.Retext = newApiV1NoteStructFromSchema(noteDetailRetext)
+	}
+
+	return c.JSON(noteResponse)
 }

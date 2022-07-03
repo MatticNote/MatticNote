@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	ErrNoteNotFound = errors.New("note not found")
+	ErrNoteNotFound     = errors.New("note not found")
+	ErrNoteInvalidParam = errors.New("note invalid parameter")
 )
 
 func CreateNote(
@@ -20,6 +21,16 @@ func CreateNote(
 	replyId *ksuid.KSUID,
 	retextId *ksuid.KSUID,
 ) (*schemas.Note, error) {
+	if cw == nil && body == nil && replyId == nil && retextId == nil {
+		return nil, ErrNoteInvalidParam
+	} else if replyId != nil && (body == nil || body != nil && *body == "") {
+		return nil, ErrNoteInvalidParam
+	} else if replyId != nil && retextId != nil {
+		return nil, ErrNoteInvalidParam
+	} else if cw != nil && (body == nil || body != nil && *body == "") {
+		return nil, ErrNoteInvalidParam
+	}
+
 	newNote := new(schemas.Note)
 	newNote.ID = ksuid.New()
 
