@@ -1,0 +1,15 @@
+<h1>Core account settings</h1>
+
+{{- if not .isUserEmailVerified }}
+<p>Your email is not verified</p>
+{{- else }}
+    {{- if not .user.Username.Valid }}
+    <p>Username is not defined, please choose first!</p>
+    {{- end }}
+{{- end }}
+
+<p>ID: {{ .user.ID }}</p>
+<p>Email: {{ .userEmail }}</p>
+{{ if .user.Username.Valid }}
+<p>Username: {{ .user.Username.String }}</p>
+{{ end }}

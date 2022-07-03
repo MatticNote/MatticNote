@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	recover2 "github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/gofiber/template/ace"
+	"github.com/gofiber/template/html"
 	"github.com/urfave/cli/v2"
 	"io/fs"
 	"log"
@@ -40,13 +40,14 @@ func cliServer(_ *cli.Context) error {
 		CaseSensitive:         true,
 		DisableStartupMessage: true,
 		ErrorHandler:          server.ErrorView,
-		Views: ace.NewFileSystem(func() http.FileSystem {
+		Views: html.NewFileSystem(func() http.FileSystem {
 			dist, err := fs.Sub(template, "template")
 			if err != nil {
 				panic(err)
 			}
+
 			return http.FS(dist)
-		}(), ".ace"),
+		}(), ".html"),
 	})
 
 	app.Use(recover2.New(recover2.Config{

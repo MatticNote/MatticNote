@@ -1,0 +1,33 @@
+<h1>Security</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Time</th>
+            <th>IP</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{ $token := .currentToken -}}
+        {{ range .tokenList -}}
+            <tr>
+                <td>{{ .CreatedAt }}</td>
+                <td>
+                    {{- if .IP.Valid -}}
+                    <pre>{{- .IP.String -}}</pre>
+                    {{- else -}}
+                    <pre>Unknown</pre>
+                    {{- end -}}
+                </td>
+                <td>
+                    {{- if eq .Token $token }}
+                    <p>Current Session</p>
+                    {{ else }}
+                    <button>End session</button>
+                    {{- end -}}
+                </td>
+            </tr>
+        {{- end }}
+    </tbody>
+</table>

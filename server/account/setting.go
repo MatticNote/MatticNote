@@ -30,11 +30,13 @@ func settingCoreGet(c *fiber.Ctx) error {
 			"isUserEmailVerified": isEmailVerified,
 			"userEmail":           email,
 		},
+		"account/setting/_layout",
 	)
 }
 
 func settingSecurityGet(c *fiber.Ctx) error {
 	user := c.Locals("currentUser").(*schemas.User)
+	token := c.Cookies(account.TokenCookieName)
 
 	tokenList, err := account.ListUserToken(user.ID)
 	if err != nil {
@@ -44,8 +46,10 @@ func settingSecurityGet(c *fiber.Ctx) error {
 	return c.Render(
 		"account/setting/security",
 		fiber.Map{
-			"user":      user,
-			"tokenList": tokenList,
+			"user":         user,
+			"tokenList":    tokenList,
+			"currentToken": token,
 		},
+		"account/setting/_layout",
 	)
 }

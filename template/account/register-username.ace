@@ -1,7 +1,0 @@
-{{ if .invalid }}
-p Specified user is already taken
-{{ end }}
-form method="post"
-  input type="input" name="username" placeholder="username" pattern="[A-Za-z0-9_]{1,32}" required=
-  input type="hidden" name="{{ .csrf_name }}" value="{{ .csrf_token }}"
-  input type="submit"

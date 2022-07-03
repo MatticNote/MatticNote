@@ -24,7 +24,7 @@ var (
 	issueTokenLock     sync.Mutex
 	verifyTokenLock    sync.Mutex
 
-	LocalUsernameRegexp = regexp.MustCompile(`^\w$`)
+	LocalUsernameRegexp = regexp.MustCompile(`^\w{1,32}$`)
 	UsernameRegexp      = regexp.MustCompile(`\w+([a-zA-Z\d_.-]+\w+)?`)
 )
 

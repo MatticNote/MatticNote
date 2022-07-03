@@ -39,12 +39,12 @@ func registerGet(c *fiber.Ctx) error {
 	}
 
 	return c.Render("account/register", fiber.Map{
-		"invalid":              invalid,
-		"title":                "Register",
-		"csrf_name":            csrfFormName,
-		"csrf_token":           c.Locals(csrfContextKey),
-		"required_invite_code": requiredInviteCode,
-	}, "account/_common")
+		"invalid":            invalid,
+		"title":              "Register",
+		"csrfName":           csrfFormName,
+		"csrfToken":          c.Locals(csrfContextKey),
+		"requiredInviteCode": requiredInviteCode,
+	}, "account/_layout")
 }
 
 func registerPost(c *fiber.Ctx) error {
@@ -81,7 +81,7 @@ func registerPost(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.Redirect("/account/login")
+	return c.Render("account/register_post", fiber.Map{}, "account/_layout")
 }
 
 func verifyEmailToken(c *fiber.Ctx) error {
@@ -132,11 +132,11 @@ func registerUsernameGet(c *fiber.Ctx) error {
 	}
 
 	return c.Render("account/register-username", fiber.Map{
-		"invalid":    invalid,
-		"title":      "Register username",
-		"csrf_name":  csrfFormName,
-		"csrf_token": c.Locals(csrfContextKey),
-	}, "account/_common")
+		"invalid":   invalid,
+		"title":     "Register username",
+		"csrfName":  csrfFormName,
+		"csrfToken": c.Locals(csrfContextKey),
+	}, "account/_layout")
 }
 
 func registerUsernamePost(c *fiber.Ctx) error {
@@ -172,6 +172,9 @@ func registerUsernamePost(c *fiber.Ctx) error {
 	if err != nil {
 		switch {
 		case errors.Is(err, ia.ErrUsernameAlreadyTaken):
+			c.Locals("invalid", true)
+			return registerUsernameGet(c)
+		case errors.Is(err, ia.ErrInvalidUsernameFormat):
 			c.Locals("invalid", true)
 			return registerUsernameGet(c)
 		default:

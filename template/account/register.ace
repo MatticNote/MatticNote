@@ -1,9 +1,0 @@
-{{ if .invalid }}
-p Invalid Form
-{{ end }}
-h1 Register
-form method="post"
-  input type="email" name="email" placeholder="example@example.com" required=
-  input type="password" name="password" placeholder="password" required=
-  input type="hidden" name="{{ .csrf_name }}" value="{{ .csrf_token }}"
-  input type="submit"

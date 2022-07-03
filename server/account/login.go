@@ -19,9 +19,9 @@ func loginGet(c *fiber.Ctx) error {
 	}
 
 	return c.Render("account/login", fiber.Map{
-		"csrf_name":  csrfFormName,
-		"csrf_token": c.Locals(csrfContextKey),
-	})
+		"csrfName":  csrfFormName,
+		"csrfToken": c.Locals(csrfContextKey),
+	}, "account/_layout")
 }
 
 func loginPost(c *fiber.Ctx) error {

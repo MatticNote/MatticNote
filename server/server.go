@@ -8,7 +8,7 @@ import (
 
 func ConfigureRoute(app *fiber.App) {
 	app.Get("/", func(ctx *fiber.Ctx) error {
-		return ctx.Render("hello", fiber.Map{}, "_common")
+		return ctx.Render("index", fiber.Map{})
 	})
 
 	app.Get("/@:username", getUserProfile)
