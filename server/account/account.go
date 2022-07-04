@@ -53,6 +53,7 @@ func ConfigureRoute(r fiber.Router) {
 			return ksuid.New().String()
 		},
 		Expiration:        15 * time.Minute,
+		CookiePath:        "/account",
 		ContextKey:        csrfContextKey,
 		CookieHTTPOnly:    true,
 		CookieSessionOnly: true,
