@@ -137,10 +137,11 @@ func IssueEmailToken(
 		_ = rsCon.Close()
 	}()
 
-	verifyKey := fmt.Sprintf("emailVerify:%s", ksuid.New().String())
+	verifyKey := ksuid.New()
+	verifyRedisKey := fmt.Sprintf("emailVerify:%s", verifyKey.String())
 	_, err := rsCon.Do(
 		"HSET",
-		verifyKey,
+		verifyRedisKey,
 		"id",
 		userId.String(),
 		"email",
@@ -149,7 +150,7 @@ func IssueEmailToken(
 	if err != nil {
 		return err
 	}
-	err = rsCon.Send("EXPIRE", verifyKey, "3600")
+	err = rsCon.Send("EXPIRE", verifyRedisKey, "3600")
 	if err != nil {
 		return err
 	}

@@ -70,6 +70,11 @@ func ConfigureRoute(r fiber.Router) {
 	r.Get("/register", registerGet)
 	r.Post("/register", registerPost)
 
+	r.Get("/reset-password", resetPasswordNewGet)
+	r.Post("/reset-password", resetPasswordNewPost)
+	r.Get("/reset-password/:token", resetPasswordFormGet)
+	r.Post("/reset-password/:token", resetPasswordFormPost)
+
 	r.Get("/verify/:token", verifyEmailToken)
 
 	r.Get("/register-username", validateCookie, registerUsernameGet)

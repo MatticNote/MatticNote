@@ -11,7 +11,7 @@ import (
 
 type registerForm struct {
 	Email      string `validate:"required,email"`
-	Password   string `validate:"required,min=6"`
+	Password   string `validate:"required,min=8"`
 	InviteCode string `json:"invite_code"`
 }
 
@@ -35,7 +35,7 @@ func registerGet(c *fiber.Ctx) error {
 	}
 
 	if c.Cookies(ia.TokenCookieName) != "" {
-		return c.Redirect("/web/")
+		return c.Redirect("/web")
 	}
 
 	return c.Render("account/register", fiber.Map{
