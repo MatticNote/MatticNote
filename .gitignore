@@ -1,3 +1,4 @@
 .idea/
 dbconfig.yml
 matticnote.toml
+build/

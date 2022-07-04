@@ -2,15 +2,22 @@ package main
 
 import (
 	"fmt"
+	"github.com/MatticNote/MatticNote/internal"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
+	"runtime"
 )
 
 var mnCli = &cli.App{
-	Name:                 "MatticNote",
-	Description:          "Social Networking Service",
-	Version:              fmt.Sprintf("0.0.0"),
+	Name:        "MatticNote",
+	Description: "Social Networking Service",
+	Version: fmt.Sprintf(
+		"%s (Build Date: %s, Go Version: %s)",
+		internal.GetSysVersion(),
+		internal.GetBuildDate(),
+		runtime.Version(),
+	),
 	EnableBashCompletion: true,
 	Commands: []*cli.Command{
 		{
