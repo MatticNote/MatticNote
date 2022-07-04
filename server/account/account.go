@@ -13,7 +13,7 @@ import (
 
 const (
 	csrfFormName   = "csrf_token"
-	csrfContextKey = "csrf_token"
+	csrfContextKey = "csrfToken"
 )
 
 func csrfErrorHandler(c *fiber.Ctx, _ error) error {
