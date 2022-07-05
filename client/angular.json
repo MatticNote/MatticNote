@@ -8,9 +8,6 @@
       "schematics": {
         "@schematics/angular:component": {
           "style": "scss"
-        },
-        "@schematics/angular:application": {
-          "strict": true
         }
       },
       "root": "",
@@ -32,8 +29,7 @@
               "src/assets"
             ],
             "styles": [
-              "src/styles.scss",
-              "src/ui/styles.scss"
+              "src/styles.scss"
             ],
             "scripts": []
           },
@@ -43,7 +39,7 @@
                 {
                   "type": "initial",
                   "maximumWarning": "500kb",
-                  "maximumError": "5mb"
+                  "maximumError": "1mb"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -80,10 +76,6 @@
               "browserTarget": "matticnote:build:development"
             }
           },
-          "options": {
-            "browserTarget": "matticnote:build",
-            "proxyConfig": "src/proxy.config.json"
-          },
           "defaultConfiguration": "development"
         },
         "extract-i18n": {
@@ -113,6 +105,5 @@
         }
       }
     }
-  },
-  "defaultProject": "matticnote"
+  }
 }
