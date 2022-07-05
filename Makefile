@@ -6,8 +6,8 @@ BUILD_SUFFIX := $(or $(BUILD_SUFFIX), unknown)
 .PHONY: build
 
 build-frontend:
-	npm --prefix ${CLIENT_PATH} install ${CLIENT_PATH} --no-bin-links
-	npm --prefix ${CLIENT_PATH} run css
+	npm --prefix ${CLIENT_PATH} install ${CLIENT_PATH}
+	npm --prefix ${CLIENT_PATH} run css:production
 	npm --prefix ${CLIENT_PATH} run build
 fetch-meta:
 	$(eval MN_VERSION=$(or $(shell git describe --tags --abbrev=0), unknown))
