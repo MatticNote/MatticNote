@@ -15,5 +15,8 @@ func ErrorView(c *fiber.Ctx, err error) error {
 }
 
 func NotFoundView(c *fiber.Ctx) error {
-	return c.Status(fiber.StatusNotFound).SendString("404 NotFound")
+	return c.Status(fiber.StatusNotFound).Render(
+		"404",
+		fiber.Map{},
+	)
 }
