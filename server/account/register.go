@@ -29,9 +29,9 @@ func registerGet(c *fiber.Ctx) error {
 		requiredInviteCode = true
 	}
 
-	invalid, ok := c.Locals("invalid").(bool)
+	emailExists, ok := c.Locals("emailExists").(bool)
 	if !ok {
-		invalid = false
+		emailExists = false
 	}
 
 	if c.Cookies(ia.TokenCookieName) != "" {
@@ -39,7 +39,7 @@ func registerGet(c *fiber.Ctx) error {
 	}
 
 	return c.Render("account/register", fiber.Map{
-		"invalid":            invalid,
+		"emailExists":        emailExists,
 		"title":              "Register",
 		"csrfName":           csrfFormName,
 		"csrfToken":          c.Locals(csrfContextKey),
@@ -74,14 +74,16 @@ func registerPost(c *fiber.Ctx) error {
 	)
 	if err != nil {
 		if errors.Is(err, ia.ErrEmailExists) {
-			c.Locals("invalid", true)
+			c.Locals("emailExists", true)
 			return registerGet(c)
 		} else {
 			return err
 		}
 	}
 
-	return c.Render("account/register_post", fiber.Map{}, "account/_layout")
+	return c.Render("account/register_post", fiber.Map{
+		"email": form.Email,
+	}, "account/_layout")
 }
 
 func verifyEmailToken(c *fiber.Ctx) error {
@@ -108,7 +110,11 @@ func verifyEmailToken(c *fiber.Ctx) error {
 	if !currentUser.Username.Valid {
 		return c.Redirect("/account/register-username")
 	} else {
-		return c.Redirect("/web")
+		return c.Render(
+			"account/verify-email_complete",
+			fiber.Map{},
+			"account/_layout",
+		)
 	}
 }
 
@@ -127,7 +133,7 @@ func registerUsernameGet(c *fiber.Ctx) error {
 		return err
 	}
 	if !verified || currentUser.DeletedAt.Valid {
-		return c.SendStatus(fiber.StatusForbidden)
+		return fiber.ErrForbidden
 	}
 
 	invalid, ok := c.Locals("invalid").(bool)
@@ -165,11 +171,11 @@ func registerUsernamePost(c *fiber.Ctx) error {
 		return err
 	}
 	if !verified || currentUser.DeletedAt.Valid {
-		return c.SendStatus(fiber.StatusForbidden)
+		return fiber.ErrForbidden
 	}
 
 	if currentUser.Username.Valid {
-		return c.SendStatus(fiber.StatusForbidden)
+		return fiber.ErrForbidden
 	}
 
 	err = ia.ChooseUsername(currentUser.ID, form.Username)

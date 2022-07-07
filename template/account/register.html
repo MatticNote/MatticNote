@@ -1,4 +1,5 @@
 <h1>Register</h1>
+{{ if .emailExists }}<p>Email is already used.</p>{{ end }}
 <form method="post">
     <input type="email" name="email" placeholder="example@example.com" required>
     <input type="password" name="password" placeholder="Password" required>
