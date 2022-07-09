@@ -11,6 +11,8 @@ func ErrorView(c *fiber.Ctx, err error) error {
 		return NotFoundView(c)
 	case fiber.ErrForbidden:
 		return ForbiddenView(c)
+	case fiber.ErrUnprocessableEntity:
+		return c.SendStatus(fiber.StatusUnprocessableEntity)
 	default:
 		return c.Status(fiber.StatusInternalServerError).SendString(fmt.Sprintf("%T: %s", err, err.Error()))
 	}

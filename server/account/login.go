@@ -28,7 +28,7 @@ func loginGet(c *fiber.Ctx) error {
 func loginPost(c *fiber.Ctx) error {
 	form := new(loginForm)
 	if err := c.BodyParser(form); err != nil {
-		return err
+		return fiber.ErrUnprocessableEntity
 	}
 
 	err := validator.New().Struct(*form)

@@ -66,6 +66,7 @@ func CreateInvite(
 
 	err = database.Database.QueryRow(
 		"INSERT INTO users_invite(id, owner, code, count, expired_at) VALUES ($1, $2, $3, $4, $5) RETURNING count, expired_at;",
+		inviteInternalID.String(),
 		owner,
 		inviteCode,
 		countP,
@@ -93,7 +94,7 @@ func UseInviteCode(
 	)
 
 	err := database.Database.QueryRow(
-		"SELECT id, count FROM users_invite WHERE code = $1 AND (expired_at IS NULL OR expired_at >= now()) AND count > 0",
+		"SELECT id, count FROM users_invite WHERE code = $1 AND (count IS NULL OR count > 0) AND (expired_at IS NULL OR expired_at >= now())",
 		inviteCode,
 	).Scan(
 		&id,
@@ -112,10 +113,7 @@ func UseInviteCode(
 		if err != nil {
 			return err
 		}
-		i, ok := newCountRaw.(int32)
-		if !ok {
-			return errors.New("internal error")
-		}
+		i := newCountRaw.(int64)
 		newCount := i - 1
 
 		_, err = database.Database.Exec(
@@ -129,4 +127,37 @@ func UseInviteCode(
 	}
 
 	return nil
+}
+
+func GetUserInviteList(
+	userId ksuid.KSUID,
+) ([]*schemas.UserInvite, error) {
+	row, err := database.Database.Query(
+		"SELECT id, owner, code, count, expired_at FROM users_invite WHERE owner = $1 AND (count IS NULL OR count > 0) AND (expired_at IS NULL OR expired_at >= now())",
+		userId.String(),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = row.Close()
+	}()
+
+	var inviteList []*schemas.UserInvite
+	for row.Next() {
+		var invite = new(schemas.UserInvite)
+		err := row.Scan(
+			&invite.ID,
+			&invite.Owner,
+			&invite.Code,
+			&invite.Count,
+			&invite.ExpiredAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		inviteList = append(inviteList, invite)
+	}
+
+	return inviteList, nil
 }

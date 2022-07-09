@@ -56,7 +56,7 @@ func noteApiRoute(r fiber.Router) {
 func createNote(c *fiber.Ctx) error {
 	form := new(apiV1NoteCreateStruct)
 	if err := c.BodyParser(form); err != nil {
-		return err
+		return fiber.ErrUnprocessableEntity
 	}
 
 	err := validator.New().Struct(*form)

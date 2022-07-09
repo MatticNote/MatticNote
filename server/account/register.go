@@ -57,6 +57,7 @@ func registerGet(c *fiber.Ctx) error {
 		"requiredInviteCode": requiredInviteCode,
 		"invalid":            invalid,
 		"inviteInvalid":      inviteInvalid,
+		"inviteCode":         c.Query("invite"),
 	}, "account/_layout")
 }
 
@@ -67,7 +68,7 @@ func registerPost(c *fiber.Ctx) error {
 
 	form := new(registerForm)
 	if err := c.BodyParser(form); err != nil {
-		return err
+		return fiber.ErrUnprocessableEntity
 	}
 
 	err := validator.New().Struct(*form)
@@ -178,7 +179,7 @@ func registerUsernameGet(c *fiber.Ctx) error {
 func registerUsernamePost(c *fiber.Ctx) error {
 	form := new(registerUsernameForm)
 	if err := c.BodyParser(form); err != nil {
-		return err
+		return fiber.ErrUnprocessableEntity
 	}
 
 	err := validator.New().Struct(*form)

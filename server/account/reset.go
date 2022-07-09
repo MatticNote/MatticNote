@@ -36,7 +36,7 @@ func resetPasswordNewGet(c *fiber.Ctx) error {
 func resetPasswordNewPost(c *fiber.Ctx) error {
 	form := new(resetPasswordNewStruct)
 	if err := c.BodyParser(form); err != nil {
-		return err
+		return fiber.ErrUnprocessableEntity
 	}
 
 	err := validator.New().Struct(*form)
@@ -83,7 +83,7 @@ func resetPasswordFormPost(c *fiber.Ctx) error {
 
 	form := new(resetPasswordFormStruct)
 	if err := c.BodyParser(form); err != nil {
-		return err
+		return fiber.ErrUnprocessableEntity
 	}
 
 	err := validator.New().Struct(*form)

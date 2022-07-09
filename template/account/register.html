@@ -4,7 +4,7 @@
 {{ if .inviteInvalid }}<p>Invalid invite code.</p>{{ end }}
 <form method="post">
     {{ if .requiredInviteCode }}
-    <input type="text" name="invite_code" placeholder="Invite Code" required>
+    <input type="text" name="invite_code" placeholder="Invite Code" value="{{ .inviteCode }}" required>
     {{ end }}
     <input type="email" name="email" placeholder="example@example.com" required>
     <input type="password" name="password" placeholder="Password" required>

@@ -1,0 +1,45 @@
+<h1>Invite</h1>
+
+<h2>Create Invite</h2>
+
+{{ if .newInvite }}
+<div>
+    <p>Created Invite: {{ .newInvite.Code }}</p>
+</div>
+{{ end }}
+
+<form method="post">
+    <select name="count">
+        <option value="" selected>No limit</option>
+        <option value="1">1</option>
+        <option value="5">5</option>
+        <option value="10">10</option>
+        <option value="25">25</option>
+        <option value="50">50</option>
+        <option value="100">100</option>
+    </select>
+
+    <select name="expired_after">
+        <option value="" selected>No Expires</option>
+        <option value="1800">30 minutes</option>
+        <option value="3600">1 hour</option>
+        <option value="21600">6 hours</option>
+        <option value="43200">12 hours</option>
+        <option value="86400">1 day</option>
+        <option value="604800">7 days</option>
+    </select>
+
+    <input type="hidden" name="{{ .csrfName }}" value="{{ .csrfToken }}">
+    <input type="hidden" name="action" value="create_invite">
+
+    <input type="submit" value="Create invite link">
+</form>
+
+<hr>
+
+<h2>Invite list</h2>
+<ul>
+    {{ range .inviteList }}
+    <li>{{ .Code }} {{ .Count.Value }}</li>
+    {{ end }}
+</ul>
