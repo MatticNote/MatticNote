@@ -20,6 +20,7 @@ func ConfigureRoute(app *fiber.App) {
 	})
 
 	app.Get("/@:username", getUserProfile)
+	app.Get("/@:username/:noteId", getUserNote)
 
 	app.Use(csrf.New(csrf.Config{
 		KeyLookup: fmt.Sprintf("form:%s", common.CSRFFormName),
