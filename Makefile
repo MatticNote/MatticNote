@@ -1,14 +1,13 @@
 # MatticNote Makefile
-CLIENT_PATH   = ./client
 PACKAGE_NAME  = github.com/MatticNote/MatticNote
 BUILD_SUFFIX := $(or $(BUILD_SUFFIX), unknown)
 
 .PHONY: build
 
 build-frontend:
-	npm --prefix ${CLIENT_PATH} install ${CLIENT_PATH}
-	npm --prefix ${CLIENT_PATH} run css:production
-	npm --prefix ${CLIENT_PATH} run build
+	cd client && npm install
+	cd client && npm run css:production
+	cd client && npm run build -- --no-progress
 fetch-meta:
 	$(eval MN_VERSION=$(or $(shell git describe --tags --abbrev=0), unknown))
 	$(eval MN_REVISION=$(shell git rev-parse --short HEAD))
