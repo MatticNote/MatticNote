@@ -14,7 +14,7 @@ const (
 
 func CSRFErrorHandler(c *fiber.Ctx, _ error) error {
 	return c.Status(fiber.StatusForbidden).Render(
-		"_csrf_error",
+		"error/csrf",
 		fiber.Map{},
 	)
 }
