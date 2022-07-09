@@ -107,7 +107,7 @@ func RegisterLocalAccount(
 	}
 
 	if !skipEmailVerify {
-		err := IssueEmailToken(id, email)
+		err := IssueEmailVerifyToken(id, email)
 		if err != nil {
 			return nil, err
 		}
@@ -125,12 +125,20 @@ func RegisterLocalAccount(
 	return &createdUser, nil
 }
 
-func IssueEmailToken(
+func IssueEmailVerifyToken(
 	userId ksuid.KSUID,
 	email string,
 ) error {
 	issueTokenLock.Lock()
 	defer issueTokenLock.Unlock()
+
+	used, err := IsEmailUsed(email)
+	if err != nil {
+		return err
+	}
+	if used {
+		return ErrEmailExists
+	}
 
 	rsCon := database.RedisPool.Get()
 	defer func() {
@@ -139,7 +147,7 @@ func IssueEmailToken(
 
 	verifyKey := ksuid.New()
 	verifyRedisKey := fmt.Sprintf("emailVerify:%s", verifyKey.String())
-	_, err := rsCon.Do(
+	_, err = rsCon.Do(
 		"HSET",
 		verifyRedisKey,
 		"id",
@@ -164,6 +172,7 @@ func VerifyEmailToken(
 ) error {
 	verifyTokenLock.Lock()
 	defer verifyTokenLock.Unlock()
+
 	rsCon := database.RedisPool.Get()
 	defer func() {
 		_ = rsCon.Close()
@@ -187,6 +196,15 @@ func VerifyEmailToken(
 	email, err := redis.String(rsCon.Do("HGET", tokenKey, "email"))
 	if err != nil {
 		return err
+	}
+
+	used, err := IsEmailUsed(email)
+	if err != nil {
+		return err
+	}
+
+	if used {
+		return ErrEmailExists
 	}
 
 	_, err = database.Database.Exec("UPDATE users_email SET is_verified=TRUE, email=$1 WHERE id = $2;", email, userId.String())
@@ -252,4 +270,23 @@ func IsEmailVerified(userId ksuid.KSUID) (bool, error) {
 	}
 
 	return isVerified, nil
+}
+
+func IsEmailUsed(email string) (bool, error) {
+	var count int
+	err := database.Database.QueryRow(
+		"SELECT count(*) FROM users_email LEFT OUTER JOIN users u on u.id = users_email.id WHERE email ILIKE $1 AND (deleted_at IS NULL AND deleted_at >= now())",
+		email,
+	).Scan(
+		&count,
+	)
+	if err != nil {
+		return false, err
+	}
+
+	if count > 0 {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }

@@ -118,31 +118,23 @@ func verifyEmailToken(c *fiber.Ctx) error {
 
 	err := ia.VerifyEmailToken(token)
 	if err != nil {
-		if errors.Is(err, ia.ErrInvalidToken) {
+		switch {
+		case errors.Is(err, ia.ErrInvalidToken), errors.Is(err, ia.ErrEmailExists):
 			return c.Status(fiber.StatusBadRequest).Render(
-				"account/invalid-email-token",
+				"account/verify-email_invalid",
 				fiber.Map{},
 				"account/_layout",
 			)
-		} else {
+		default:
 			return err
 		}
 	}
 
-	currentUser, ok := c.Locals("currentUser").(*schemas.User)
-	if !ok {
-		return c.Redirect("/account/login")
-	}
-
-	if !currentUser.Username.Valid {
-		return c.Redirect("/account/register-username")
-	} else {
-		return c.Render(
-			"account/verify-email_complete",
-			fiber.Map{},
-			"account/_layout",
-		)
-	}
+	return c.Render(
+		"account/verify-email_complete",
+		fiber.Map{},
+		"account/_layout",
+	)
 }
 
 func registerUsernameGet(c *fiber.Ctx) error {

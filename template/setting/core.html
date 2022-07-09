@@ -1,5 +1,12 @@
 <h1>Account core settings</h1>
 
+{{ if .changeEmail }}
+<p>Verification email was sent to {{ .changeEmail }}</p>
+{{ end }}
+{{ if .invalidChangeEmailForm }}
+<p>Invalid change email form</p>
+{{ end }}
+
 {{- if not .isUserEmailVerified }}
 <p>Your email is not verified</p>
 {{- else }}
@@ -13,3 +20,12 @@
 {{ if .user.Username.Valid }}
 <p>Username: {{ .user.Username.String }}</p>
 {{ end }}
+
+<hr>
+<h2>Change Email</h2>
+<form method="post">
+    <input type="email" name="email" placeholder="{{ .userEmail }}" required>
+    <input type="hidden" name="{{ .csrfName }}" value="{{ .csrfToken }}">
+    <input type="hidden" name="action" value="change_email">
+    <input type="submit">
+</form>
