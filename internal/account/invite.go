@@ -17,7 +17,8 @@ var (
 )
 
 var (
-	ErrInvalidInviteCode = errors.New("invalid invite code")
+	ErrInvalidInviteCode  = errors.New("invalid invite code")
+	ErrInviteCodeNotFound = errors.New("invite code not found")
 )
 
 const (
@@ -160,4 +161,52 @@ func GetUserInviteList(
 	}
 
 	return inviteList, nil
+}
+
+func GetInvite(
+	id ksuid.KSUID,
+) (*schemas.UserInvite, error) {
+	invite := new(schemas.UserInvite)
+	err := database.Database.QueryRow(
+		"SELECT id, owner, code, count, expired_at FROM users_invite WHERE id = $1",
+		id.String(),
+	).Scan(
+		&invite.ID,
+		&invite.Owner,
+		&invite.Code,
+		&invite.Count,
+		&invite.ExpiredAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrInviteCodeNotFound
+		} else {
+			return nil, err
+		}
+	}
+
+	return invite, nil
+}
+
+func DeleteInvite(
+	id ksuid.KSUID,
+) error {
+	exec, err := database.Database.Exec(
+		"UPDATE users_invite SET count = 0 WHERE id = $1 AND (count IS NULL OR count > 0) AND (expired_at IS NULL OR expired_at >= now());",
+		id.String(),
+	)
+	if err != nil {
+		return err
+	}
+
+	ra, err := exec.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if ra <= 0 {
+		return ErrInviteCodeNotFound
+	}
+
+	return nil
 }

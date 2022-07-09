@@ -39,7 +39,16 @@
 
 <h2>Invite list</h2>
 <ul>
+    {{ $csrfToken := .csrfToken }}
+    {{ $csrfName := .csrfName }}
     {{ range .inviteList }}
-    <li>{{ .Code }} {{ .Count.Value }}</li>
+    <li>{{ .Code }}
+        <form method="post">
+            <input type="hidden" name="id" value="{{ .ID }}">
+            <input type="hidden" name="action" value="delete_invite">
+            <input type="hidden" name="{{ $csrfName }}" value="{{ $csrfToken }}">
+            <input type="submit" value="Revoke">
+        </form>
+    </li>
     {{ end }}
 </ul>

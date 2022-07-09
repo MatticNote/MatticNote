@@ -1,11 +1,13 @@
 package setting
 
 import (
+	"errors"
 	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/database/schemas"
 	"github.com/MatticNote/MatticNote/internal/account"
 	"github.com/MatticNote/MatticNote/server/common"
 	"github.com/gofiber/fiber/v2"
+	"github.com/segmentio/ksuid"
 	"time"
 )
 
@@ -17,6 +19,10 @@ type (
 	inviteCreateFormStruct struct {
 		Count        int `form:"count"`
 		ExpiredAfter int `form:"expired_after"`
+	}
+
+	inviteDeleteFormStruct struct {
+		ID string `form:"id"`
 	}
 )
 
@@ -89,13 +95,19 @@ func settingInviteGet(c *fiber.Ctx) error {
 		newInvite = nil
 	}
 
+	deletedInvite, ok := c.Locals("deletedInvite").(bool)
+	if !ok {
+		deletedInvite = false
+	}
+
 	return c.Render(
 		"setting/invite",
 		fiber.Map{
-			"inviteList": inviteList,
-			"csrfName":   common.CSRFFormName,
-			"csrfToken":  c.Locals(common.CSRFContextKey),
-			"newInvite":  newInvite,
+			"inviteList":    inviteList,
+			"csrfName":      common.CSRFFormName,
+			"csrfToken":     c.Locals(common.CSRFContextKey),
+			"newInvite":     newInvite,
+			"deletedInvite": deletedInvite,
 		},
 		"setting/_layout",
 	)
@@ -134,7 +146,37 @@ func settingInvitePost(c *fiber.Ctx) error {
 		c.Locals("createdInvite", newInvite)
 		return settingInviteGet(c)
 	case "delete_invite":
-		return nil
+		formDelete := new(inviteDeleteFormStruct)
+
+		if err := c.BodyParser(formDelete); err != nil {
+			return fiber.ErrUnprocessableEntity
+		}
+
+		id, err := ksuid.Parse(formDelete.ID)
+		if err != nil {
+			return fiber.ErrBadRequest
+		}
+
+		invite, err := account.GetInvite(id)
+		if err != nil {
+			if errors.Is(err, account.ErrInviteCodeNotFound) {
+				return fiber.ErrBadRequest
+			} else {
+				return nil
+			}
+		}
+
+		if invite.Owner == nil || (invite.Owner != nil && user.ID != *invite.Owner) {
+			return fiber.ErrForbidden
+		}
+
+		err = account.DeleteInvite(id)
+		if err != nil {
+			return err
+		}
+
+		c.Locals("deletedInvite", true)
+		return settingInviteGet(c)
 	default:
 		return fiber.ErrBadRequest
 	}

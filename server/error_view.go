@@ -9,6 +9,8 @@ func ErrorView(c *fiber.Ctx, err error) error {
 	switch err {
 	case fiber.ErrNotFound:
 		return NotFoundView(c)
+	case fiber.ErrBadRequest:
+		return BadRequestView(c)
 	case fiber.ErrForbidden:
 		return ForbiddenView(c)
 	case fiber.ErrUnprocessableEntity:
@@ -16,6 +18,14 @@ func ErrorView(c *fiber.Ctx, err error) error {
 	default:
 		return c.Status(fiber.StatusInternalServerError).SendString(fmt.Sprintf("%T: %s", err, err.Error()))
 	}
+}
+
+func BadRequestView(c *fiber.Ctx) error {
+	return c.Status(fiber.StatusBadRequest).Render(
+		"error/400",
+		fiber.Map{},
+		"error/_layout",
+	)
 }
 
 func NotFoundView(c *fiber.Ctx) error {
