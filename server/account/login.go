@@ -59,7 +59,7 @@ func loginPost(c *fiber.Ctx) error {
 	}
 
 	if user.DeletedAt.Valid {
-		return c.Redirect("/setting/core")
+		return c.Redirect("/settings/core")
 	}
 
 	if isEmailVerified {
@@ -69,7 +69,7 @@ func loginPost(c *fiber.Ctx) error {
 			return c.Redirect("/web")
 		}
 	} else {
-		return c.Redirect("/setting/core")
+		return c.Redirect("/settings/core")
 	}
 }
 
