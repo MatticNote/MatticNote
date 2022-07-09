@@ -3,6 +3,7 @@ package account
 import (
 	"errors"
 	ia "github.com/MatticNote/MatticNote/internal/account"
+	"github.com/MatticNote/MatticNote/server/common"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
@@ -25,8 +26,8 @@ func resetPasswordNewGet(c *fiber.Ctx) error {
 	return c.Render(
 		"account/reset-password",
 		fiber.Map{
-			"csrfName":  csrfFormName,
-			"csrfToken": c.Locals(csrfContextKey),
+			"csrfName":  common.CSRFFormName,
+			"csrfToken": c.Locals(common.CSRFContextKey),
 		},
 		"account/_layout",
 	)
@@ -70,8 +71,8 @@ func resetPasswordFormGet(c *fiber.Ctx) error {
 	return c.Render(
 		"account/reset-password_form",
 		fiber.Map{
-			"csrfName":  csrfFormName,
-			"csrfToken": c.Locals(csrfContextKey),
+			"csrfName":  common.CSRFFormName,
+			"csrfToken": c.Locals(common.CSRFContextKey),
 		},
 		"account/_layout",
 	)

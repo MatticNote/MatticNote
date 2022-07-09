@@ -1,4 +1,4 @@
-package account
+package setting
 
 import (
 	"github.com/MatticNote/MatticNote/database/schemas"
@@ -6,7 +6,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func settingRoute(r fiber.Router) {
+func ConfigureRoute(r fiber.Router) {
 	r.Get("/core", settingCoreGet)
 	r.Get("/security", settingSecurityGet)
 }
@@ -24,13 +24,13 @@ func settingCoreGet(c *fiber.Ctx) error {
 	}
 
 	return c.Render(
-		"account/setting/core",
+		"setting/core",
 		fiber.Map{
 			"user":                user,
 			"isUserEmailVerified": isEmailVerified,
 			"userEmail":           email,
 		},
-		"account/setting/_layout",
+		"setting/_layout",
 	)
 }
 
@@ -44,12 +44,12 @@ func settingSecurityGet(c *fiber.Ctx) error {
 	}
 
 	return c.Render(
-		"account/setting/security",
+		"setting/security",
 		fiber.Map{
 			"user":         user,
 			"tokenList":    tokenList,
 			"currentToken": token,
 		},
-		"account/setting/_layout",
+		"setting/_layout",
 	)
 }

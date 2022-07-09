@@ -3,6 +3,7 @@ package account
 import (
 	"errors"
 	"github.com/MatticNote/MatticNote/internal/account"
+	"github.com/MatticNote/MatticNote/server/common"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"time"
@@ -19,8 +20,8 @@ func loginGet(c *fiber.Ctx) error {
 	}
 
 	return c.Render("account/login", fiber.Map{
-		"csrfName":  csrfFormName,
-		"csrfToken": c.Locals(csrfContextKey),
+		"csrfName":  common.CSRFFormName,
+		"csrfToken": c.Locals(common.CSRFContextKey),
 	}, "account/_layout")
 }
 
@@ -58,7 +59,7 @@ func loginPost(c *fiber.Ctx) error {
 	}
 
 	if user.DeletedAt.Valid {
-		return c.Redirect("/account/settings/core")
+		return c.Redirect("/setting/core")
 	}
 
 	if isEmailVerified {
@@ -68,7 +69,7 @@ func loginPost(c *fiber.Ctx) error {
 			return c.Redirect("/web")
 		}
 	} else {
-		return c.Redirect("/account/settings/core")
+		return c.Redirect("/setting/core")
 	}
 }
 

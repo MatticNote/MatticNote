@@ -5,6 +5,7 @@ import (
 	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/database/schemas"
 	ia "github.com/MatticNote/MatticNote/internal/account"
+	"github.com/MatticNote/MatticNote/server/common"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
@@ -51,8 +52,8 @@ func registerGet(c *fiber.Ctx) error {
 	return c.Render("account/register", fiber.Map{
 		"emailExists":        emailExists,
 		"title":              "Register",
-		"csrfName":           csrfFormName,
-		"csrfToken":          c.Locals(csrfContextKey),
+		"csrfName":           common.CSRFFormName,
+		"csrfToken":          c.Locals(common.CSRFContextKey),
 		"requiredInviteCode": requiredInviteCode,
 		"invalid":            invalid,
 		"inviteInvalid":      inviteInvalid,
@@ -169,8 +170,8 @@ func registerUsernameGet(c *fiber.Ctx) error {
 	return c.Render("account/register-username", fiber.Map{
 		"invalid":   invalid,
 		"title":     "Register username",
-		"csrfName":  csrfFormName,
-		"csrfToken": c.Locals(csrfContextKey),
+		"csrfName":  common.CSRFFormName,
+		"csrfToken": c.Locals(common.CSRFContextKey),
 	}, "account/_layout")
 }
 
