@@ -35,6 +35,21 @@ func cliServer(_ *cli.Context) error {
 		return err
 	}
 
+	database.InitFiberRedisMemory(
+		config.Config.Redis.Host,
+		config.Config.Redis.Port,
+		config.Config.Redis.User,
+		config.Config.Redis.Password,
+		config.Config.Redis.Database,
+	)
+	database.InitRedis(
+		config.Config.Redis.Host,
+		config.Config.Redis.Port,
+		config.Config.Redis.User,
+		config.Config.Redis.Password,
+		config.Config.Redis.Database,
+	)
+
 	app := fiber.New(fiber.Config{
 		ServerHeader:          "MatticNote",
 		Prefork:               config.Config.Server.Prefork,
@@ -82,21 +97,6 @@ func cliServer(_ *cli.Context) error {
 	server.ConfigureRoute(app)
 
 	app.Use(server.NotFoundView)
-
-	database.InitFiberRedisMemory(
-		config.Config.Redis.Host,
-		config.Config.Redis.Port,
-		config.Config.Redis.User,
-		config.Config.Redis.Password,
-		config.Config.Redis.Database,
-	)
-	database.InitRedis(
-		config.Config.Redis.Host,
-		config.Config.Redis.Port,
-		config.Config.Redis.User,
-		config.Config.Redis.Password,
-		config.Config.Redis.Database,
-	)
 
 	listen := fmt.Sprintf("%s:%d", config.Config.Server.Host, config.Config.Server.Port)
 	if !fiber.IsChild() {
