@@ -5,6 +5,7 @@ import (
 	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/server"
+	"github.com/MatticNote/MatticNote/server/common"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	recover2 "github.com/gofiber/fiber/v2/middleware/recover"
@@ -65,7 +66,7 @@ func cliServer(_ *cli.Context) error {
 		Browse: false,
 	}))
 
-	app.Use("/web", filesystem.New(filesystem.Config{
+	app.Use("/web", common.ValidateCookie, filesystem.New(filesystem.Config{
 		Root: func() http.FileSystem {
 			webCliDist, err := fs.Sub(webCli, "client/dist/client")
 			if err != nil {
