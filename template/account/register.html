@@ -1,6 +1,11 @@
 <h1>Register</h1>
 {{ if .emailExists }}<p>Email is already used.</p>{{ end }}
+{{ if .invalid }}<p>Invalid form.</p>{{ end }}
+{{ if .inviteInvalid }}<p>Invalid invite code.</p>{{ end }}
 <form method="post">
+    {{ if .requiredInviteCode }}
+    <input type="text" name="invite_code" placeholder="Invite Code" required>
+    {{ end }}
     <input type="email" name="email" placeholder="example@example.com" required>
     <input type="password" name="password" placeholder="Password" required>
     <input type="hidden" name="{{ .csrfName }}" value="{{ .csrfToken }}">

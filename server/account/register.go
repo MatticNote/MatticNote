@@ -12,7 +12,7 @@ import (
 type registerForm struct {
 	Email      string `validate:"required,email"`
 	Password   string `validate:"required,min=8"`
-	InviteCode string `json:"invite_code"`
+	InviteCode string `form:"invite_code"`
 }
 
 type registerUsernameForm struct {
@@ -34,6 +34,16 @@ func registerGet(c *fiber.Ctx) error {
 		emailExists = false
 	}
 
+	invalid, ok := c.Locals("invalid").(bool)
+	if !ok {
+		invalid = false
+	}
+
+	inviteInvalid, ok := c.Locals("invalidInvite").(bool)
+	if !ok {
+		inviteInvalid = false
+	}
+
 	if c.Cookies(ia.TokenCookieName) != "" {
 		return c.Redirect("/web")
 	}
@@ -44,6 +54,8 @@ func registerGet(c *fiber.Ctx) error {
 		"csrfName":           csrfFormName,
 		"csrfToken":          c.Locals(csrfContextKey),
 		"requiredInviteCode": requiredInviteCode,
+		"invalid":            invalid,
+		"inviteInvalid":      inviteInvalid,
 	}, "account/_layout")
 }
 
@@ -64,7 +76,20 @@ func registerPost(c *fiber.Ctx) error {
 	}
 
 	if config.Config.System.RegistrationMode == 1 {
-		// TODO: Invite token use method
+		if form.InviteCode == "" {
+			c.Locals("invalid", true)
+			return registerGet(c)
+		}
+
+		err := ia.UseInviteCode(form.InviteCode)
+		if err != nil {
+			if errors.Is(err, ia.ErrInvalidInviteCode) {
+				c.Locals("invalidInvite", true)
+				return registerGet(c)
+			} else {
+				return err
+			}
+		}
 	}
 
 	_, err = ia.RegisterLocalAccount(
@@ -192,5 +217,5 @@ func registerUsernamePost(c *fiber.Ctx) error {
 		}
 	}
 
-	return c.Redirect("/web/")
+	return c.Redirect("/web")
 }
