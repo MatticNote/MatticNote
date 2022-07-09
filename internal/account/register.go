@@ -181,7 +181,7 @@ func VerifyEmailToken(
 	tokenKey := fmt.Sprintf("emailVerify:%s", token)
 	userIdStr, err := redis.String(rsCon.Do("HGET", tokenKey, "id"))
 	if err != nil {
-		if err == redis.ErrNil {
+		if errors.Is(err, redis.ErrNil) {
 			return ErrInvalidToken
 		} else {
 			return err
@@ -275,7 +275,7 @@ func IsEmailVerified(userId ksuid.KSUID) (bool, error) {
 func IsEmailUsed(email string) (bool, error) {
 	var count int
 	err := database.Database.QueryRow(
-		"SELECT count(*) FROM users_email LEFT OUTER JOIN users u on u.id = users_email.id WHERE email ILIKE $1 AND (deleted_at IS NULL AND deleted_at >= now())",
+		"SELECT count(*) FROM users_email LEFT OUTER JOIN users u on u.id = users_email.id WHERE email ILIKE $1 AND (u.deleted_at IS NULL OR u.deleted_at >= now());",
 		email,
 	).Scan(
 		&count,

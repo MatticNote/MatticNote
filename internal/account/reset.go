@@ -80,7 +80,7 @@ func IsValidPasswordResetToken(token string) bool {
 	tokenRedisKey := fmt.Sprintf("passwordReset:%s", token)
 	_, err := redis.String(rsCon.Do("GET", tokenRedisKey))
 	if err != nil {
-		if err == redis.ErrNil {
+		if errors.Is(err, redis.ErrNil) {
 			return false
 		} else {
 			return false
