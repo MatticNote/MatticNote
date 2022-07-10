@@ -169,7 +169,7 @@ func getNote(c *fiber.Ctx) error {
 	}
 
 	if noteDetail.RetextID != nil {
-		noteDetailRetext, err := note.GetNote(*noteDetail.ReplyID)
+		noteDetailRetext, err := note.GetNote(*noteDetail.RetextID)
 		if err != nil {
 			return err
 		}

@@ -80,8 +80,8 @@ func GetUser(userId ksuid.KSUID) (*schemas.User, error) {
 	user := new(schemas.User)
 
 	err := database.Database.QueryRow(
-		"SELECT id, username, host, display_name, headline, description, created_at, is_silence, is_suspend, is_moderator, is_admin, deleted_at FROM users WHERE id = $1;", userId.String()).
-		Scan(&user.ID, &user.Username, &user.Host, &user.DisplayName, &user.Headline, &user.Description, &user.CreatedAt, &user.IsSilence, &user.IsSuspend, &user.IsModerator, &user.IsAdmin, &user.DeletedAt)
+		"SELECT users.id as id, username, host, display_name, headline, description, created_at, is_silence, is_suspend, is_moderator, is_admin, deleted_at, CASE WHEN following IS NULL THEN 0 ELSE following END AS following, CASE WHEN follower IS NULL THEN 0 ELSE follower END AS follower, CASE WHEN notes_count IS NULL THEN 0 ELSE notes_count END AS notes_count FROM users LEFT JOIN (SELECT from_follow as id, count(*) as following FROM users_follow_relation GROUP BY from_follow) users_following ON users.id = users_following.id LEFT JOIN (SELECT to_follow as id, count(*) as follower FROM users_follow_relation GROUP BY to_follow) users_follower ON users.id = users_follower.id LEFT JOIN (SELECT owner as id, count(*) as notes_count FROM notes GROUP BY owner) notes_count ON users.id = notes_count.id WHERE users.id = $1;", userId.String()).
+		Scan(&user.ID, &user.Username, &user.Host, &user.DisplayName, &user.Headline, &user.Description, &user.CreatedAt, &user.IsSilence, &user.IsSuspend, &user.IsModerator, &user.IsAdmin, &user.DeletedAt, &user.Following, &user.Follower, &user.NoteCount)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrUserNotFound

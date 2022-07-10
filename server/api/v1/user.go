@@ -22,6 +22,9 @@ type (
 		CreatedAt   time.Time `json:"created_at"`
 		IsModerator bool      `json:"is_moderator"`
 		IsAdmin     bool      `json:"is_admin"`
+		Following   uint      `json:"following"`
+		Follower    uint      `json:"follower"`
+		NoteCount   uint      `json:"note_count"`
 	}
 
 	apiV1UserUpdateStruct struct {
@@ -42,6 +45,9 @@ func newApiV1UserStructFromSchema(it *schemas.User) *apiV1UserStruct {
 	u.CreatedAt = it.CreatedAt
 	u.IsModerator = it.IsModerator
 	u.IsAdmin = it.IsAdmin
+	u.Following = it.Following
+	u.Follower = it.Follower
+	u.NoteCount = it.NoteCount
 
 	if it.Username.Valid {
 		u.Username = &it.Username.String

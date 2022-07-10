@@ -19,4 +19,7 @@ type User struct {
 	IsModerator bool
 	IsAdmin     bool
 	DeletedAt   sql.NullTime
+	Following   uint
+	Follower    uint
+	NoteCount   uint
 }
