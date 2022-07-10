@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/server/account"
+	"github.com/MatticNote/MatticNote/server/admin"
 	"github.com/MatticNote/MatticNote/server/api"
 	"github.com/MatticNote/MatticNote/server/common"
 	"github.com/MatticNote/MatticNote/server/setting"
@@ -34,6 +35,8 @@ func ConfigureRoute(app *fiber.App) {
 				return false
 			case strings.HasPrefix(path, "/settings"):
 				return false
+			case strings.HasPrefix(path, "/admin"):
+				return false
 			}
 			return true
 		},
@@ -51,4 +54,5 @@ func ConfigureRoute(app *fiber.App) {
 	account.ConfigureRoute(app.Group("/account"))
 	api.ConfigureRoute(app.Group("/api"))
 	setting.ConfigureRoute(app.Group("/settings", common.ValidateCookie))
+	admin.ConfigureRoute(app.Group("/admin", common.ValidateCookie, common.RequiredAdminOrModerator))
 }

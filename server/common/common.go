@@ -2,6 +2,7 @@ package common
 
 import (
 	"errors"
+	"github.com/MatticNote/MatticNote/database/schemas"
 	"github.com/MatticNote/MatticNote/internal/account"
 	"github.com/gofiber/fiber/v2"
 )
@@ -38,6 +39,19 @@ func ValidateCookie(c *fiber.Ctx) error {
 	}
 
 	c.Locals("currentUser", user)
+
+	return c.Next()
+}
+
+func RequiredAdminOrModerator(c *fiber.Ctx) error {
+	user, ok := c.Locals("currentUser").(*schemas.User)
+	if !ok {
+		return c.Redirect("/account/login")
+	}
+
+	if !(user.IsModerator || user.IsAdmin) {
+		return fiber.ErrForbidden
+	}
 
 	return c.Next()
 }
