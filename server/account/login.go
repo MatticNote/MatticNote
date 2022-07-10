@@ -11,7 +11,7 @@ import (
 
 type loginForm struct {
 	Email    string `validate:"required,email"`
-	Password string `validate:"required,min=6"`
+	Password string `validate:"required"`
 }
 
 func loginGet(c *fiber.Ctx) error {

@@ -15,6 +15,7 @@ func ConfigureRoute(r fiber.Router) {
 	r.Post("/core", settingCorePost)
 
 	r.Get("/security", settingSecurityGet)
+	r.Post("/security", settingSecurityPost)
 
 	r.Get("/invite", settingInviteGet)
 	r.Post("/invite", settingInvitePost)

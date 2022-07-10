@@ -1,5 +1,21 @@
 <h1>Security</h1>
 
+<h2>Change Password</h2>
+{{ if .invalidPassword }}
+<p>Invalid password.</p>
+{{ end }}
+{{ if .changedPassword }}
+<p>Password was changed.</p>
+{{ end }}
+<form method="post">
+    <input type="password" name="current_password" placeholder="Current Password" required>
+    <input type="password" name="new_password" placeholder="New Password" minlength="8" required>
+    <input type="hidden" name="action" value="change_password">
+    <input type="hidden" name="{{ .csrfName }}" value="{{ .csrfToken }}">
+    <input type="submit" value="Change Password">
+</form>
+<hr>
+<h2>Session List</h2>
 <table>
     <thead>
         <tr>
@@ -9,6 +25,8 @@
         </tr>
     </thead>
     <tbody>
+        {{ $csrfToken := .csrfToken }}
+        {{ $csrfName := .csrfName }}
         {{ $token := .currentToken -}}
         {{ range .tokenList -}}
             <tr>
@@ -24,7 +42,12 @@
                     {{- if eq .Token $token }}
                     <p>Current Session</p>
                     {{ else }}
-                    <button>End session</button>
+                    <form method="post">
+                        <input type="hidden" name="id" value="{{ .ID }}">
+                        <input type="hidden" name="action" value="revoke_session">
+                        <input type="hidden" name="{{ $csrfName }}" value="{{ $csrfToken }}">
+                        <input type="submit" value="Revoke session">
+                    </form>
                     {{- end -}}
                 </td>
             </tr>

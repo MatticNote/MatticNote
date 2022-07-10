@@ -12,7 +12,8 @@ import (
 )
 
 var (
-	ErrInvalidUserToken = errors.New("invalid user token")
+	ErrInvalidUserToken  = errors.New("invalid user token")
+	ErrUserTokenNotFound = errors.New("user token not found")
 )
 
 func GenerateUserToken(
@@ -77,12 +78,39 @@ func GetUserFromToken(
 	return user, nil
 }
 
+func GetUserToken(
+	id ksuid.KSUID,
+) (*schemas.UserToken, error) {
+	token := new(schemas.UserToken)
+
+	err := database.Database.QueryRow(
+		"SELECT id, token, user_id, expired_at, ip, created_at FROM users_token WHERE id = $1 AND (expired_at IS NULL OR expired_at >= now());",
+		id.String(),
+	).Scan(
+		&token.ID,
+		&token.Token,
+		&token.UserId,
+		&token.ExpiredAt,
+		&token.IP,
+		&token.CreatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrUserTokenNotFound
+		} else {
+			return nil, err
+		}
+	}
+
+	return token, nil
+}
+
 func ListUserToken(
 	userId ksuid.KSUID,
 ) ([]*schemas.UserToken, error) {
 	var tokenList []*schemas.UserToken
 
-	row, err := database.Database.Query("SELECT id, token, user_id, expired_at, ip, created_at FROM users_token WHERE user_id = $1", userId)
+	row, err := database.Database.Query("SELECT id, token, user_id, expired_at, ip, created_at FROM users_token WHERE user_id = $1 AND (expired_at IS NULL OR expired_at >= now());", userId)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return tokenList, nil
