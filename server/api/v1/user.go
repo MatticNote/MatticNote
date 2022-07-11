@@ -3,10 +3,12 @@ package v1
 import (
 	"errors"
 	"github.com/MatticNote/MatticNote/database/schemas"
+	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/internal/account"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/segmentio/ksuid"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -77,8 +79,10 @@ func userApiRoute(r fiber.Router) {
 	r.Get("/me", loginRequired, userGetMe)
 	r.Put("/me", loginRequired, userUpdateMe)
 	r.Get("/:id", userGet)
-	r.Post("/:id/follow", loginRequired, activeAccountRequired, userFollow)
-	r.Delete("/:id/follow", loginRequired, activeAccountRequired, userUnfollow)
+	r.Get("/:id/following", userFollowing)
+	r.Get("/:id/follower", userFollower)
+	r.Post("/:id/relation/follow", loginRequired, activeAccountRequired, userFollow)
+	r.Delete("/:id/relation/follow", loginRequired, activeAccountRequired, userUnfollow)
 }
 
 func userGetUsername(c *fiber.Ctx) error {
@@ -240,4 +244,90 @@ func userUnfollow(c *fiber.Ctx) error {
 	}
 
 	return c.Status(fiber.StatusNoContent).Send([]byte(""))
+}
+
+func userFollowing(c *fiber.Ctx) error {
+	targetId, err := ksuid.Parse(c.Params("id"))
+	if err != nil {
+		return apiNotFound(c, "User not found")
+	}
+
+	maxId, err := ksuid.Parse(c.Query("max_id", internal.MaxInternalIDString))
+	if err != nil {
+		return apiBadRequest(c, "Bad max_id query")
+	}
+
+	sinceId, err := ksuid.Parse(c.Query("since_id", internal.MinInternalIDString))
+	if err != nil {
+		return apiBadRequest(c, "Bad since_id query")
+	}
+
+	limit, err := strconv.Atoi(c.Query("limit", "40"))
+	if err != nil {
+		return apiBadRequest(c, "Bad limit query")
+	}
+
+	if limit < 1 {
+		return apiBadRequest(c, "limit must not be zero or negative")
+	}
+
+	if limit > 100 {
+		return apiBadRequest(c, "Too many acquisitions")
+	}
+
+	relation, err := account.ListFollowingRelation(targetId, &maxId, &sinceId, limit)
+	if err != nil {
+		return err
+	}
+
+	var response = make([]*apiV1UserStruct, 0)
+	for _, v := range relation {
+		response = append(response, newApiV1UserStructFromSchema(v))
+	}
+
+	// TODO: Link HTTP Header
+	return c.JSON(response)
+}
+
+func userFollower(c *fiber.Ctx) error {
+	targetId, err := ksuid.Parse(c.Params("id"))
+	if err != nil {
+		return apiNotFound(c, "User not found")
+	}
+
+	maxId, err := ksuid.Parse(c.Query("max_id", internal.MaxInternalIDString))
+	if err != nil {
+		return apiBadRequest(c, "Bad max_id query")
+	}
+
+	sinceId, err := ksuid.Parse(c.Query("since_id", internal.MinInternalIDString))
+	if err != nil {
+		return apiBadRequest(c, "Bad since_id query")
+	}
+
+	limit, err := strconv.Atoi(c.Query("limit", "40"))
+	if err != nil {
+		return apiBadRequest(c, "Bad limit query")
+	}
+
+	if limit < 1 {
+		return apiBadRequest(c, "limit must not be zero or negative")
+	}
+
+	if limit > 100 {
+		return apiBadRequest(c, "Too many acquisitions")
+	}
+
+	relation, err := account.ListFollowerRelation(targetId, &maxId, &sinceId, limit)
+	if err != nil {
+		return err
+	}
+
+	var response = make([]*apiV1UserStruct, 0)
+	for _, v := range relation {
+		response = append(response, newApiV1UserStructFromSchema(v))
+	}
+
+	// TODO: Link HTTP Header
+	return c.JSON(response)
 }

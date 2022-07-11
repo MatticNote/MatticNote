@@ -6,6 +6,7 @@ import (
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/database/schemas"
 	"github.com/gofiber/fiber/v2"
+	"github.com/lib/pq"
 	"github.com/segmentio/ksuid"
 	"golang.org/x/crypto/bcrypt"
 	"time"
@@ -80,7 +81,7 @@ func GetUser(userId ksuid.KSUID) (*schemas.User, error) {
 	user := new(schemas.User)
 
 	err := database.Database.QueryRow(
-		"SELECT users.id as id, username, host, display_name, headline, description, created_at, is_silence, is_suspend, is_moderator, is_admin, deleted_at, CASE WHEN following IS NULL THEN 0 ELSE following END AS following, CASE WHEN follower IS NULL THEN 0 ELSE follower END AS follower, CASE WHEN notes_count IS NULL THEN 0 ELSE notes_count END AS notes_count FROM users LEFT JOIN (SELECT from_follow as id, count(*) as following FROM users_follow_relation GROUP BY from_follow) users_following ON users.id = users_following.id LEFT JOIN (SELECT to_follow as id, count(*) as follower FROM users_follow_relation GROUP BY to_follow) users_follower ON users.id = users_follower.id LEFT JOIN (SELECT owner as id, count(*) as notes_count FROM notes GROUP BY owner) notes_count ON users.id = notes_count.id WHERE users.id = $1;", userId.String()).
+		"SELECT users.id as id, username, host, display_name, headline, description, created_at, is_silence, is_suspend, is_moderator, is_admin, deleted_at, CASE WHEN following IS NULL THEN 0 ELSE following END AS following, CASE WHEN follower IS NULL THEN 0 ELSE follower END AS follower, CASE WHEN notes_count IS NULL THEN 0 ELSE notes_count END AS notes_count FROM users LEFT JOIN (SELECT from_follow as id, count(*) as following FROM users_follow_relation WHERE is_active IS TRUE GROUP BY from_follow) users_following ON users.id = users_following.id LEFT JOIN (SELECT to_follow as id, count(*) as follower FROM users_follow_relation WHERE is_active IS TRUE GROUP BY to_follow) users_follower ON users.id = users_follower.id LEFT JOIN (SELECT owner as id, count(*) as notes_count FROM notes GROUP BY owner) notes_count ON users.id = notes_count.id WHERE users.id = $1;", userId.String()).
 		Scan(&user.ID, &user.Username, &user.Host, &user.DisplayName, &user.Headline, &user.Description, &user.CreatedAt, &user.IsSilence, &user.IsSuspend, &user.IsModerator, &user.IsAdmin, &user.DeletedAt, &user.Following, &user.Follower, &user.NoteCount)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -91,6 +92,33 @@ func GetUser(userId ksuid.KSUID) (*schemas.User, error) {
 	}
 
 	return user, nil
+}
+
+func GetUserMultiple(userIds ...ksuid.KSUID) ([]*schemas.User, error) {
+	rows, err := database.Database.Query(
+		"SELECT users.id as id, username, host, display_name, headline, description, created_at, is_silence, is_suspend, is_moderator, is_admin, deleted_at, CASE WHEN following IS NULL THEN 0 ELSE following END AS following, CASE WHEN follower IS NULL THEN 0 ELSE follower END AS follower, CASE WHEN notes_count IS NULL THEN 0 ELSE notes_count END AS notes_count FROM users LEFT JOIN (SELECT from_follow as id, count(*) as following FROM users_follow_relation WHERE is_active IS TRUE GROUP BY from_follow) users_following ON users.id = users_following.id LEFT JOIN (SELECT to_follow as id, count(*) as follower FROM users_follow_relation WHERE is_active IS TRUE GROUP BY to_follow) users_follower ON users.id = users_follower.id LEFT JOIN (SELECT owner as id, count(*) as notes_count FROM notes GROUP BY owner) notes_count ON users.id = notes_count.id WHERE users.id = ANY ($1);",
+		pq.Array(userIds),
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = rows.Close()
+	}()
+
+	var users []*schemas.User
+
+	for rows.Next() {
+		user := new(schemas.User)
+		err := rows.Scan(&user.ID, &user.Username, &user.Host, &user.DisplayName, &user.Headline, &user.Description, &user.CreatedAt, &user.IsSilence, &user.IsSuspend, &user.IsModerator, &user.IsAdmin, &user.DeletedAt, &user.Following, &user.Follower, &user.NoteCount)
+		if err != nil {
+			return nil, err
+		}
+
+		users = append(users, user)
+	}
+
+	return users, nil
 }
 
 func GetUserByUsername(username string, host ...string) (*schemas.User, error) {
