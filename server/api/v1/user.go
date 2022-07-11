@@ -130,6 +130,10 @@ func userGet(c *fiber.Ctx) error {
 		return apiGone(c, "User is gone")
 	}
 
+	if user.IsSuspend {
+		return apiForbidden(c, "User is suspended")
+	}
+
 	return c.JSON(newApiV1UserStructFromSchema(user))
 }
 
@@ -206,7 +210,24 @@ func userFollow(c *fiber.Ctx) error {
 
 	user := c.Locals("currentUser").(*schemas.User)
 
-	isActive, err := account.CreateFollowRelation(user.ID, targetId)
+	targetUser, err := account.GetUser(targetId)
+	if err != nil {
+		if errors.Is(err, account.ErrUserNotFound) {
+			return apiNotFound(c, "User not found")
+		} else {
+			return err
+		}
+	}
+
+	if targetUser.DeletedAt.Valid && targetUser.DeletedAt.Time.Before(time.Now()) {
+		return apiGone(c, "User is gone")
+	}
+
+	if targetUser.IsSuspend {
+		return apiForbidden(c, "Target user is suspended")
+	}
+
+	isActive, err := account.CreateFollowRelation(user.ID, targetUser.ID)
 	if err != nil {
 		switch {
 		case errors.Is(err, account.ErrUserNotFound):
@@ -231,7 +252,24 @@ func userUnfollow(c *fiber.Ctx) error {
 
 	user := c.Locals("currentUser").(*schemas.User)
 
-	err = account.DeleteFollowRelation(user.ID, targetId)
+	targetUser, err := account.GetUser(targetId)
+	if err != nil {
+		if errors.Is(err, account.ErrUserNotFound) {
+			return apiNotFound(c, "User not found")
+		} else {
+			return err
+		}
+	}
+
+	if targetUser.DeletedAt.Valid && targetUser.DeletedAt.Time.Before(time.Now()) {
+		return apiGone(c, "User is gone")
+	}
+
+	if targetUser.IsSuspend {
+		return apiForbidden(c, "Target user is suspended")
+	}
+
+	err = account.DeleteFollowRelation(user.ID, targetUser.ID)
 	if err != nil {
 		switch {
 		case errors.Is(err, account.ErrCannotRelationYourself):
@@ -259,6 +297,10 @@ func userFollowing(c *fiber.Ctx) error {
 		} else {
 			return err
 		}
+	}
+
+	if user.IsSuspend {
+		return apiForbidden(c, "User is suspended")
 	}
 
 	limit, err := strconv.Atoi(c.Query("limit", "40"))
@@ -325,6 +367,10 @@ func userFollower(c *fiber.Ctx) error {
 		} else {
 			return err
 		}
+	}
+
+	if user.IsSuspend {
+		return apiForbidden(c, "User is suspended")
 	}
 
 	limit, err := strconv.Atoi(c.Query("limit", "40"))
