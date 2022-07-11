@@ -2,6 +2,7 @@ package v1
 
 import (
 	"errors"
+	"fmt"
 	"github.com/MatticNote/MatticNote/database/schemas"
 	"github.com/MatticNote/MatticNote/internal/account"
 	"github.com/go-playground/validator/v10"
@@ -294,7 +295,20 @@ func userFollowing(c *fiber.Ctx) error {
 		response = append(response, newApiV1UserStructFromSchema(v))
 	}
 
-	// TODO: Link HTTP Header
+	var paginationLink = make([]string, 0)
+
+	if page > 1 {
+		paginationLink = append(paginationLink, fmt.Sprintf("%s/api/v1/users/%s/following?limit=%d&page=%d", c.BaseURL(), user.ID.String(), limit, page-1), "prev")
+	}
+
+	if len(response) >= limit {
+		paginationLink = append(paginationLink, fmt.Sprintf("%s/api/v1/users/%s/following?limit=%d&page=%d", c.BaseURL(), user.ID.String(), limit, page+1), "next")
+	}
+
+	if len(paginationLink) > 0 {
+		c.Links(paginationLink...)
+	}
+
 	return c.JSON(response)
 }
 
@@ -347,6 +361,19 @@ func userFollower(c *fiber.Ctx) error {
 		response = append(response, newApiV1UserStructFromSchema(v))
 	}
 
-	// TODO: Link HTTP Header
+	var paginationLink = make([]string, 0)
+
+	if page > 1 {
+		paginationLink = append(paginationLink, fmt.Sprintf("%s/api/v1/users/%s/follower?limit=%d&page=%d", c.BaseURL(), user.ID.String(), limit, page-1), "prev")
+	}
+
+	if len(response) >= limit {
+		paginationLink = append(paginationLink, fmt.Sprintf("%s/api/v1/users/%s/follower?limit=%d&page=%d", c.BaseURL(), user.ID.String(), limit, page+1), "next")
+	}
+
+	if len(paginationLink) > 0 {
+		c.Links(paginationLink...)
+	}
+
 	return c.JSON(response)
 }
