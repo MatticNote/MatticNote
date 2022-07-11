@@ -3,7 +3,6 @@ package v1
 import (
 	"errors"
 	"github.com/MatticNote/MatticNote/database/schemas"
-	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/internal/account"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -252,14 +251,13 @@ func userFollowing(c *fiber.Ctx) error {
 		return apiNotFound(c, "User not found")
 	}
 
-	maxId, err := ksuid.Parse(c.Query("max_id", internal.MaxInternalIDString))
+	user, err := account.GetUser(targetId)
 	if err != nil {
-		return apiBadRequest(c, "Bad max_id query")
-	}
-
-	sinceId, err := ksuid.Parse(c.Query("since_id", internal.MinInternalIDString))
-	if err != nil {
-		return apiBadRequest(c, "Bad since_id query")
+		if errors.Is(err, account.ErrUserNotFound) {
+			return apiNotFound(c, "User not found")
+		} else {
+			return err
+		}
 	}
 
 	limit, err := strconv.Atoi(c.Query("limit", "40"))
@@ -275,7 +273,18 @@ func userFollowing(c *fiber.Ctx) error {
 		return apiBadRequest(c, "Too many acquisitions")
 	}
 
-	relation, err := account.ListFollowingRelation(targetId, &maxId, &sinceId, limit)
+	page, err := strconv.Atoi(c.Query("page", "1"))
+	if err != nil {
+		return apiBadRequest(c, "Bad page query")
+	}
+
+	if page < 1 {
+		return apiBadRequest(c, "page must not be zero or negative")
+	}
+
+	offset := limit * (page - 1)
+
+	relation, err := account.ListFollowingRelation(user.ID, limit, offset)
 	if err != nil {
 		return err
 	}
@@ -295,14 +304,13 @@ func userFollower(c *fiber.Ctx) error {
 		return apiNotFound(c, "User not found")
 	}
 
-	maxId, err := ksuid.Parse(c.Query("max_id", internal.MaxInternalIDString))
+	user, err := account.GetUser(targetId)
 	if err != nil {
-		return apiBadRequest(c, "Bad max_id query")
-	}
-
-	sinceId, err := ksuid.Parse(c.Query("since_id", internal.MinInternalIDString))
-	if err != nil {
-		return apiBadRequest(c, "Bad since_id query")
+		if errors.Is(err, account.ErrUserNotFound) {
+			return apiNotFound(c, "User not found")
+		} else {
+			return err
+		}
 	}
 
 	limit, err := strconv.Atoi(c.Query("limit", "40"))
@@ -318,7 +326,18 @@ func userFollower(c *fiber.Ctx) error {
 		return apiBadRequest(c, "Too many acquisitions")
 	}
 
-	relation, err := account.ListFollowerRelation(targetId, &maxId, &sinceId, limit)
+	page, err := strconv.Atoi(c.Query("page", "1"))
+	if err != nil {
+		return apiBadRequest(c, "Bad page query")
+	}
+
+	if page < 1 {
+		return apiBadRequest(c, "page must not be zero or negative")
+	}
+
+	offset := limit * (page - 1)
+
+	relation, err := account.ListFollowerRelation(user.ID, limit, offset)
 	if err != nil {
 		return err
 	}

@@ -1,7 +1,6 @@
 package account
 
 import (
-	"database/sql"
 	"errors"
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/database/schemas"
@@ -80,44 +79,15 @@ func DeleteFollowRelation(
 
 func ListFollowingRelation(
 	userId ksuid.KSUID,
-	maxId *ksuid.KSUID,
-	sinceId *ksuid.KSUID,
 	limit int,
+	offset int,
 ) ([]*schemas.User, error) {
-	var (
-		rows *sql.Rows
-		err  error
+	rows, err := database.Database.Query(
+		"SELECT to_follow FROM users_follow_relation WHERE from_follow = $1 AND is_active IS TRUE ORDER BY following_since DESC LIMIT $2 OFFSET $3;",
+		userId,
+		limit,
+		offset,
 	)
-	switch {
-	case maxId == nil && sinceId != nil:
-		rows, err = database.Database.Query(
-			"SELECT to_follow FROM users_follow_relation WHERE from_follow = $1 AND is_active IS TRUE AND to_follow >= $2 ORDER BY following_since DESC LIMIT $3;",
-			userId,
-			sinceId.String(),
-			limit,
-		)
-	case maxId != nil && sinceId == nil:
-		rows, err = database.Database.Query(
-			"SELECT to_follow FROM users_follow_relation WHERE from_follow = $1 AND is_active IS TRUE AND to_follow <= $2 ORDER BY following_since DESC LIMIT $3;",
-			userId,
-			maxId.String(),
-			limit,
-		)
-	case maxId != nil && sinceId != nil:
-		rows, err = database.Database.Query(
-			"SELECT to_follow FROM users_follow_relation WHERE from_follow = $1 AND is_active IS TRUE AND to_follow >= $2 AND to_follow <= $3 ORDER BY following_since DESC LIMIT $4;",
-			userId,
-			sinceId.String(),
-			maxId.String(),
-			limit,
-		)
-	default:
-		rows, err = database.Database.Query(
-			"SELECT to_follow FROM users_follow_relation WHERE from_follow = $1 AND is_active IS TRUE ORDER BY following_since DESC LIMIT $2;",
-			userId,
-			limit,
-		)
-	}
 	if err != nil {
 		return nil, err
 	}
@@ -141,44 +111,15 @@ func ListFollowingRelation(
 
 func ListFollowerRelation(
 	userId ksuid.KSUID,
-	maxId *ksuid.KSUID,
-	sinceId *ksuid.KSUID,
 	limit int,
+	offset int,
 ) ([]*schemas.User, error) {
-	var (
-		rows *sql.Rows
-		err  error
+	rows, err := database.Database.Query(
+		"SELECT from_follow FROM users_follow_relation WHERE to_follow = $1 AND is_active IS TRUE ORDER BY following_since DESC LIMIT $2 OFFSET $3;",
+		userId,
+		limit,
+		offset,
 	)
-	switch {
-	case maxId == nil && sinceId != nil:
-		rows, err = database.Database.Query(
-			"SELECT from_follow FROM users_follow_relation WHERE to_follow = $1 AND is_active IS TRUE AND from_follow >= $2 ORDER BY following_since DESC LIMIT $3;",
-			userId,
-			sinceId.String(),
-			limit,
-		)
-	case maxId != nil && sinceId == nil:
-		rows, err = database.Database.Query(
-			"SELECT from_follow FROM users_follow_relation WHERE to_follow = $1 AND is_active IS TRUE AND from_follow <= $2 ORDER BY following_since DESC LIMIT $3;",
-			userId,
-			maxId.String(),
-			limit,
-		)
-	case maxId != nil && sinceId != nil:
-		rows, err = database.Database.Query(
-			"SELECT from_follow FROM users_follow_relation WHERE to_follow = $1 AND is_active IS TRUE AND from_follow >= $2 AND from_follow <= $3 ORDER BY following_since DESC LIMIT $4;",
-			userId,
-			sinceId.String(),
-			maxId.String(),
-			limit,
-		)
-	default:
-		rows, err = database.Database.Query(
-			"SELECT from_follow FROM users_follow_relation WHERE to_follow = $1 AND is_active IS TRUE ORDER BY following_since DESC LIMIT $2;",
-			userId,
-			limit,
-		)
-	}
 	if err != nil {
 		return nil, err
 	}
