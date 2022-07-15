@@ -18,11 +18,12 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: true
-      - name: Make
+      - name: Build
         run: make build
         env:
           BUILD_SUFFIX: ${{ runner.os }}-${{ runner.arch }}
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
+          name: ${{ runner.os }}-${{ runner.arch }}
           path: build/matticnote-*
