@@ -23,6 +23,7 @@ jobs:
           - target_os: linux
             arch: arm64
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v3
