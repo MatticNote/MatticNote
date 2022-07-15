@@ -12,6 +12,7 @@ jobs:
         with:
           node-version: lts/*
           cache: 'npm'
+          cache-dependency-path: client/package-lock.json
       - name: Setup Golang
         uses: actions/setup-go@v3
         with:
