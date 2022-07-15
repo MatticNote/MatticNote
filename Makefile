@@ -5,7 +5,7 @@ BUILD_SUFFIX := $(or $(BUILD_SUFFIX), unknown)
 .PHONY: build
 
 build-frontend:
-	cd client && npm install
+	cd client && npm ci
 	cd client && npm run css:production
 	cd client && npm run build -- --no-progress
 fetch-meta:
