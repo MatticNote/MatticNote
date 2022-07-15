@@ -1,0 +1,27 @@
+name: Build
+on: push
+jobs:
+  Build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: lts/*
+          cache: 'npm'
+      - name: Setup Golang
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - name: Make
+        run: make build
+        env:
+          BUILD_SUFFIX: `uname -s`-`uname -m`
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          path: build/matticnote-*
