@@ -8,16 +8,12 @@ jobs:
         include:
           - target_os: windows
             arch: 386
-            suffix: .exe
           - target_os: windows
             arch: amd64
-            suffix: .exe
           - target_os: windows
             arch: arm
-            suffix: .exe
           - target_os: windows
             arch: arm64
-            suffix: .exe
           - target_os: darwin
             arch: amd64
           - target_os: darwin
@@ -50,11 +46,11 @@ jobs:
       - name: Build
         run: make build
         env:
-          BUILD_SUFFIX: ${{ matrix.target_os }}-${{ matrix.arch }}${{ matrix.suffix }}
+          BUILD_SUFFIX: ${{ matrix.target_os }}-${{ matrix.arch }}${{ matrix.target_os == 'windows' && '.exe' || '' }}
           GOOS: ${{ matrix.target_os }}
           GOARCH: ${{ matrix.arch }}
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.os }}-${{ matrix.arch }}
+          name: ${{ matrix.target_os }}-${{ matrix.arch }}
           path: build/matticnote-*
