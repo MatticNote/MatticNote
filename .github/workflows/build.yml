@@ -3,6 +3,33 @@ on: push
 jobs:
   Build:
     name: Build
+    strategy:
+      matrix:
+        include:
+          - target_os: windows
+            arch: 386
+            suffix: .exe
+          - target_os: windows
+            arch: amd64
+            suffix: .exe
+          - target_os: windows
+            arch: arm
+            suffix: .exe
+          - target_os: windows
+            arch: arm64
+            suffix: .exe
+          - target_os: darwin
+            arch: amd64
+          - target_os: darwin
+            arch: arm64
+          - target_os: linux
+            arch: 386
+          - target_os: linux
+            arch: amd64
+          - target_os: linux
+            arch: arm
+          - target_os: linux
+            arch: arm64
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -18,12 +45,16 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: true
+      - name: Build frontend
+        run: make build-frontend
       - name: Build
         run: make build
         env:
-          BUILD_SUFFIX: ${{ runner.os }}-${{ runner.arch }}
+          BUILD_SUFFIX: ${{ matrix.target_os }}-${{ matrix.arch }}${{ matrix.suffix }}
+          GOOS: ${{ matrix.target_os }}
+          GOARCH: ${{ matrix.arch }}
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ runner.os }}-${{ runner.arch }}
+          name: ${{ matrix.os }}-${{ matrix.arch }}
           path: build/matticnote-*

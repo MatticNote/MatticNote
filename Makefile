@@ -13,7 +13,7 @@ fetch-meta:
 	$(eval MN_REVISION=$(shell git rev-parse --short HEAD))
 	$(eval MN_BUILDDATE=$(shell date '+%Y/%m/%d-%H:%M:%S%z'))
 	@echo Version: $(MN_VERSION)-$(MN_REVISION)
-build: build-frontend fetch-meta
+build: fetch-meta
 	go build \
 	-o build/matticnote-$(MN_VERSION)-$(MN_REVISION)-$(BUILD_SUFFIX) \
 	-ldflags "-X ${PACKAGE_NAME}/internal.version=$(MN_VERSION) \
