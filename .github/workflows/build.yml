@@ -20,7 +20,7 @@ jobs:
       - name: Make
         run: make build
         env:
-          BUILD_SUFFIX: `uname -s`-`uname -m`
+          BUILD_SUFFIX: ${{ runner.os }}-${{ runner.arch }}
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
