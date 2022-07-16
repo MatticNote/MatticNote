@@ -6,10 +6,12 @@ import (
 	"io/ioutil"
 )
 
+const MNConfigDefaultPath = "matticnote.toml"
+
 var Config *MNConfig
 
-func LoadConfig() error {
-	file, err := ioutil.ReadFile("matticnote.toml")
+func LoadConfig(filename string) error {
+	file, err := ioutil.ReadFile(filename)
 	if err != nil {
 		return err
 	}

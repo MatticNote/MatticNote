@@ -9,7 +9,7 @@ import (
 )
 
 func cliMigrate(c *cli.Context) error {
-	if err := config.LoadConfig(); err != nil {
+	if err := config.LoadConfig(c.Path("config")); err != nil {
 		return err
 	}
 

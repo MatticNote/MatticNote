@@ -8,6 +8,7 @@ import (
 	"github.com/MatticNote/MatticNote/server/common"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/filesystem"
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	recover2 "github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/template/html"
 	"github.com/urfave/cli/v2"
@@ -19,8 +20,8 @@ import (
 	"syscall"
 )
 
-func cliServer(_ *cli.Context) error {
-	if err := config.LoadConfig(); err != nil {
+func cliServer(c *cli.Context) error {
+	if err := config.LoadConfig(c.Path("config")); err != nil {
 		return err
 	}
 
@@ -69,6 +70,10 @@ func cliServer(_ *cli.Context) error {
 	app.Use(recover2.New(recover2.Config{
 		EnableStackTrace: true,
 	}))
+
+	if c.Bool("logging") {
+		app.Use(logger.New())
+	}
 
 	app.Use("/static/ui", filesystem.New(filesystem.Config{
 		Root: func() http.FileSystem {
