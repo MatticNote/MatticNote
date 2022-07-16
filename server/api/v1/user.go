@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/MatticNote/MatticNote/database/schemas"
+	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/internal/account"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -316,35 +317,46 @@ func userFollowing(c *fiber.Ctx) error {
 		return apiBadRequest(c, "Too many acquisitions")
 	}
 
-	page, err := strconv.Atoi(c.Query("page", "1"))
+	maxId, err := ksuid.Parse(c.Query("max_id", internal.MaxInternalIDString))
 	if err != nil {
-		return apiBadRequest(c, "Bad page query")
+		return apiBadRequest(c, "Bad max_id parameter")
 	}
 
-	if page < 1 {
-		return apiBadRequest(c, "page must not be zero or negative")
+	sinceId, err := ksuid.Parse(c.Query("since_id", internal.MinInternalIDString))
+	if err != nil {
+		return apiBadRequest(c, "Bad min_id parameter")
 	}
 
-	offset := limit * (page - 1)
-
-	relation, err := account.ListFollowingRelation(user.ID, limit, offset)
+	relation, err := account.ListFollowingRelation(user.ID, maxId, sinceId, limit)
 	if err != nil {
 		return err
 	}
 
+	var (
+		relationMaxID ksuid.KSUID
+		relationMinID ksuid.KSUID
+	)
+
 	var response = make([]*apiV1UserStruct, 0)
-	for _, v := range relation {
-		response = append(response, newApiV1UserStructFromSchema(v))
+	for i, v := range relation {
+		if i == 0 {
+			relationMaxID = v.ID
+		}
+		response = append(response, newApiV1UserStructFromSchema(v.User))
+		relationMinID = v.ID
 	}
 
 	var paginationLink = make([]string, 0)
 
-	if page > 1 {
-		paginationLink = append(paginationLink, fmt.Sprintf("%s/api/v1/users/%s/following?limit=%d&page=%d", c.BaseURL(), user.ID.String(), limit, page-1), "prev")
-	}
+	if len(response) != 0 {
+		// I don't feel like it's right
+		if maxId.String() != internal.MaxInternalIDString || sinceId.String() != internal.MinInternalIDString {
+			paginationLink = append(paginationLink, fmt.Sprintf("%s/api/v1/users/%s/following?limit=%d&since_id=%s", c.BaseURL(), user.ID.String(), limit, relationMaxID.Next().String()), "prev")
+		}
 
-	if len(response) >= limit {
-		paginationLink = append(paginationLink, fmt.Sprintf("%s/api/v1/users/%s/following?limit=%d&page=%d", c.BaseURL(), user.ID.String(), limit, page+1), "next")
+		if len(response) >= limit {
+			paginationLink = append(paginationLink, fmt.Sprintf("%s/api/v1/users/%s/following?limit=%d&max_id=%s", c.BaseURL(), user.ID.String(), limit, relationMinID.String()), "next")
+		}
 	}
 
 	if len(paginationLink) > 0 {
@@ -386,35 +398,46 @@ func userFollower(c *fiber.Ctx) error {
 		return apiBadRequest(c, "Too many acquisitions")
 	}
 
-	page, err := strconv.Atoi(c.Query("page", "1"))
+	maxId, err := ksuid.Parse(c.Query("max_id", internal.MaxInternalIDString))
 	if err != nil {
-		return apiBadRequest(c, "Bad page query")
+		return apiBadRequest(c, "Bad max_id parameter")
 	}
 
-	if page < 1 {
-		return apiBadRequest(c, "page must not be zero or negative")
+	sinceId, err := ksuid.Parse(c.Query("min_id", internal.MinInternalIDString))
+	if err != nil {
+		return apiBadRequest(c, "Bad min_id parameter")
 	}
 
-	offset := limit * (page - 1)
-
-	relation, err := account.ListFollowerRelation(user.ID, limit, offset)
+	relation, err := account.ListFollowerRelation(user.ID, maxId, sinceId, limit)
 	if err != nil {
 		return err
 	}
 
+	var (
+		relationMaxID ksuid.KSUID
+		relationMinID ksuid.KSUID
+	)
+
 	var response = make([]*apiV1UserStruct, 0)
-	for _, v := range relation {
-		response = append(response, newApiV1UserStructFromSchema(v))
+	for i, v := range relation {
+		if i == 0 {
+			relationMaxID = v.ID
+		}
+		response = append(response, newApiV1UserStructFromSchema(v.User))
+		relationMinID = v.ID
 	}
 
 	var paginationLink = make([]string, 0)
 
-	if page > 1 {
-		paginationLink = append(paginationLink, fmt.Sprintf("%s/api/v1/users/%s/follower?limit=%d&page=%d", c.BaseURL(), user.ID.String(), limit, page-1), "prev")
-	}
+	if len(response) != 0 {
+		// I don't feel like it's right
+		if maxId.String() != internal.MaxInternalIDString || sinceId.String() != internal.MinInternalIDString {
+			paginationLink = append(paginationLink, fmt.Sprintf("%s/api/v1/users/%s/follower?limit=%d&since_id=%s", c.BaseURL(), user.ID.String(), limit, relationMaxID.Next().String()), "prev")
+		}
 
-	if len(response) >= limit {
-		paginationLink = append(paginationLink, fmt.Sprintf("%s/api/v1/users/%s/follower?limit=%d&page=%d", c.BaseURL(), user.ID.String(), limit, page+1), "next")
+		if len(response) >= limit {
+			paginationLink = append(paginationLink, fmt.Sprintf("%s/api/v1/users/%s/follower?limit=%d&max_id=%s", c.BaseURL(), user.ID.String(), limit, relationMinID.String()), "next")
+		}
 	}
 
 	if len(paginationLink) > 0 {
