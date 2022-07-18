@@ -72,7 +72,6 @@ func InsertTokenCookie(c *fiber.Ctx, token string) {
 		Value:    token,
 		Path:     "/",
 		Secure:   false,
-		HTTPOnly: true,
 		SameSite: fiber.CookieSameSiteStrictMode,
 	})
 }

@@ -1,0 +1,5 @@
+<div>
+  <h3 *ngIf="title">{{ title }}</h3>
+  <div class="text-xs" *ngIf="message && options.enableHtml" [innerHTML]="message"></div>
+  <div class="text-xs" *ngIf="message && !options.enableHtml">{{ message }}</div>
+</div>

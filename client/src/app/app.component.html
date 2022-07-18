@@ -36,36 +36,58 @@
           </label>
           <div tabindex="0" class="mt-3 card card-compact dropdown-content w-52 bg-base-100 shadow">
             <div class="card-body">
-              <span class="font-bold text-lg">8 Items</span>
-              <span class="text-info">Subtotal: $999</span>
-              <div class="card-actions">
-                <button class="btn btn-primary btn-block">View cart</button>
-              </div>
+              <span class="font-bold text-lg">Notifications</span>
+              <span>WIP</span>
             </div>
           </div>
         </div>
-        <div class="dropdown dropdown-end">
-          <label tabindex="0" class="btn btn-ghost btn-circle avatar">
-            <div class="w-10 rounded-full">
-              <img src="" alt="people"/>
-            </div>
-          </label>
-          <ul tabindex="0" class="menu menu-compact dropdown-content mt-3 p-2 shadow bg-base-100 rounded-box w-52">
-            <li><a routerLink="/users/username">Profile</a></li>
-            <li><a routerLink="/settings">Client Settings</a></li>
-            <li><a href="/settings/core">Account Settings</a></li>
-            <li><a href="/account/logout">Logout</a></li>
-          </ul>
-        </div>
+        <ng-container *ngIf="api.user">
+          <div class="dropdown dropdown-end">
+              <label tabindex="0" class="btn btn-ghost btn-circle avatar">
+                <div class="w-10 rounded-full">
+                  <img src="" alt="people"/>
+                </div>
+              </label>
+              <div tabindex="0" class="card card-compact dropdown-content bg-base-100 w-64 shadow">
+                <div class="card-body">
+                  <span class="font-bold text-lg">
+                    <ng-container *ngIf="api.user.display_name != null; else noDisplayName">{{ api.user.display_name }}</ng-container>
+                    <ng-template #noDisplayName>{{ api.user.username }}</ng-template>
+                  </span>
+                  <p class="text-sm">{{ api.user.headline }}</p>
+                  <p class="text-xs" *ngIf="api.user.username != null">@{{ api.user.username }}</p>
+                  <ul class="menu p-2">
+                    <div class="divider"></div>
+                    <li *ngIf="api.user.username != null; else noUsername">
+                      <a [routerLink]="['users', api.user.username]">Profile</a>
+                    </li>
+                    <ng-template #noUsername>
+                      <li class="disabled">
+                        Profile
+                      </li>
+                    </ng-template>
+                    <div class="divider"></div>
+                    <li><a routerLink="/settings">Client Settings</a></li>
+                    <li><a href="/settings/core">Account Settings</a></li>
+                    <div class="divider"></div>
+                    <li><a href="/account/logout">Logout</a></li>
+                  </ul>
+                </div>
+              </div>
+          </div>
+        </ng-container>
       </div>
     </div>
 
-    <h1 class="text-3xl font-bold underline">
-      Hello World!
-    </h1>
-
     <div>
       <router-outlet></router-outlet>
+    </div>
+
+    <div toastContainer>
+      <div class="alert hidden"></div>
+      <div class="alert alert-info hidden"></div>
+      <div class="alert alert-warning hidden"></div>
+      <div class="alert alert-error hidden"></div>
     </div>
   </div>
 
