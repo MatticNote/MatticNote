@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/database/schemas"
-	"github.com/gofiber/fiber/v2"
 	"github.com/lib/pq"
 	"github.com/segmentio/ksuid"
 	"golang.org/x/crypto/bcrypt"
@@ -16,10 +15,7 @@ var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrUserNotFound       = errors.New("user not found")
 	ErrUserGone           = errors.New("user is gone")
-)
-
-const (
-	TokenCookieName = "mn_token"
+	ErrUserSuspend        = errors.New("user is suspend")
 )
 
 func AuthenticateUser(
@@ -32,10 +28,7 @@ func AuthenticateUser(
 	)
 
 	err := database.Database.QueryRow(
-		"SELECT u.id, ua.password FROM users_email "+
-			"LEFT OUTER JOIN users u on u.id = users_email.id "+
-			"LEFT JOIN users_auth ua on u.id = ua.id "+
-			"WHERE email = $1 AND (deleted_at IS NULL OR deleted_at > now());",
+		"SELECT u.id, ua.password FROM users_email LEFT OUTER JOIN users u on u.id = users_email.id LEFT JOIN users_auth ua on u.id = ua.id WHERE email = $1 AND (deleted_at IS NULL OR deleted_at > now());",
 		email,
 	).
 		Scan(&userId, &userPassword)
@@ -63,18 +56,11 @@ func AuthenticateUser(
 		return nil, ErrUserGone
 	}
 
-	return user, nil
-}
+	if user.IsSuspend {
+		return nil, ErrUserSuspend
+	}
 
-func InsertTokenCookie(c *fiber.Ctx, token string) {
-	c.Cookie(&fiber.Cookie{
-		Name:     TokenCookieName,
-		Value:    token,
-		Path:     "/",
-		Secure:   false,
-		HTTPOnly: true,
-		SameSite: fiber.CookieSameSiteStrictMode,
-	})
+	return user, nil
 }
 
 func GetUser(userId ksuid.KSUID) (*schemas.User, error) {

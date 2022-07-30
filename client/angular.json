@@ -73,7 +73,8 @@
               "browserTarget": "matticnote:build:production"
             },
             "development": {
-              "browserTarget": "matticnote:build:development"
+              "browserTarget": "matticnote:build:development",
+              "proxyConfig": "src/proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

@@ -23,7 +23,7 @@ type (
 
 func settingSecurityGet(c *fiber.Ctx) error {
 	user := c.Locals("currentUser").(*schemas.User)
-	token := c.Cookies(account.TokenCookieName)
+	token := c.Cookies(common.TokenCookieName)
 
 	tokenList, err := account.ListUserToken(user.ID)
 	if err != nil {

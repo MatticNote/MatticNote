@@ -1,5 +1,101 @@
-<h1 class="text-3xl font-bold underline">
-  Hello World!
-</h1>
+<ng-progress
+  id="progress"
+  color="blue"
+  [meteor]="true"
+  [fixed]="true"
+  [speed]="400"
+  [spinner]="true"
+  [spinnerPosition]="'left'"
+></ng-progress>
 
-<router-outlet></router-outlet>
+<div class="drawer">
+  <input id="drawer-menu" type="checkbox" class="drawer-toggle" [(ngModel)]="isDrawerOpen" />
+  <div class="drawer-content">
+    <div class="navbar bg-base-100">
+      <div class="navbar-start block md:hidden">
+        <label for="drawer-menu" class="btn btn-square btn-ghost">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="inline-block w-6 h-6 stroke-current"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+        </label>
+      </div>
+      <div class="navbar-start hidden md:block">
+        <ul class="menu menu-horizontal p-0">
+          <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}"><ng-icon name="bootstrap-house-door"></ng-icon><span class="hidden lg:block"> Timeline</span></a></li>
+          <li><a routerLink="/discover" routerLinkActive="active"><ng-icon name="bootstrap-compass"></ng-icon><span class="hidden lg:block"> Discover</span></a></li>
+        </ul>
+      </div>
+      <div class="navbar-center">
+        <a class="btn btn-ghost normal-case text-xl">MatticNote</a>
+      </div>
+      <div class="navbar-end">
+        <div class="dropdown dropdown-end">
+          <label tabindex="0" class="btn btn-ghost btn-circle">
+            <div class="indicator">
+              <ng-icon name="bootstrap-bell"></ng-icon>
+              <span class="badge badge-sm indicator-item"></span>
+            </div>
+          </label>
+          <div tabindex="0" class="mt-3 card card-compact dropdown-content w-52 bg-base-100 shadow">
+            <div class="card-body">
+              <span class="font-bold text-lg">Notifications</span>
+              <span>WIP</span>
+            </div>
+          </div>
+        </div>
+        <ng-container *ngIf="api.user">
+          <div class="dropdown dropdown-end">
+              <label tabindex="0" class="btn btn-ghost btn-circle avatar">
+                <div class="w-10 rounded-full">
+                  <img src="" alt="people"/>
+                </div>
+              </label>
+              <div tabindex="0" class="card card-compact dropdown-content bg-base-100 w-64 shadow">
+                <div class="card-body">
+                  <span class="font-bold text-lg">
+                    <ng-container *ngIf="api.user.display_name != null; else noDisplayName">{{ api.user.display_name }}</ng-container>
+                    <ng-template #noDisplayName>{{ api.user.username }}</ng-template>
+                  </span>
+                  <p class="text-sm">{{ api.user.headline }}</p>
+                  <p class="text-xs" *ngIf="api.user.username != null">@{{ api.user.username }}</p>
+                  <ul class="menu p-2">
+                    <div class="divider"></div>
+                    <li *ngIf="api.user.username != null; else noUsername">
+                      <a [routerLink]="['users', api.user.username]">Profile</a>
+                    </li>
+                    <ng-template #noUsername>
+                      <li class="disabled">
+                        Profile
+                      </li>
+                    </ng-template>
+                    <div class="divider"></div>
+                    <li><a routerLink="/settings">Client Settings</a></li>
+                    <li><a href="/settings/core">Account Settings</a></li>
+                    <div class="divider"></div>
+                    <li><a href="/account/logout">Logout</a></li>
+                  </ul>
+                </div>
+              </div>
+          </div>
+        </ng-container>
+      </div>
+    </div>
+
+    <div>
+      <router-outlet></router-outlet>
+    </div>
+
+    <div toastContainer>
+      <div class="alert hidden"></div>
+      <div class="alert alert-info hidden"></div>
+      <div class="alert alert-warning hidden"></div>
+      <div class="alert alert-error hidden"></div>
+    </div>
+  </div>
+
+  <div class="drawer-side">
+    <label for="drawer-menu" class="drawer-overlay"></label>
+    <ul class="menu p-4 overflow-y-auto w-80 bg-base-100">
+      <li><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" (click)="isDrawerOpen = false"><ng-icon name="bootstrap-house-door"></ng-icon> Timeline</a></li>
+      <li><a routerLink="/discover" routerLinkActive="active" (click)="isDrawerOpen = false"><ng-icon name="bootstrap-compass"></ng-icon> Discover</a></li>
+    </ul>
+  </div>
+</div>

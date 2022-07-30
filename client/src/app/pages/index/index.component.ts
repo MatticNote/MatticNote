@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import {ProgressService} from "../../service/progress.service";
 
 @Component({
   selector: 'app-index',
@@ -7,7 +8,7 @@ import { Component, OnInit } from '@angular/core';
 })
 export class IndexComponent implements OnInit {
 
-  constructor() { }
+  constructor(public ps: ProgressService) { }
 
   ngOnInit(): void {
   }

@@ -21,8 +21,17 @@ func CSRFErrorHandler(c *fiber.Ctx, _ error) error {
 }
 
 func ValidateCookie(c *fiber.Ctx) error {
-	token := c.Cookies(account.TokenCookieName)
+	token := c.Cookies(TokenCookieName)
 	if token == "" {
+		session, err := AccountSession.Get(c)
+		if err != nil {
+			return err
+		}
+		session.Set(AccountSessionRedirectTo, c.OriginalURL())
+		err = session.Save()
+		if err != nil {
+			return err
+		}
 		return c.Redirect("/account/login")
 	}
 
@@ -31,7 +40,8 @@ func ValidateCookie(c *fiber.Ctx) error {
 		switch {
 		case errors.Is(err, account.ErrUserNotFound),
 			errors.Is(err, account.ErrUserGone),
-			errors.Is(err, account.ErrInvalidUserToken):
+			errors.Is(err, account.ErrInvalidUserToken),
+			errors.Is(err, account.ErrUserSuspend):
 			return c.Redirect("/account/logout")
 		default:
 			return err
@@ -43,9 +53,45 @@ func ValidateCookie(c *fiber.Ctx) error {
 	return c.Next()
 }
 
-func RequiredAdminOrModerator(c *fiber.Ctx) error {
+func RequireActiveAccount(c *fiber.Ctx) error {
+	user, ok := c.Locals("currentUser").(*schemas.User)
+
+	if !ok {
+		session, err := AccountSession.Get(c)
+		if err != nil {
+			return err
+		}
+		session.Set(AccountSessionRedirectTo, c.OriginalURL())
+		err = session.Save()
+		if err != nil {
+			return err
+		}
+		return c.Redirect("/account/login")
+	}
+
+	if user.DeletedAt.Valid {
+		return c.Redirect("/settings/core")
+	}
+
+	if !user.Username.Valid {
+		return c.Redirect("/settings/core")
+	}
+
+	return c.Next()
+}
+
+func RequireAdminOrModerator(c *fiber.Ctx) error {
 	user, ok := c.Locals("currentUser").(*schemas.User)
 	if !ok {
+		session, err := AccountSession.Get(c)
+		if err != nil {
+			return err
+		}
+		session.Set(AccountSessionRedirectTo, c.OriginalURL())
+		err = session.Save()
+		if err != nil {
+			return err
+		}
 		return c.Redirect("/account/login")
 	}
 

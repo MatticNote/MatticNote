@@ -6,6 +6,8 @@ import (
 )
 
 func ConfigureRoute(r fiber.Router) {
+	common.InitAccountSessionStore()
+
 	r.Get("/login", loginGet)
 	r.Post("/login", loginPost)
 

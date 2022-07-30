@@ -17,9 +17,14 @@ func ConfigureRoute(r fiber.Router) {
 				if authHeader[1] != "" {
 					user, err := account.GetUserFromToken(authHeader[1])
 					if err != nil {
-						if errors.Is(err, account.ErrInvalidUserToken) {
+						switch {
+						case errors.Is(err, account.ErrInvalidUserToken):
 							return apiUnauthorized(c)
-						} else {
+						case errors.Is(err, account.ErrUserGone):
+							return apiForbidden(c, "Your account is deleted.")
+						case errors.Is(err, account.ErrUserSuspend):
+							return apiForbidden(c, "Your account is currently suspended.")
+						default:
 							return err
 						}
 					}
