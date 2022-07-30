@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <title>User note</title>
+    <link rel="stylesheet" href="{{ index .ui "ui.css" }}">
 </head>
 <body>
     {{ .note.Body.String }}
+    <script defer src="{{ index .ui "ui.js" }}"></script>
 </body>
 </html>

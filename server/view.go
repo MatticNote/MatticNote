@@ -5,6 +5,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+var UIFileManifest map[string]string
+
 func ErrorView(c *fiber.Ctx, err error) error {
 	switch err {
 	case fiber.ErrNotFound:

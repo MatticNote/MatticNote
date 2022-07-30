@@ -24,6 +24,7 @@ func getUserProfile(c *fiber.Ctx) error {
 		"user-profile",
 		fiber.Map{
 			"user": user,
+			"ui":   UIFileManifest,
 		},
 	)
 }
@@ -84,6 +85,7 @@ func getUserNote(c *fiber.Ctx) error {
 			"note":       noteData,
 			"replyNote":  replyNoteData,
 			"retextNote": retextNoteData,
+			"ui":         UIFileManifest,
 		},
 	)
 }

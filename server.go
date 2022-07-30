@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/MatticNote/MatticNote/config"
 	"github.com/MatticNote/MatticNote/database"
@@ -85,6 +86,11 @@ func cliServer(c *cli.Context) error {
 		}(),
 		Browse: false,
 	}))
+
+	err := json.Unmarshal(webUiManifest, &server.UIFileManifest)
+	if err != nil {
+		panic(err)
+	}
 
 	app.Use("/web", common.ValidateCookie, common.RequireActiveAccount, filesystem.New(filesystem.Config{
 		Root: func() http.FileSystem {

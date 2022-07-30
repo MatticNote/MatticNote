@@ -3,6 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <title>User info</title>
+        <link rel="stylesheet" href="{{ index .ui "ui.css" }}">
     </head>
     <body>
         <h1>
@@ -18,5 +19,7 @@
             {{- end -}}
         </h2>
         <p>@{{ .user.Username.String }}</p>
+
+        <script defer src="{{ index .ui "ui.js" }}"></script>
     </body>
 </html>

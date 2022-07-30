@@ -17,7 +17,9 @@ import (
 
 func ConfigureRoute(app *fiber.App) {
 	app.Get("/", func(ctx *fiber.Ctx) error {
-		return ctx.Render("index", fiber.Map{})
+		return ctx.Render("index", fiber.Map{
+			"ui": UIFileManifest,
+		})
 	})
 
 	app.Get("/@:username", getUserProfile)

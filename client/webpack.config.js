@@ -1,4 +1,6 @@
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+const {WebpackManifestPlugin} = require("webpack-manifest-plugin");
 const mode = (process.env.NODE_ENV === 'production') ? 'production' : 'development';
 
 module.exports = [
@@ -8,7 +10,7 @@ module.exports = [
     },
     output: {
       path: `${__dirname}/dist/ui`,
-      filename: '[name].js',
+      filename: '[name].[hash].js',
     },
     mode: mode,
     module: {
@@ -25,7 +27,13 @@ module.exports = [
       ]
     },
     plugins: [
-      new MiniCssExtractPlugin()
+      new CleanWebpackPlugin(),
+      new MiniCssExtractPlugin({
+        filename: 'ui.[hash].css',
+      }),
+      new WebpackManifestPlugin({
+        publicPath: '/static/ui/'
+      }),
     ]
   }
 ];
