@@ -54,5 +54,5 @@ func ConfigureRoute(app *fiber.App) {
 	account.ConfigureRoute(app.Group("/account"))
 	api.ConfigureRoute(app.Group("/api"))
 	setting.ConfigureRoute(app.Group("/settings", common.ValidateCookie))
-	admin.ConfigureRoute(app.Group("/admin", common.ValidateCookie, common.RequiredAdminOrModerator))
+	admin.ConfigureRoute(app.Group("/admin", common.ValidateCookie, common.RequireAdminOrModerator))
 }

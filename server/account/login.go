@@ -21,6 +21,8 @@ func loginGet(c *fiber.Ctx) error {
 	return c.Render("account/login", fiber.Map{
 		"csrfName":  common.CSRFFormName,
 		"csrfToken": c.Locals(common.CSRFContextKey),
+		"invalid":   c.Locals("invalid"),
+		"suspend":   c.Locals("suspend"),
 	}, "account/_layout")
 }
 
@@ -41,6 +43,9 @@ func loginPost(c *fiber.Ctx) error {
 		switch {
 		case errors.Is(err, account.ErrInvalidCredentials), errors.Is(err, account.ErrUserGone):
 			c.Locals("invalid", true)
+			return loginGet(c)
+		case errors.Is(err, account.ErrUserSuspend):
+			c.Locals("suspend", true)
 			return loginGet(c)
 		}
 	}

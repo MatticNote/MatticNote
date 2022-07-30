@@ -86,7 +86,7 @@ func cliServer(c *cli.Context) error {
 		Browse: false,
 	}))
 
-	app.Use("/web", common.ValidateCookie, filesystem.New(filesystem.Config{
+	app.Use("/web", common.ValidateCookie, common.RequireActiveAccount, filesystem.New(filesystem.Config{
 		Root: func() http.FileSystem {
 			webCliDist, err := fs.Sub(webCli, "client/dist/client")
 			if err != nil {

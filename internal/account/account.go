@@ -15,6 +15,7 @@ var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 	ErrUserNotFound       = errors.New("user not found")
 	ErrUserGone           = errors.New("user is gone")
+	ErrUserSuspend        = errors.New("user is suspend")
 )
 
 func AuthenticateUser(
@@ -53,6 +54,10 @@ func AuthenticateUser(
 
 	if user.DeletedAt.Valid && user.DeletedAt.Time.Before(time.Now()) {
 		return nil, ErrUserGone
+	}
+
+	if user.IsSuspend {
+		return nil, ErrUserSuspend
 	}
 
 	return user, nil

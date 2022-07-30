@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/internal"
 	"github.com/gofiber/fiber/v2"
@@ -9,6 +10,7 @@ import (
 )
 
 const (
+	AccountSessionCookieName = "mn_as"
 	AccountSessionRedirectTo = "redirectTo"
 )
 
@@ -25,5 +27,6 @@ func InitAccountSessionStore() {
 		KeyGenerator: func() string {
 			return internal.GenerateRandString(128)
 		},
+		KeyLookup: fmt.Sprintf("cookie:%s", AccountSessionCookieName),
 	})
 }

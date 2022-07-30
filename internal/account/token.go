@@ -73,6 +73,10 @@ func GetUserFromToken(
 		return nil, ErrUserGone
 	}
 
+	if user.IsSuspend {
+		return nil, ErrUserSuspend
+	}
+
 	return user, nil
 }
 
