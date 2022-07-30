@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/MatticNote/MatticNote/database"
+	"github.com/MatticNote/MatticNote/internal"
 	"github.com/MatticNote/MatticNote/server/account"
 	"github.com/MatticNote/MatticNote/server/admin"
 	"github.com/MatticNote/MatticNote/server/api"
@@ -10,7 +11,6 @@ import (
 	"github.com/MatticNote/MatticNote/server/setting"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/csrf"
-	"github.com/segmentio/ksuid"
 	"strings"
 	"time"
 )
@@ -26,7 +26,7 @@ func ConfigureRoute(app *fiber.App) {
 	app.Use(csrf.New(csrf.Config{
 		KeyLookup: fmt.Sprintf("form:%s", common.CSRFFormName),
 		KeyGenerator: func() string {
-			return ksuid.New().String()
+			return internal.GenerateRandString(128)
 		},
 		Next: func(c *fiber.Ctx) bool {
 			var path = c.Path()

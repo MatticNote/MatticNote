@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/database/schemas"
-	"github.com/gofiber/fiber/v2"
 	"github.com/lib/pq"
 	"github.com/segmentio/ksuid"
 	"golang.org/x/crypto/bcrypt"
@@ -18,10 +17,6 @@ var (
 	ErrUserGone           = errors.New("user is gone")
 )
 
-const (
-	TokenCookieName = "mn_token"
-)
-
 func AuthenticateUser(
 	email,
 	password string,
@@ -32,10 +27,7 @@ func AuthenticateUser(
 	)
 
 	err := database.Database.QueryRow(
-		"SELECT u.id, ua.password FROM users_email "+
-			"LEFT OUTER JOIN users u on u.id = users_email.id "+
-			"LEFT JOIN users_auth ua on u.id = ua.id "+
-			"WHERE email = $1 AND (deleted_at IS NULL OR deleted_at > now());",
+		"SELECT u.id, ua.password FROM users_email LEFT OUTER JOIN users u on u.id = users_email.id LEFT JOIN users_auth ua on u.id = ua.id WHERE email = $1 AND (deleted_at IS NULL OR deleted_at > now());",
 		email,
 	).
 		Scan(&userId, &userPassword)
@@ -64,16 +56,6 @@ func AuthenticateUser(
 	}
 
 	return user, nil
-}
-
-func InsertTokenCookie(c *fiber.Ctx, token string) {
-	c.Cookie(&fiber.Cookie{
-		Name:     TokenCookieName,
-		Value:    token,
-		Path:     "/",
-		Secure:   false,
-		SameSite: fiber.CookieSameSiteStrictMode,
-	})
 }
 
 func GetUser(userId ksuid.KSUID) (*schemas.User, error) {

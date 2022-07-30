@@ -19,7 +19,7 @@ type (
 )
 
 func resetPasswordNewGet(c *fiber.Ctx) error {
-	if c.Cookies(ia.TokenCookieName) != "" {
+	if c.Cookies(common.TokenCookieName) != "" {
 		return c.Redirect("/web")
 	}
 

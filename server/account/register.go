@@ -45,7 +45,7 @@ func registerGet(c *fiber.Ctx) error {
 		inviteInvalid = false
 	}
 
-	if c.Cookies(ia.TokenCookieName) != "" {
+	if c.Cookies(common.TokenCookieName) != "" {
 		return c.Redirect("/web")
 	}
 

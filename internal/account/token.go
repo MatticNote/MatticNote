@@ -1,12 +1,11 @@
 package account
 
 import (
-	"crypto/sha512"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/MatticNote/MatticNote/database"
 	"github.com/MatticNote/MatticNote/database/schemas"
+	"github.com/MatticNote/MatticNote/internal"
 	"github.com/segmentio/ksuid"
 	"time"
 )
@@ -21,8 +20,7 @@ func GenerateUserToken(
 	issuedFromIP string,
 	expiredAt ...time.Time,
 ) (string, error) {
-	tokenRaw := sha512.Sum512([]byte(fmt.Sprintf("%s.%s", userId.String(), ksuid.New())))
-	token := fmt.Sprintf("%x", tokenRaw)
+	token := internal.GenerateRandString(128)
 
 	var err error
 

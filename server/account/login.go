@@ -6,7 +6,6 @@ import (
 	"github.com/MatticNote/MatticNote/server/common"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"time"
 )
 
 type loginForm struct {
@@ -15,7 +14,7 @@ type loginForm struct {
 }
 
 func loginGet(c *fiber.Ctx) error {
-	if c.Cookies(account.TokenCookieName) != "" {
+	if c.Cookies(common.TokenCookieName) != "" {
 		return c.Redirect("/web/")
 	}
 
@@ -51,7 +50,7 @@ func loginPost(c *fiber.Ctx) error {
 		return err
 	}
 
-	account.InsertTokenCookie(c, session)
+	common.InsertTokenCookie(c, session)
 
 	isEmailVerified, err := account.IsEmailVerified(user.ID)
 	if err != nil {
@@ -66,7 +65,20 @@ func loginPost(c *fiber.Ctx) error {
 		if !user.Username.Valid {
 			return c.Redirect("/account/register-username")
 		} else {
-			return c.Redirect("/web")
+			session, err := common.AccountSession.Get(c)
+			if err != nil {
+				return err
+			}
+			redirectTo, ok := session.Get(common.AccountSessionRedirectTo).(string)
+			if !ok {
+				return c.Redirect("/web")
+			} else {
+				err := session.Destroy()
+				if err != nil {
+					return err
+				}
+				return c.Redirect(redirectTo)
+			}
 		}
 	} else {
 		return c.Redirect("/settings/core")
@@ -74,16 +86,11 @@ func loginPost(c *fiber.Ctx) error {
 }
 
 func logout(c *fiber.Ctx) error {
-	err := account.DeleteUserTokenFromToken(c.Cookies(account.TokenCookieName))
+	err := account.DeleteUserTokenFromToken(c.Cookies(common.TokenCookieName))
 	if err != nil {
 		return err
 	}
 
-	c.Cookie(&fiber.Cookie{
-		Name:    account.TokenCookieName,
-		Value:   "",
-		MaxAge:  -1,
-		Expires: time.Now().Add(-100 * time.Hour),
-	})
-	return c.Redirect("/account/login", fiber.StatusTemporaryRedirect)
+	common.DestroyTokenCookie(c)
+	return c.Redirect("/")
 }
